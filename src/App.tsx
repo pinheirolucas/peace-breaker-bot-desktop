@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Server } from "../electron/discovery";
+import { sortServers } from "../electron/discovery";
+import AddServerForm from "./AddServerForm";
 import { AppearanceDock } from "./components/AppearanceDock";
 import { AppearanceStage } from "./components/AppearanceStage";
 import { Button, IconButton } from "./components/Button";
@@ -33,7 +35,7 @@ import {
 import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
-import { useSelectedServer } from "./storage";
+import { useManualServers, useSelectedServer } from "./storage";
 import useBotStatus from "./useBotStatus";
 import "./styles/shell.css";
 
@@ -81,8 +83,14 @@ export default function App() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [addServerOpen, setAddServerOpen] = useState(false);
 
-  const [servers, setServers] = useState<Server[]>([]);
+  const [discovered, setDiscovered] = useState<Server[]>([]);
+  const [manualServers, setManualServers] = useManualServers([]);
+  const servers = useMemo(
+    () => sortServers([...manualServers, ...discovered]),
+    [manualServers, discovered]
+  );
   const [serverMenuOpen, setServerMenuOpen] = useState(false);
   const [selectedServer, setSelectedServer] = useSelectedServer(null);
   const [activeUrl, setActiveUrl] = useState<string | null>(getApiUrl());
@@ -129,8 +137,8 @@ export default function App() {
       return undefined;
     }
 
-    const unsubscribe = discovery.onServers((discovered) => {
-      setServers(Array.isArray(discovered) ? (discovered as Server[]) : []);
+    const unsubscribe = discovery.onServers((next) => {
+      setDiscovered(Array.isArray(next) ? (next as Server[]) : []);
     });
 
     return () => {
@@ -275,6 +283,38 @@ export default function App() {
     }
   }
 
+  function addManualServer(apiUrl: string) {
+    if (!discovered.some((server) => server.apiUrl === apiUrl)) {
+      setManualServers((current) =>
+        current.some((server) => server.apiUrl === apiUrl)
+          ? current
+          : [
+              ...current,
+              {
+                id: apiUrl,
+                apiUrl,
+                address: null,
+                port: Number(new URL(apiUrl).port) || (apiUrl.startsWith("https:") ? 443 : 80),
+                hostname: null,
+                isLocal: false,
+                manual: true
+              }
+            ]
+      );
+    }
+
+    setSelectedServer(apiUrl);
+    setAddServerOpen(false);
+  }
+
+  function removeManualServer(server: Server) {
+    setManualServers((current) => current.filter((candidate) => candidate.id !== server.id));
+
+    if (selectedServer === server.apiUrl) {
+      setSelectedServer(null);
+    }
+  }
+
   // macOS gets a native item in its app menu instead — see
   // electron/main.ts's buildAppMenu — so this only needs to be offered here
   // on the platforms that have no menu bar of their own.
@@ -330,6 +370,8 @@ export default function App() {
                   onOpenChange={setServerMenuOpen}
                   onSelect={(server) => setSelectedServer(server.apiUrl)}
                   onRefresh={refreshDiscovery}
+                  onAddServer={() => setAddServerOpen(true)}
+                  onRemoveServer={removeManualServer}
                 />
                 <Menu
                   trigger={
@@ -405,6 +447,12 @@ export default function App() {
           </SegmentedRoot>
 
           <ImportForm open={importOpen} onClose={() => setImportOpen(false)} />
+
+          <AddServerForm
+            open={addServerOpen}
+            onCancel={() => setAddServerOpen(false)}
+            onAdd={addManualServer}
+          />
 
           <Toast
             key={toast.key}

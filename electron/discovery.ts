@@ -29,6 +29,7 @@ export interface Server {
   port: number;
   hostname: string | null;
   isLocal: boolean;
+  manual?: true;
 }
 
 const fqdnSuffix = `._${discoveryType}._${discoveryProtocol}.local`;
@@ -84,7 +85,7 @@ export function hostnameFromService(service?: DiscoveredService | null): string 
   return withoutDomain || null;
 }
 
-const apiVersionPath = "/v1";
+export const apiVersionPath = "/v1";
 
 export function buildApiUrl(service?: DiscoveredService | null): string | null {
   if (!service || !Number.isInteger(service.port) || (service.port as number) <= 0) {

@@ -15,7 +15,9 @@ import {
   resetApiUrl,
   isHealthy,
   onHealthChange,
-  onConnectionError
+  onConnectionError,
+  normalizeApiUrl,
+  testServer
 } from "./service";
 
 // Mocking at the request level rather than stubbing fetch keeps these tests
@@ -828,3 +830,80 @@ describe("health does not confuse a decoding failure with a dead server", () => 
     expect(isHealthy()).toBe(true);
   });
 })
+
+describe("normalizeApiUrl", () => {
+  it("accepts a well-formed http(s) url with a host", () => {
+    expect(normalizeApiUrl("http://10.0.0.20:9001")).toBe("http://10.0.0.20:9001");
+  });
+
+  it("rejects the same shapes setApiUrl does", () => {
+    expect(normalizeApiUrl("not a server")).toBeNull();
+    expect(normalizeApiUrl("10.0.0.20:9001")).toBeNull();
+  });
+});
+
+describe("testServer", () => {
+  const candidate = "http://10.0.0.55:9001";
+
+  it("resolves the bot status on a reachable server", async () => {
+    server.use(
+      http.get(`${candidate}/bot/status`, () => success({ connected: false }))
+    );
+
+    await expect(testServer(candidate)).resolves.toEqual({ connected: false });
+  });
+
+  it("rejects with a null-label ApiError when nothing answers", async () => {
+    server.use(http.get(`${candidate}/bot/status`, () => HttpResponse.error()));
+
+    await expect(testServer(candidate)).rejects.toMatchObject({
+      label: null,
+      message: "Erro desconhecido, tente novamente mais tarde"
+    });
+  });
+
+  it("rejects with the backend's label and message on a real error status", async () => {
+    server.use(
+      http.get(`${candidate}/bot/status`, () =>
+        errorAtStatus(500, { label: "boom", message: "Falha no servidor" })
+      )
+    );
+
+    await expect(testServer(candidate)).rejects.toMatchObject({
+      label: "boom",
+      message: "Falha no servidor"
+    });
+  });
+
+  it("rejects when a 200 response carries no data envelope", async () => {
+    server.use(http.get(`${candidate}/bot/status`, () => HttpResponse.json({})));
+
+    await expect(testServer(candidate)).rejects.toBeInstanceOf(ApiError);
+  });
+
+  it("never touches the app's live health state or fires a connection error, on success or failure", async () => {
+    const seenHealth: boolean[] = [];
+    const unsubscribeHealth = onHealthChange((next) => seenHealth.push(next));
+    let connectionErrors = 0;
+    const unsubscribeError = onConnectionError(() => {
+      connectionErrors += 1;
+    });
+
+    expect(isHealthy()).toBe(true);
+
+    server.use(http.get(`${candidate}/bot/status`, () => HttpResponse.error()));
+    await expect(testServer(candidate)).rejects.toThrow();
+    expect(isHealthy()).toBe(true);
+
+    server.resetHandlers();
+    server.use(http.get(`${candidate}/bot/status`, () => success({ connected: false })));
+    await testServer(candidate);
+    expect(isHealthy()).toBe(true);
+
+    expect(seenHealth).toEqual([]);
+    expect(connectionErrors).toBe(0);
+
+    unsubscribeHealth();
+    unsubscribeError();
+  });
+});

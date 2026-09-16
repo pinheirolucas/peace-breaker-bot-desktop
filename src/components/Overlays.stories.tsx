@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { CheckIcon, RefreshIcon } from "../icons";
+import { CheckIcon, CloseIcon, ErrorIcon, PlusIcon, RefreshIcon } from "../icons";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
 import { DropZone } from "./DropZone";
@@ -52,6 +52,68 @@ export const SaveFormInvalid: StoryObj = {
   )
 };
 
+export const AddServerFilling: StoryObj = {
+  name: "Dialog · AddServerForm untested",
+  render: () => (
+    <Dialog
+      open
+      onOpenChange={() => {}}
+      title="Adicionar servidor"
+      description="Informe o endereço de um servidor que não foi encontrado automaticamente."
+      footer={<><Button variant="secondary">Cancelar</Button><Button disabled>Adicionar</Button></>}
+    >
+      <div style={{ display: "grid", gap: 12 }}>
+        <Field label="Endereço" placeholder="192.168.1.20:9001" autoFocus />
+        <div className="testrow">
+          <Button variant="secondary"><RefreshIcon size={14} />Testar conexão</Button>
+        </div>
+      </div>
+    </Dialog>
+  )
+};
+
+export const AddServerTestFailed: StoryObj = {
+  name: "Dialog · AddServerForm test failed",
+  render: () => (
+    <Dialog
+      open
+      onOpenChange={() => {}}
+      title="Adicionar servidor"
+      description="Informe o endereço de um servidor que não foi encontrado automaticamente."
+      footer={<><Button variant="secondary">Cancelar</Button><Button disabled>Adicionar</Button></>}
+    >
+      <div style={{ display: "grid", gap: 12 }}>
+        <Field label="Endereço" defaultValue="servidor-desligado.exemplo.com:9001" />
+        <div className="testrow">
+          <Button variant="secondary"><RefreshIcon size={14} />Testar conexão</Button>
+          <span className="tstatus err"><ErrorIcon size={14} />Não foi possível conectar</span>
+        </div>
+      </div>
+    </Dialog>
+  )
+};
+
+export const AddServerTested: StoryObj = {
+  name: "Dialog · AddServerForm test succeeded",
+  render: () => (
+    <Dialog
+      open
+      onOpenChange={() => {}}
+      title="Adicionar servidor"
+      description="Informe o endereço de um servidor que não foi encontrado automaticamente."
+      footer={<><Button variant="secondary">Cancelar</Button><Button>Adicionar</Button></>}
+    >
+      <div style={{ display: "grid", gap: 12 }}>
+        <Field label="Endereço" defaultValue="bot.exemplo.com:9001" />
+        <div className="testrow">
+          <Button variant="secondary"><RefreshIcon size={14} />Testar conexão</Button>
+          <span className="tstatus ok"><CheckIcon size={14} />Conectado</span>
+        </div>
+      </div>
+    </Dialog>
+  )
+};
+
 export const ImportFormAccepted: StoryObj = {
   name: "Dialog · ImportForm file accepted",
   render: function Render() {
@@ -98,12 +160,25 @@ export const Toasts: StoryObj = {
 
 export const ServerMenu: StoryObj = {
   render: () => (
-    <Menu open trigger={<ServerChip address="localhost:9001" healthy />}>
-      <div className="mhead">Falando agora com <b>localhost:9001</b></div>
+    <Menu open trigger={<ServerChip address="bot.exemplo.com:9001" healthy botStatus={{ connected: false }} />}>
+      <div className="mhead">
+        Conectado a <b>bot.exemplo.com:9001</b>
+        <span className="msub">bot fora de um canal de voz</span>
+      </div>
       <MenuSeparator />
-      <MenuLabel>Encontrados na rede · 2</MenuLabel>
-      <MenuItem tick={<CheckIcon />} primary="192.168.0.12:9001" secondary="macbook · este computador" />
+      <MenuLabel>Rede local</MenuLabel>
+      <MenuItem tick={null} primary="192.168.0.12:9001" secondary="macbook · este computador" />
       <MenuItem tick={null} primary="192.168.0.31:9001" secondary="servidor-sala" />
+      <MenuSeparator />
+      <MenuLabel>Remoto</MenuLabel>
+      <MenuItem
+        tick={<CheckIcon />}
+        primary="bot.exemplo.com:9001"
+        trail={<CloseIcon size={12} />}
+        trailLabel="Remover bot.exemplo.com:9001"
+      />
+      <MenuSeparator />
+      <MenuItem tick={<PlusIcon />} primary="Adicionar servidor" />
       <MenuSeparator />
       <MenuItem tick={<RefreshIcon />} primary="Procurar novamente" />
     </Menu>
