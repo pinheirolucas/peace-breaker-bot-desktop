@@ -6,7 +6,7 @@ import MyInstantsPanel from "./MyInstantsPanel";
 import SnackbarContext from "./SnackbarContext";
 import { getContent, getMyInstants, playOnDiscord, stopPlayingOnDiscord } from "./service";
 import type { Region } from "./regions";
-import type { Listing } from "./service";
+import type { BotStatus, Listing } from "./service";
 import type { Instant } from "./storage";
 
 vi.mock("./service", async (importOriginal) => ({
@@ -64,8 +64,15 @@ function renderPanel({
   search = "",
   region = "br",
   favorites = [],
-  healthy = true
-}: { search?: string; region?: Region; favorites?: Instant[]; healthy?: boolean } = {}) {
+  healthy = true,
+  botStatus = null
+}: {
+  search?: string;
+  region?: Region;
+  favorites?: Instant[];
+  healthy?: boolean;
+  botStatus?: BotStatus | null;
+} = {}) {
   localStorage.setItem("instants", JSON.stringify(favorites));
 
   const snackbar = { openSnackbar: vi.fn(), closeSnackbar: vi.fn() };
@@ -77,6 +84,7 @@ function renderPanel({
         search={next.search}
         region={next.region}
         healthy={healthy}
+        botStatus={botStatus}
         serverAddress="localhost:9001"
         {...props}
       />

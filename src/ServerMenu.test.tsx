@@ -28,6 +28,7 @@ function renderMenu(props: Partial<React.ComponentProps<typeof ServerMenu>> = {}
       servers={[]}
       currentApiUrl="http://localhost:9001"
       healthy={true}
+      botStatus={null}
       open={true}
       onOpenChange={onOpenChange}
       onSelect={onSelect}
@@ -148,6 +149,114 @@ describe("ServerMenu", () => {
     expect(
       screen.getByRole("button", { name: "localhost:9001 não está respondendo" })
     ).toBeInTheDocument();
+  });
+
+  // The chip/menu's third state: server reachable, bot confirmed to have
+  // no voice connection. Never on an unknown status — the regression this
+  // guards is the gate condition collapsing null into connected:false.
+  describe("bot voice status", () => {
+    it("names the address plus the not-in-voice fragment when the bot is confirmed away", () => {
+      renderMenu({
+        currentApiUrl: "http://localhost:9001",
+        healthy: true,
+        botStatus: { connected: false },
+        open: false
+      });
+
+      expect(
+        screen.getByRole("button", { name: "localhost:9001 · bot fora de um canal de voz" })
+      ).toBeInTheDocument();
+    });
+
+    it("names the address plus guild and channel once both resolve", () => {
+      renderMenu({
+        currentApiUrl: "http://localhost:9001",
+        healthy: true,
+        botStatus: { connected: true, guildName: "Peace Breakers", channelName: "geral" },
+        open: false
+      });
+
+      expect(
+        screen.getByRole("button", { name: "localhost:9001 · Peace Breakers #geral" })
+      ).toBeInTheDocument();
+    });
+
+    it("keeps the plain address, with no aria-label override, while the status is unknown", () => {
+      renderMenu({
+        currentApiUrl: "http://localhost:9001",
+        healthy: true,
+        botStatus: null,
+        open: false
+      });
+
+      expect(screen.getByRole("button", { name: "localhost:9001" })).toBeInTheDocument();
+    });
+
+    it("keeps the plain address when connected but the names haven't resolved yet", () => {
+      renderMenu({
+        currentApiUrl: "http://localhost:9001",
+        healthy: true,
+        botStatus: { connected: true },
+        open: false
+      });
+
+      expect(screen.getByRole("button", { name: "localhost:9001" })).toBeInTheDocument();
+    });
+
+    it("shows the not-in-voice fragment as the header's second line", () => {
+      renderMenu({
+        currentApiUrl: "http://10.0.0.42:9001",
+        healthy: true,
+        botStatus: { connected: false }
+      });
+
+      const header = screen.getByText("Conectado a").closest(".mhead")! as HTMLElement;
+      expect(within(header).getByText("bot fora de um canal de voz")).toBeInTheDocument();
+    });
+
+    it("shows the guild and channel as the header's second line once resolved", () => {
+      renderMenu({
+        currentApiUrl: "http://10.0.0.42:9001",
+        healthy: true,
+        botStatus: { connected: true, guildName: "Peace Breakers", channelName: "geral" }
+      });
+
+      const header = screen.getByText("Conectado a").closest(".mhead")! as HTMLElement;
+      expect(within(header).getByText("Peace Breakers · #geral")).toBeInTheDocument();
+    });
+
+    it("shows no second line at all when the status is unknown", () => {
+      renderMenu({
+        currentApiUrl: "http://10.0.0.42:9001",
+        healthy: true,
+        botStatus: null
+      });
+
+      const header = screen.getByText("Conectado a").closest(".mhead")! as HTMLElement;
+      expect(within(header).queryByText(/canal de voz|·/)).not.toBeInTheDocument();
+    });
+
+    it("shows no second line when connected but the names haven't resolved yet", () => {
+      renderMenu({
+        currentApiUrl: "http://10.0.0.42:9001",
+        healthy: true,
+        botStatus: { connected: true }
+      });
+
+      const header = screen.getByText("Conectado a").closest(".mhead")! as HTMLElement;
+      expect(within(header).queryByText(/canal de voz|·/)).not.toBeInTheDocument();
+    });
+
+    it("shows no second line while the server itself is unresponsive, even with a stale bot status", () => {
+      renderMenu({
+        currentApiUrl: "http://10.0.0.42:9001",
+        healthy: false,
+        botStatus: { connected: false }
+      });
+
+      const header = screen.getByText("Conectado a").closest(".mhead")! as HTMLElement;
+      expect(within(header).queryByText(/canal de voz|·/)).not.toBeInTheDocument();
+    });
   });
 
   describe("under en-US", () => {

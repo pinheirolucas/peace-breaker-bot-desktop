@@ -152,7 +152,12 @@
 }
 .srv:hover { color: var(--fg); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+/* Both literals, not tokens: a health warning has to read as a warning
+ * regardless of the active palette. Red (server unresponsive) always wins
+ * over amber (server fine, bot not in a channel) since the two attributes
+ * are never both true at once. */
 .dot[data-healthy="false"] { background: oklch(0.58 0.19 25); }
+.dot[data-healthy="true"][data-bot-away="true"] { background: oklch(0.74 0.16 82); }
 
 /* --- switch / radio ------------------------------------------------------ */
 .sw {

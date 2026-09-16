@@ -88,6 +88,7 @@ function DemoApp() {
               instant={instant}
               playback="idle"
               otherPlaying={false}
+              botStatus={null}
               onPlay={noop}
               onPlayOnDiscord={noop}
               onStop={noop}

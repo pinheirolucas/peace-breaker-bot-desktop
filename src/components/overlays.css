@@ -134,6 +134,9 @@
 }
 .menu .mhead { padding: 8px 10px 10px; font-size: 12.5px; color: var(--muted); }
 .menu .mhead b { color: var(--fg); font-weight: 650; }
+/* The header isn't a MenuItem, so .msub's own rule (scoped to .mitem)
+ * doesn't reach it — same look, plus the gap a second line needs. */
+.menu .mhead .msub { display: block; margin-top: 2px; font-size: 11.5px; color: var(--muted); }
 .menu .mlabel {
   display: block;
   padding: 10px 10px 4px;

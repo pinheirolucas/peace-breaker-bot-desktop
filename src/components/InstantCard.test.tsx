@@ -22,6 +22,7 @@ function renderCard(props: Partial<InstantCardProps> = {}) {
       instant={instant}
       playback="idle"
       otherPlaying={false}
+      botStatus={null}
       onPlay={handlers.onPlay}
       onPlayOnDiscord={handlers.onPlayOnDiscord}
       onStop={handlers.onStop}
@@ -159,14 +160,69 @@ describe("InstantCard state matrix", () => {
   });
 
   it("agrees with cardState, which is the single source of the rules", () => {
-    expect(cardState("idle", true)).toEqual({
+    expect(cardState("idle", true, null)).toEqual({
       live: false,
       dim: true,
       playDisabled: true,
       discordDisabled: true,
+      botGated: false,
       stopDisabled: true,
       trailDisabled: false
     });
+  });
+});
+
+// The bot-not-in-voice gate is a second, independent reason the
+// send-to-Discord button can be disabled. The exact condition matters: only
+// a confirmed `connected: false` gates it — `null` ("unknown": still
+// loading, or an old/unreachable backend) must fall through to whatever
+// today's busy/otherPlaying rule already says, unchanged.
+describe("InstantCard bot-not-connected gate", () => {
+  it("cardState disables Discord on an idle card when the bot is confirmed not connected", () => {
+    const state = cardState("idle", false, { connected: false });
+
+    expect(state.discordDisabled).toBe(true);
+    expect(state.botGated).toBe(true);
+  });
+
+  // Regression guard: this would pass if the condition were written as
+  // `!botStatus?.connected` instead of `botStatus?.connected === false`.
+  it("cardState with an unknown bot status matches today's pre-existing behaviour exactly", () => {
+    expect(cardState("idle", false, null)).toEqual({
+      live: false,
+      dim: false,
+      playDisabled: false,
+      discordDisabled: false,
+      botGated: false,
+      stopDisabled: true,
+      trailDisabled: false
+    });
+  });
+
+  it("does not gate the card that is itself the one playing on Discord", () => {
+    const state = cardState("discord", false, { connected: false });
+
+    expect(state.discordDisabled).toBe(false);
+    expect(state.botGated).toBe(false);
+  });
+
+  it("swaps the Discord button's label and disables it when the bot isn't in a channel", () => {
+    const { button } = renderCard({ botStatus: { connected: false } });
+
+    const discordButton = button("Bot fora de um canal de voz");
+    expect(discordButton).toBeDisabled();
+  });
+
+  it("keeps the ordinary label and enabled state when the bot status is unknown", () => {
+    const { button } = renderCard({ botStatus: null });
+
+    expect(button("Reproduzir no Discord")).toBeEnabled();
+  });
+
+  it("keeps the ordinary label and enabled state when the bot is connected", () => {
+    const { button } = renderCard({ botStatus: { connected: true } });
+
+    expect(button("Reproduzir no Discord")).toBeEnabled();
   });
 });
 
