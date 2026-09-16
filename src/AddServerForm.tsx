@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { apiVersionPath } from "../electron/discovery";
 import { Button } from "./components/Button";
 import { Dialog } from "./components/Dialog";
 import { Field } from "./components/Field";
@@ -15,10 +16,18 @@ export interface AddServerFormProps {
   onAdd: (apiUrl: string) => void;
 }
 
+const defaultApiPath = `/api${apiVersionPath}`;
+
 function candidateFrom(input: string): string | null {
   const trimmed = input.trim();
   const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
-  return normalizeApiUrl(withScheme);
+  const normalized = normalizeApiUrl(withScheme);
+
+  if (!normalized) {
+    return null;
+  }
+
+  return new URL(normalized).pathname === "/" ? `${normalized}${defaultApiPath}` : normalized;
 }
 
 export default function AddServerForm({ open, onCancel, onAdd }: AddServerFormProps) {

@@ -6,7 +6,8 @@ import { http, HttpResponse } from "msw";
 
 import AddServerForm from "./AddServerForm";
 
-const candidate = "http://10.0.0.20:9001";
+const typed = "10.0.0.20:9001";
+const resolved = "http://10.0.0.20:9001/api/v1";
 const server = setupServer();
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
@@ -65,25 +66,67 @@ describe("AddServerForm", () => {
 
   it("defaults a schemeless address to http, matching the placeholder's own shape", async () => {
     server.use(
-      http.get(`${candidate}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
+      http.get(`${resolved}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
     );
 
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(addressField(), "10.0.0.20:9001");
+    await user.type(addressField(), typed);
     await user.click(testButton());
 
     expect(await screen.findByText("Conectado")).toBeInTheDocument();
   });
 
-  it("shows a failure status, and keeps Adicionar disabled, when the candidate doesn't answer", async () => {
-    server.use(http.get(`${candidate}/bot/status`, () => HttpResponse.error()));
+  it("appends the backend's default API mount and version, not just the bare host", async () => {
+    let requested: string | undefined;
+    server.use(
+      http.get("*/bot/status", ({ request }) => {
+        requested = new URL(request.url).pathname;
+        return HttpResponse.json({ data: { connected: false } });
+      })
+    );
 
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(addressField(), candidate);
+    await user.type(addressField(), typed);
+    await user.click(testButton());
+
+    await screen.findByText("Conectado");
+    expect(requested).toBe("/api/v1/bot/status");
+  });
+
+  it("respects an address that already carries its own path, rather than doubling it", async () => {
+    const custom = "https://tunnel.example.com/custom";
+    let requested: string | undefined;
+    server.use(
+      http.get("*/bot/status", ({ request }) => {
+        requested = request.url;
+        return HttpResponse.json({ data: { connected: false } });
+      })
+    );
+
+    const user = userEvent.setup();
+    const { onAdd } = renderForm();
+
+    await user.type(addressField(), custom);
+    await user.click(testButton());
+    await screen.findByText("Conectado");
+
+    expect(requested).toBe(`${custom}/bot/status`);
+
+    await user.click(addButton());
+    expect(onAdd).toHaveBeenCalledWith(custom);
+  });
+
+  it("shows a failure status, and keeps Adicionar disabled, when the candidate doesn't answer", async () => {
+    server.use(http.get(`${resolved}/bot/status`, () => HttpResponse.error()));
+
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(addressField(), typed);
     await user.click(testButton());
 
     expect(await screen.findByText("Não foi possível conectar")).toBeInTheDocument();
@@ -92,31 +135,31 @@ describe("AddServerForm", () => {
 
   it("enables Adicionar only once the test succeeds, and adds the exact tested address", async () => {
     server.use(
-      http.get(`${candidate}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
+      http.get(`${resolved}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
     );
 
     const user = userEvent.setup();
     const { onAdd } = renderForm();
 
-    await user.type(addressField(), candidate);
+    await user.type(addressField(), typed);
     await user.click(testButton());
 
     const add = await screen.findByRole("button", { name: "Adicionar" });
     expect(add).toBeEnabled();
 
     await user.click(add);
-    expect(onAdd).toHaveBeenCalledWith(candidate);
+    expect(onAdd).toHaveBeenCalledWith(resolved);
   });
 
   it("invalidates a successful test the moment the address is edited again", async () => {
     server.use(
-      http.get(`${candidate}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
+      http.get(`${resolved}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
     );
 
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(addressField(), candidate);
+    await user.type(addressField(), typed);
     await user.click(testButton());
     await screen.findByText("Conectado");
     expect(addButton()).toBeEnabled();
@@ -129,18 +172,18 @@ describe("AddServerForm", () => {
 
   it("routes Enter to test first, then to add once a test has passed", async () => {
     server.use(
-      http.get(`${candidate}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
+      http.get(`${resolved}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
     );
 
     const user = userEvent.setup();
     const { onAdd } = renderForm();
 
-    await user.type(addressField(), `${candidate}{Enter}`);
+    await user.type(addressField(), `${typed}{Enter}`);
     await screen.findByText("Conectado");
     expect(onAdd).not.toHaveBeenCalled();
 
     await user.type(addressField(), "{Enter}");
-    expect(onAdd).toHaveBeenCalledWith(candidate);
+    expect(onAdd).toHaveBeenCalledWith(resolved);
   });
 
   it("calls onCancel from the dialog's own Cancelar", async () => {
@@ -153,7 +196,7 @@ describe("AddServerForm", () => {
 
   it("resets on every open, rather than keep what was typed last time", async () => {
     server.use(
-      http.get(`${candidate}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
+      http.get(`${resolved}/bot/status`, () => HttpResponse.json({ data: { connected: false } }))
     );
 
     const user = userEvent.setup();
@@ -161,7 +204,7 @@ describe("AddServerForm", () => {
       <AddServerForm open={true} onCancel={vi.fn()} onAdd={vi.fn()} />
     );
 
-    await user.type(addressField(), candidate);
+    await user.type(addressField(), typed);
     await user.click(testButton());
     await screen.findByText("Conectado");
 
