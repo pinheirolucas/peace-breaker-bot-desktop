@@ -33,10 +33,11 @@
   },
   "server": {
     "connectedTo": "Connected to",
-    "found_one": "Found on the network · {{count}}",
-    "found_other": "Found on the network · {{count}}",
+    "localNetwork": "Local network",
+    "remote": "Remote",
     "none": "No servers found",
     "noneHint": "Discovery is blocked on many networks",
+    "noneManual": "No remote servers added yet",
     "refresh": "Search again",
     "switchTitle": "Switch servers",
     "unresponsive": "{{address}} isn't responding",
@@ -45,7 +46,18 @@
     "chipNotInVoice": "{{address}} · bot isn't in a voice channel",
     "chipInVoice": "{{address}} · {{guildName}} #{{channelName}}",
     "thisComputer": "this computer",
-    "onlyThisComputer": "This computer"
+    "onlyThisComputer": "This computer",
+    "add": "Add server",
+    "addAction": "Add",
+    "addDescription": "Enter the address of a server that wasn't found automatically.",
+    "addressLabel": "Address",
+    "addressPlaceholder": "192.168.1.20:9001",
+    "addressError": "Invalid address",
+    "testConnection": "Test connection",
+    "testing": "Testing…",
+    "testSuccess": "Connected",
+    "testUnreachable": "Couldn't connect",
+    "remove": "Remove {{address}}"
   },
   "save": {
     "title": "Add an instant",

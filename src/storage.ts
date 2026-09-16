@@ -1,3 +1,4 @@
+import type { Server } from "../electron/discovery";
 import type { LanguageId } from "./i18n/detect";
 import { createPersistedState } from "./lib/persisted";
 import type { Region } from "./regions";
@@ -19,6 +20,8 @@ export const useThemeState = createPersistedState<ThemeId>("theme");
 export const useColorModeState = createPersistedState<ColorMode>("colorMode");
 
 export const useSelectedServer = createPersistedState<string | null>("selectedServer");
+
+export const useManualServers = createPersistedState<Server[]>("manualServers");
 
 /** The MyInstants catalogue's country. Read it through useRegion, which
  *  falls back to the default when the stored value is not a known region. */

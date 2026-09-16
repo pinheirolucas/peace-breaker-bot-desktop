@@ -33,10 +33,11 @@
   },
   "server": {
     "connectedTo": "Conectado a",
-    "found_one": "Encontrados na rede · {{count}}",
-    "found_other": "Encontrados na rede · {{count}}",
+    "localNetwork": "Rede local",
+    "remote": "Remoto",
     "none": "Nenhum servidor encontrado",
     "noneHint": "A busca é bloqueada em muitas redes",
+    "noneManual": "Nenhum servidor remoto adicionado",
     "refresh": "Procurar novamente",
     "switchTitle": "Trocar de servidor",
     "unresponsive": "{{address}} não está respondendo",
@@ -45,7 +46,18 @@
     "chipNotInVoice": "{{address}} · bot fora de um canal de voz",
     "chipInVoice": "{{address}} · {{guildName}} #{{channelName}}",
     "thisComputer": "este computador",
-    "onlyThisComputer": "Este computador"
+    "onlyThisComputer": "Este computador",
+    "add": "Adicionar servidor",
+    "addAction": "Adicionar",
+    "addDescription": "Informe o endereço de um servidor que não foi encontrado automaticamente.",
+    "addressLabel": "Endereço",
+    "addressPlaceholder": "192.168.1.20:9001",
+    "addressError": "Endereço inválido",
+    "testConnection": "Testar conexão",
+    "testing": "Testando…",
+    "testSuccess": "Conectado",
+    "testUnreachable": "Não foi possível conectar",
+    "remove": "Remover {{address}}"
   },
   "save": {
     "title": "Adicionar instant",

@@ -36,6 +36,9 @@ export interface MenuItemProps {
   primary: ReactNode;
   secondary?: ReactNode;
   closeOnSelect?: boolean;
+  trail?: ReactNode;
+  trailLabel?: string;
+  onTrailSelect?: () => void;
 }
 
 export function MenuItem({
@@ -44,7 +47,10 @@ export function MenuItem({
   tick,
   primary,
   secondary,
-  closeOnSelect = true
+  closeOnSelect = true,
+  trail,
+  trailLabel,
+  onTrailSelect
 }: MenuItemProps) {
   return (
     <RadixMenu.Item
@@ -58,10 +64,24 @@ export function MenuItem({
       }}
     >
       {tick !== undefined && <span className="mtick">{tick}</span>}
-      <span>
+      <span className="mtxt">
         {primary}
         {secondary && <span className="msub">{secondary}</span>}
       </span>
+      {trail !== undefined && (
+        <button
+          type="button"
+          className="mtrail"
+          aria-label={trailLabel}
+          tabIndex={-1}
+          onClick={(event) => {
+            event.stopPropagation();
+            onTrailSelect?.();
+          }}
+        >
+          {trail}
+        </button>
+      )}
     </RadixMenu.Item>
   );
 }

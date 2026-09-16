@@ -201,7 +201,7 @@ describe("server picker", () => {
     const macbookItem = within(menu).getByRole("menuitem", { name: /10\.0\.0\.133:9001/ });
     expect(macbookItem).toHaveTextContent("MacBook-Pro-de-Lucas · este computador");
     expect(within(menu).getByText("raspberrypi")).toBeInTheDocument();
-    expect(within(menu).getByText(/Encontrados na rede · 2/)).toBeInTheDocument();
+    expect(within(menu).getByText("Rede local")).toBeInTheDocument();
   });
 
   it("switches to a picked server in one click, remembers it, and keeps the menu open", async () => {
@@ -260,6 +260,74 @@ describe("server picker", () => {
 
     expect(bridge.refresh).toHaveBeenCalledTimes(1);
     expect(screen.getByText("Procurar novamente")).toBeInTheDocument();
+  });
+});
+
+describe("manual servers", () => {
+  beforeEach(reset);
+
+  const manual = {
+    id: "http://bot.example.com:9001",
+    apiUrl: "http://bot.example.com:9001",
+    address: null,
+    port: 9001,
+    hostname: null,
+    isLocal: false,
+    manual: true
+  };
+
+  it("opens the add-server dialog from the picker, and Cancelar closes it with nothing added", async () => {
+    installBridge();
+    render(<App />);
+
+    await openServerMenu();
+    await userEvent.click(screen.getByText("Adicionar servidor"));
+
+    expect(screen.getByRole("dialog", { name: "Adicionar servidor" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("manualServers") ?? "[]")).toEqual([]);
+  });
+
+  it("lists a persisted manual server under Remoto, adopted the same way a discovered one is", () => {
+    localStorage.setItem("manualServers", JSON.stringify([manual]));
+
+    installBridge();
+    render(<App />);
+
+    expect(setApiUrl).toHaveBeenLastCalledWith(manual.apiUrl);
+  });
+
+  it("removing the active manual server drops the selection back to no server at all", async () => {
+    localStorage.setItem("manualServers", JSON.stringify([manual]));
+    localStorage.setItem("selectedServer", JSON.stringify(manual.apiUrl));
+
+    installBridge();
+    render(<App />);
+    expect(setApiUrl).toHaveBeenLastCalledWith(manual.apiUrl);
+
+    await openServerMenu();
+    await userEvent.click(screen.getByRole("button", { name: "Remover bot.example.com:9001" }));
+
+    expect(resetApiUrl).toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem("manualServers") ?? "[]")).toEqual([]);
+  });
+
+  it("removing a manual server that isn't the active one leaves the active pick alone", async () => {
+    const other = { ...manual, id: "http://other.example.com:9001", apiUrl: "http://other.example.com:9001" };
+    localStorage.setItem("manualServers", JSON.stringify([manual, other]));
+    localStorage.setItem("selectedServer", JSON.stringify(manual.apiUrl));
+
+    installBridge();
+    render(<App />);
+
+    await openServerMenu();
+    await userEvent.click(screen.getByRole("button", { name: "Remover other.example.com:9001" }));
+
+    expect(setApiUrl).toHaveBeenLastCalledWith(manual.apiUrl);
+    expect(JSON.parse(localStorage.getItem("manualServers") ?? "[]")).toEqual([manual]);
   });
 });
 

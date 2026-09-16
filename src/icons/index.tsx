@@ -105,6 +105,15 @@ export function PlusIcon({ size = 16, ...rest }: IconProps) {
   );
 }
 
+export function ErrorIcon({ size = 16, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" {...rest}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m8.3 8.3 7.4 7.4" />
+    </svg>
+  );
+}
+
 export function CloseIcon({ size = 16, ...rest }: IconProps) {
   return (
     <svg {...base(size)} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" {...rest}>

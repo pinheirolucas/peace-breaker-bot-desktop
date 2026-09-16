@@ -22,6 +22,8 @@ function renderMenu(props: Partial<React.ComponentProps<typeof ServerMenu>> = {}
   const onOpenChange = vi.fn();
   const onSelect = vi.fn();
   const onRefresh = vi.fn();
+  const onAddServer = vi.fn();
+  const onRemoveServer = vi.fn();
 
   render(
     <ServerMenu
@@ -33,11 +35,13 @@ function renderMenu(props: Partial<React.ComponentProps<typeof ServerMenu>> = {}
       onOpenChange={onOpenChange}
       onSelect={onSelect}
       onRefresh={onRefresh}
+      onAddServer={onAddServer}
+      onRemoveServer={onRemoveServer}
       {...props}
     />
   );
 
-  return { onOpenChange, onSelect, onRefresh };
+  return { onOpenChange, onSelect, onRefresh, onAddServer, onRemoveServer };
 }
 
 describe("formatApiUrl", () => {
@@ -141,6 +145,74 @@ describe("ServerMenu", () => {
 
     expect(onRefresh).toHaveBeenCalledTimes(1);
     expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it("opens the add-server flow from its own item, and closes the menu behind it", async () => {
+    const user = userEvent.setup();
+    const { onAddServer, onOpenChange } = renderMenu();
+
+    await user.click(screen.getByText("Adicionar servidor"));
+
+    expect(onAddServer).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  function isBefore(a: Element, b: Element): boolean {
+    return Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }
+
+  describe("local and remote sections", () => {
+    it("splits discovered servers into the local section and manually-added ones into remote", () => {
+      const found = server({ id: "found", apiUrl: "http://10.0.0.1:9001", hostname: "raspberrypi" });
+      const added = server({
+        id: "added",
+        apiUrl: "http://bot.example.com:9001",
+        hostname: null,
+        isLocal: false,
+        manual: true
+      });
+      renderMenu({ servers: [found, added] });
+
+      const menu = screen.getByRole("menu");
+      const localLabel = within(menu).getByText("Rede local");
+      const remoteLabel = within(menu).getByText("Remoto");
+      const foundItem = within(menu).getByRole("menuitem", { name: /10\.0\.0\.1:9001/ });
+      const addedItem = within(menu).getByRole("menuitem", { name: /bot\.example\.com:9001/ });
+
+      expect(isBefore(localLabel, foundItem)).toBe(true);
+      expect(isBefore(foundItem, remoteLabel)).toBe(true);
+      expect(isBefore(remoteLabel, addedItem)).toBe(true);
+    });
+
+    it("shows a manual-section empty state distinct from the local one's discovery hint", () => {
+      renderMenu({ servers: [] });
+
+      expect(screen.getByText("Nenhum servidor remoto adicionado")).toBeInTheDocument();
+      expect(screen.getAllByText("A busca é bloqueada em muitas redes")).toHaveLength(1);
+    });
+
+    it("shows a remove control only on a manually-added row", () => {
+      const found = server({ id: "found", apiUrl: "http://10.0.0.1:9001" });
+      const added = server({ id: "added", apiUrl: "http://bot.example.com:9001", manual: true });
+      renderMenu({ servers: [found, added] });
+
+      const foundItem = screen.getByRole("menuitem", { name: /10\.0\.0\.1:9001/ });
+      const addedItem = screen.getByRole("menuitem", { name: /bot\.example\.com:9001/ });
+
+      expect(within(foundItem).queryByRole("button")).not.toBeInTheDocument();
+      expect(within(addedItem).getByRole("button", { name: "Remover bot.example.com:9001" })).toBeInTheDocument();
+    });
+
+    it("removes a manual server without also selecting it", async () => {
+      const user = userEvent.setup();
+      const added = server({ id: "added", apiUrl: "http://bot.example.com:9001", manual: true });
+      const { onRemoveServer, onSelect } = renderMenu({ servers: [added] });
+
+      await user.click(screen.getByRole("button", { name: "Remover bot.example.com:9001" }));
+
+      expect(onRemoveServer).toHaveBeenCalledWith(added);
+      expect(onSelect).not.toHaveBeenCalled();
+    });
   });
 
   it("passes an unhealthy state through to the chip's accessible name", () => {

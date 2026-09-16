@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { Server } from "../electron/discovery";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "./components/Menu";
 import { ServerChip } from "./components/ServerChip";
-import { CheckIcon, RefreshIcon } from "./icons";
+import { CheckIcon, CloseIcon, PlusIcon, RefreshIcon } from "./icons";
 import type { BotStatus } from "./service";
 
 export function formatApiUrl(url: string): string {
@@ -32,6 +32,8 @@ export interface ServerMenuProps {
   onOpenChange: (open: boolean) => void;
   onSelect: (server: Server) => void;
   onRefresh: () => void;
+  onAddServer: () => void;
+  onRemoveServer: (server: Server) => void;
 }
 
 /** The header's second line: which of the bot's channel, "not in a
@@ -74,11 +76,32 @@ export default function ServerMenu({
   open,
   onOpenChange,
   onSelect,
-  onRefresh
+  onRefresh,
+  onAddServer,
+  onRemoveServer
 }: ServerMenuProps) {
   const { t } = useTranslation();
   const current = currentApiUrl ? formatApiUrl(currentApiUrl) : null;
   const sub = botLine(healthy, botStatus, t);
+
+  const local = servers.filter((server) => !server.manual);
+  const remote = servers.filter((server) => server.manual);
+
+  function row(server: Server) {
+    return (
+      <MenuItem
+        key={server.id}
+        tick={server.apiUrl === currentApiUrl ? <CheckIcon /> : null}
+        primary={formatApiUrl(server.apiUrl)}
+        secondary={describe(server, t) || undefined}
+        onSelect={() => onSelect(server)}
+        closeOnSelect={false}
+        trail={server.manual ? <CloseIcon size={12} /> : undefined}
+        trailLabel={server.manual ? t("server.remove", { address: formatApiUrl(server.apiUrl) }) : undefined}
+        onTrailSelect={server.manual ? () => onRemoveServer(server) : undefined}
+      />
+    );
+  }
 
   return (
     <Menu
@@ -99,26 +122,20 @@ export default function ServerMenu({
           <MenuSeparator />
         </>
       )}
-      <MenuLabel>{t("server.found", { count: servers.length })}</MenuLabel>
 
-      {servers.length === 0 && (
-        <MenuItem
-          disabled
-          primary={t("server.none")}
-          secondary={t("server.noneHint")}
-        />
+      <MenuLabel>{t("server.localNetwork")}</MenuLabel>
+      {local.length === 0 && (
+        <MenuItem disabled primary={t("server.none")} secondary={t("server.noneHint")} />
       )}
+      {local.map(row)}
 
-      {servers.map((server) => (
-        <MenuItem
-          key={server.id}
-          tick={server.apiUrl === currentApiUrl ? <CheckIcon /> : null}
-          primary={formatApiUrl(server.apiUrl)}
-          secondary={describe(server, t) || undefined}
-          onSelect={() => onSelect(server)}
-          closeOnSelect={false}
-        />
-      ))}
+      <MenuSeparator />
+      <MenuLabel>{t("server.remote")}</MenuLabel>
+      {remote.length === 0 && <MenuItem disabled primary={t("server.noneManual")} />}
+      {remote.map(row)}
+
+      <MenuSeparator />
+      <MenuItem tick={<PlusIcon />} primary={t("server.add")} onSelect={onAddServer} />
 
       <MenuSeparator />
       <MenuItem

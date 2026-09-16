@@ -29,6 +29,7 @@ export interface Server {
   port: number;
   hostname: string | null;
   isLocal: boolean;
+  manual?: true;
 }
 
 const fqdnSuffix = `._${discoveryType}._${discoveryProtocol}.local`;

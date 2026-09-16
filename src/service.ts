@@ -107,7 +107,7 @@ export function onConnectionError(listener: Listener<[]>): () => void {
   };
 }
 
-function normalizeApiUrl(value: unknown): string | null {
+export function normalizeApiUrl(value: unknown): string | null {
   if (typeof value !== "string" || !value.trim()) {
     return null;
   }
@@ -237,6 +237,27 @@ export async function getContent(url: string): Promise<ContentInfo> {
 export async function getBotStatus(): Promise<BotStatus> {
   const base = requireApiUrl();
   return requestEnvelope<BotStatus>(`${base}/bot/status`);
+}
+
+export async function testServer(candidateBase: string): Promise<BotStatus> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${candidateBase}/bot/status`);
+  } catch {
+    throw new ApiError(null, genericErrorMessage);
+  }
+
+  let body: Envelope<BotStatus> = {};
+  try {
+    body = await response.json();
+  } catch {}
+
+  if (!response.ok || !body.data) {
+    throw new ApiError(body.label ?? null, body.message || genericErrorMessage);
+  }
+
+  return body.data;
 }
 
 /** `region` is sent whenever it is given. Which requests it affects (today,
