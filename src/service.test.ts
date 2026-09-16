@@ -9,6 +9,7 @@ import {
   stopPlayingOnDiscord,
   getContent,
   getMyInstants,
+  getBotStatus,
   getApiUrl,
   setApiUrl,
   resetApiUrl,
@@ -103,6 +104,25 @@ describe("playOnDiscord", () => {
     await expect(playOnDiscord("https://www.myinstants.com/a/")).rejects.toThrow(
       "Erro desconhecido, tente novamente mais tarde"
     );
+  });
+
+  // The bot has no voice connection: same envelope shape as any other
+  // application error, just at 409 instead of 200 or 400 — the generic
+  // envelope handling covers it with no code of its own.
+  it("throws ApiError(bot_not_connected) on a 409", async () => {
+    server.use(
+      http.post(`${apiUrl}/bot/play`, () =>
+        errorAtStatus(409, {
+          label: "bot_not_connected",
+          message: "O bot ainda não está em um canal de voz"
+        })
+      )
+    );
+
+    await expect(playOnDiscord("https://www.myinstants.com/a/")).rejects.toMatchObject({
+      label: "bot_not_connected",
+      message: "O bot ainda não está em um canal de voz"
+    });
   });
 
   // The backend sends its errors with HTTP 200, so fetch does not reject and the
@@ -275,6 +295,46 @@ describe("getContent", () => {
     );
 
     await expect(getContent("https://www.myinstants.com/a/")).rejects.toThrow(
+      "Erro desconhecido, tente novamente mais tarde"
+    );
+  });
+});
+
+describe("getBotStatus", () => {
+  it("unwraps data.data into the bot's connection status", async () => {
+    server.use(
+      http.get(`${apiUrl}/bot/status`, () =>
+        success({
+          connected: true,
+          guildId: "123456789012345678",
+          guildName: "Peace Breakers",
+          channelId: "876543210987654321",
+          channelName: "geral"
+        })
+      )
+    );
+
+    await expect(getBotStatus()).resolves.toEqual({
+      connected: true,
+      guildId: "123456789012345678",
+      guildName: "Peace Breakers",
+      channelId: "876543210987654321",
+      channelName: "geral"
+    });
+  });
+
+  it("resolves the optional fields as absent, not empty strings, when not connected", async () => {
+    server.use(http.get(`${apiUrl}/bot/status`, () => success({ connected: false })));
+
+    await expect(getBotStatus()).resolves.toEqual({ connected: false });
+  });
+
+  it("throws the backend message on a real error status", async () => {
+    server.use(
+      http.get(`${apiUrl}/bot/status`, () => errorAtStatus(500, { label: "boom" }))
+    );
+
+    await expect(getBotStatus()).rejects.toThrow(
       "Erro desconhecido, tente novamente mais tarde"
     );
   });
