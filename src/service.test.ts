@@ -9,6 +9,7 @@ import {
   stopPlayingOnDiscord,
   getContent,
   getMyInstants,
+  getProviders,
   getBotStatus,
   getApiUrl,
   setApiUrl,
@@ -402,6 +403,25 @@ describe("getMyInstants", () => {
     expect(captured.search).toBe("?page=1&region=pt");
   });
 
+  it("sends the provider after page, search and region", async () => {
+    const captured = captureQuery();
+
+    await getMyInstants(2, "boo", "br", "soundbuttons");
+
+    expect(captured.search).toBe("?page=2&search=boo&region=br&provider=soundbuttons");
+  });
+
+  // Omitted entirely rather than sent empty, so a caller that never resolved
+  // a provider (the app before the registry answers) gets the exact request
+  // it always sent — the backend already defaults that to myinstants.
+  it("omits the provider entirely when it is not given", async () => {
+    const captured = captureQuery();
+
+    await getMyInstants(1);
+
+    expect(captured.search).toBe("?page=1");
+  });
+
   // Pre-existing quirk, asserted as current behaviour rather than fixed. The
   // `page || 1` default is only used to decide *whether* to append the
   // parameter; the parameter itself is built from the raw `page`, so with no
@@ -503,6 +523,25 @@ describe("getMyInstants", () => {
     captureQuery();
 
     await expect(getMyInstants(1)).resolves.toEqual(listing);
+  });
+});
+
+describe("getProviders", () => {
+  const providers = [
+    { key: "myinstants", name: "MyInstants", supportsSearch: true, supportsRegion: true },
+    { key: "soundbuttons", name: "Sound Buttons", supportsSearch: true, supportsRegion: false }
+  ];
+
+  it("unwraps data.data into the provider list", async () => {
+    server.use(http.get(`${apiUrl}/providers`, () => success(providers)));
+
+    await expect(getProviders()).resolves.toEqual(providers);
+  });
+
+  it("throws the backend message on a real error status", async () => {
+    server.use(http.get(`${apiUrl}/providers`, () => errorAtStatus(500, {})));
+
+    await expect(getProviders()).rejects.toThrow("Erro desconhecido, tente novamente mais tarde");
   });
 });
 

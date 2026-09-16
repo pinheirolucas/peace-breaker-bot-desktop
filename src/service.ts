@@ -262,18 +262,38 @@ export async function testServer(candidateBase: string): Promise<BotStatus> {
 
 /** `region` is sent whenever it is given. Which requests it affects (today,
  *  only the listing with no search term) is the backend's call, so the client
- *  does not second-guess it. */
+ *  does not second-guess it. `provider` picks which site is scraped; omitted,
+ *  the backend defaults to myinstants, so a caller that never resolved a
+ *  provider gets the exact same request it always sent. */
 export async function getMyInstants(
   page?: number,
   search?: string,
-  region?: string
+  region?: string,
+  provider?: string
 ): Promise<Listing> {
   const base = requireApiUrl();
   const params = [
     { value: page || 1, query: `page=${page}` },
     { value: search, query: `&search=${search}` },
-    { value: region, query: `&region=${encodeURIComponent(region ?? "")}` }
+    { value: region, query: `&region=${encodeURIComponent(region ?? "")}` },
+    { value: provider, query: `&provider=${encodeURIComponent(provider ?? "")}` }
   ].reduce((acc, cur) => (cur.value ? acc + cur.query : acc), "");
 
   return requestEnvelope<Listing>(`${base}/instants?${params}`);
+}
+
+/** One entry of `GET /api/v1/providers` — the sites `getMyInstants` can
+ *  scrape. `supportsRegion` is what gates RegionMenu; the registry carries
+ *  no host, since a clip's allowed hosts are a server-side concern
+ *  (`AllowedContentHosts`) the client never needs to duplicate. */
+export interface ProviderInfo {
+  key: string;
+  name: string;
+  supportsSearch: boolean;
+  supportsRegion: boolean;
+}
+
+export async function getProviders(): Promise<ProviderInfo[]> {
+  const base = requireApiUrl();
+  return requestEnvelope<ProviderInfo[]>(`${base}/providers`);
 }
