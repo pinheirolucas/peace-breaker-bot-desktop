@@ -39,6 +39,17 @@ interface PlayResult {
   exitReason: string;
 }
 
+/** `omitempty` on the backend: the four optional fields are simply absent
+ *  from the JSON when they don't apply, never sent as empty strings. Ids
+ *  are strings — Discord snowflakes overflow a JS number. */
+export interface BotStatus {
+  connected: boolean;
+  guildId?: string;
+  guildName?: string;
+  channelId?: string;
+  channelName?: string;
+}
+
 type Listener<T extends unknown[]> = (...args: T) => void;
 
 // No default: only an explicit user pick or a discovered server ever sets
@@ -221,6 +232,11 @@ export async function stopPlayingOnDiscord(): Promise<Response> {
 export async function getContent(url: string): Promise<ContentInfo> {
   const base = requireApiUrl();
   return requestEnvelope<ContentInfo>(`${base}/instants/${encodeURIComponent(url)}/content`);
+}
+
+export async function getBotStatus(): Promise<BotStatus> {
+  const base = requireApiUrl();
+  return requestEnvelope<BotStatus>(`${base}/bot/status`);
 }
 
 /** `region` is sent whenever it is given. Which requests it affects (today,

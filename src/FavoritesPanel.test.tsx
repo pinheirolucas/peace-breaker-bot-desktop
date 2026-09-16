@@ -7,6 +7,7 @@ import type { UserEvent } from "@testing-library/user-event";
 import FavoritesPanel from "./FavoritesPanel";
 import SnackbarContext from "./SnackbarContext";
 import { getContent, playOnDiscord, stopPlayingOnDiscord } from "./service";
+import type { BotStatus } from "./service";
 
 vi.mock("./service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./service")>()),
@@ -51,7 +52,12 @@ function storedInstants() {
 
 // The add form opens from the tools row, which lives in App. A plain button
 // stands in for it so the panel can be driven on its own.
-function renderPanel({ search = "", instants = seeded, healthy = true } = {}) {
+function renderPanel({
+  search = "",
+  instants = seeded,
+  healthy = true,
+  botStatus = null
+}: { search?: string; instants?: typeof seeded; healthy?: boolean; botStatus?: BotStatus | null } = {}) {
   localStorage.setItem("instants", JSON.stringify(instants));
 
   const snackbar = { openSnackbar: vi.fn(), closeSnackbar: vi.fn() };
@@ -67,6 +73,7 @@ function renderPanel({ search = "", instants = seeded, healthy = true } = {}) {
         <FavoritesPanel
           search={search}
           healthy={healthy}
+          botStatus={botStatus}
           serverAddress="localhost:9001"
           addOpen={addOpen}
           onAddOpenChange={setAddOpen}

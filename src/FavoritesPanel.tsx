@@ -10,6 +10,7 @@ import { apiErrorMessage } from "./i18n/apiError";
 import SaveForm from "./SaveForm";
 import SnackbarContext from "./SnackbarContext";
 import { getContent } from "./service";
+import type { BotStatus } from "./service";
 import { useInstantsState } from "./storage";
 import type { Instant } from "./storage";
 import useAudioPlayer from "./useAudioPlayer";
@@ -18,6 +19,9 @@ import useDiscordPlayer from "./useDiscordPlayer";
 export interface FavoritesPanelProps {
   search: string;
   healthy: boolean;
+  /** null means unknown — see useBotStatus. Threaded straight to each
+   *  card, which is the only thing that gates on it. */
+  botStatus: BotStatus | null;
   serverAddress: string | null;
   onSwitchServer: () => void;
   /** The hero's count line: "12 sons salvos", or "3 de 12" while searching. */
@@ -32,6 +36,7 @@ export interface FavoritesPanelProps {
 export default function FavoritesPanel({
   search,
   healthy,
+  botStatus,
   serverAddress,
   onSwitchServer,
   onSummary,
@@ -163,6 +168,7 @@ export default function FavoritesPanel({
               instant={instant}
               playback={playback}
               otherPlaying={anyPlaying && playback === "idle"}
+              botStatus={botStatus}
               onPlay={handlePlay}
               onPlayOnDiscord={handlePlayOnDiscord}
               onStop={handleStop}

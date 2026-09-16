@@ -34,6 +34,7 @@ import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
 import { useSelectedServer } from "./storage";
+import useBotStatus from "./useBotStatus";
 import "./styles/shell.css";
 
 type Tab = "favorites" | "myinstants";
@@ -87,6 +88,7 @@ export default function App() {
   const [activeUrl, setActiveUrl] = useState<string | null>(getApiUrl());
   const [healthy, setHealthy] = useState<boolean>(isHealthy);
   const healthyRef = useRef<boolean>(isHealthy());
+  const botStatus = useBotStatus(activeUrl);
 
   const [toast, setToast] = useState<ToastState>({ open: false, key: 0, message: "" });
 
@@ -323,6 +325,7 @@ export default function App() {
                   servers={servers}
                   currentApiUrl={activeUrl}
                   healthy={healthy}
+                  botStatus={botStatus}
                   open={serverMenuOpen}
                   onOpenChange={setServerMenuOpen}
                   onSelect={(server) => setSelectedServer(server.apiUrl)}
@@ -364,6 +367,7 @@ export default function App() {
                   <FavoritesPanel
                     search={search}
                     healthy={healthy}
+                    botStatus={botStatus}
                     serverAddress={serverAddress}
                     onSwitchServer={openServerMenu}
                     onSummary={setSummary}
@@ -377,6 +381,7 @@ export default function App() {
                     search={search}
                     region={region}
                     healthy={healthy}
+                    botStatus={botStatus}
                     serverAddress={serverAddress}
                     onSwitchServer={openServerMenu}
                     onSummary={setSummary}

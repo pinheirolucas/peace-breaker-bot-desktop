@@ -2,6 +2,7 @@
   "card": {
     "play": "Reproduzir",
     "playOnDiscord": "Reproduzir no Discord",
+    "discordUnavailable": "Bot fora de um canal de voz",
     "stop": "Parar",
     "playingLocal": "Reproduzindo",
     "playingDiscord": "No Discord"
@@ -39,6 +40,10 @@
     "refresh": "Procurar novamente",
     "switchTitle": "Trocar de servidor",
     "unresponsive": "{{address}} não está respondendo",
+    "notInVoice": "bot fora de um canal de voz",
+    "inVoice": "{{guildName}} · #{{channelName}}",
+    "chipNotInVoice": "{{address}} · bot fora de um canal de voz",
+    "chipInVoice": "{{address}} · {{guildName}} #{{channelName}}",
     "thisComputer": "este computador",
     "onlyThisComputer": "Este computador"
   },
@@ -144,6 +149,7 @@
     "invalid_url": "A URL enviada é inválida",
     "empty_url": "Nenhuma URL enviada",
     "instant_not_found": "O instant enviado não foi encontrado",
+    "bot_not_connected": "O bot ainda não está em um canal de voz — use !join no canal que você quer.",
     "unsuported_audio_format": "O formato de áudio do instant enviado não é suportado",
     "invalid_region": "A região enviada é inválida",
     "http_request": "Ocorreu um erro ao se comunicar com o site myinstants.com",

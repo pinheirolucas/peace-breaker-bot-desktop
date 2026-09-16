@@ -87,7 +87,8 @@ export const Status: StoryObj = {
     const [keep, setKeep] = useState<"merge" | "replace">("merge");
     return (
       <div style={row}>
-        <Unit caption="Server · responding"><ServerChip address="localhost:9001" healthy /></Unit>
+        <Unit caption="Server · responding"><ServerChip address="localhost:9001" healthy botStatus={{ connected: true, guildName: "Peace Breakers", channelName: "geral" }} /></Unit>
+        <Unit caption="Server · bot not in voice"><ServerChip address="localhost:9001" healthy botStatus={{ connected: false }} /></Unit>
         <Unit caption="Server · silent"><ServerChip address="192.168.0.31:9001" healthy={false} /></Unit>
         <Unit caption="Switch"><Switch label="Instants" checked={on} onCheckedChange={setOn} /></Unit>
         <Unit caption="Radio">

@@ -11,6 +11,7 @@ import { apiErrorMessage } from "./i18n/apiError";
 import type { Region } from "./regions";
 import SnackbarContext from "./SnackbarContext";
 import { getContent, getMyInstants } from "./service";
+import type { BotStatus } from "./service";
 import { useInstantsState } from "./storage";
 import type { Instant } from "./storage";
 import useAudioPlayer from "./useAudioPlayer";
@@ -33,6 +34,9 @@ export interface MyInstantsPanelProps {
   search: string;
   region: Region;
   healthy: boolean;
+  /** null means unknown — see useBotStatus. Threaded straight to each
+   *  card, which is the only thing that gates on it. */
+  botStatus: BotStatus | null;
   serverAddress: string | null;
   onSwitchServer: () => void;
   onSummary: (summary: string) => void;
@@ -43,6 +47,7 @@ export default function MyInstantsPanel({
   search,
   region,
   healthy,
+  botStatus,
   serverAddress,
   onSwitchServer,
   onSummary,
@@ -239,6 +244,7 @@ export default function MyInstantsPanel({
               instant={instant}
               playback={playback}
               otherPlaying={anyPlaying && playback === "idle"}
+              botStatus={botStatus}
               onPlay={handlePlay}
               onPlayOnDiscord={handlePlayOnDiscord}
               onStop={handleStop}

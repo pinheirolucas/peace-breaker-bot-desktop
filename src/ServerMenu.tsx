@@ -3,6 +3,7 @@ import type { Server } from "../electron/discovery";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "./components/Menu";
 import { ServerChip } from "./components/ServerChip";
 import { CheckIcon, RefreshIcon } from "./icons";
+import type { BotStatus } from "./service";
 
 export function formatApiUrl(url: string): string {
   try {
@@ -24,10 +25,38 @@ export interface ServerMenuProps {
   servers: Server[];
   currentApiUrl: string | null;
   healthy: boolean;
+  /** null means unknown — see useBotStatus. Threaded through to the chip
+   *  and this menu's own header second line. */
+  botStatus: BotStatus | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (server: Server) => void;
   onRefresh: () => void;
+}
+
+/** The header's second line: which of the bot's channel, "not in a
+ *  channel", or nothing at all to show under the address. Only a
+ *  confirmed status earns a line — unknown, or connected with unresolved
+ *  names (a cache miss right after a fresh !join), shows nothing rather
+ *  than a stale or empty one. */
+function botLine(
+  healthy: boolean,
+  botStatus: BotStatus | null,
+  t: (key: string, opts?: Record<string, unknown>) => string
+): string | null {
+  if (!healthy || !botStatus) {
+    return null;
+  }
+
+  if (botStatus.connected === false) {
+    return t("server.notInVoice");
+  }
+
+  if (botStatus.connected && botStatus.guildName && botStatus.channelName) {
+    return t("server.inVoice", { guildName: botStatus.guildName, channelName: botStatus.channelName });
+  }
+
+  return null;
 }
 
 /**
@@ -41,6 +70,7 @@ export default function ServerMenu({
   servers,
   currentApiUrl,
   healthy,
+  botStatus,
   open,
   onOpenChange,
   onSelect,
@@ -48,12 +78,13 @@ export default function ServerMenu({
 }: ServerMenuProps) {
   const { t } = useTranslation();
   const current = currentApiUrl ? formatApiUrl(currentApiUrl) : null;
+  const sub = botLine(healthy, botStatus, t);
 
   return (
     <Menu
       open={open}
       onOpenChange={onOpenChange}
-      trigger={<ServerChip address={current} healthy={healthy} />}
+      trigger={<ServerChip address={current} healthy={healthy} botStatus={botStatus} />}
     >
       {/* With no active server there is nothing discovered either — the two
        *  never disagree in this app — so the empty list state below already
@@ -63,6 +94,7 @@ export default function ServerMenu({
         <>
           <div className="mhead">
             {t("server.connectedTo")} <b>{current}</b>
+            {sub && <span className="msub">{sub}</span>}
           </div>
           <MenuSeparator />
         </>
