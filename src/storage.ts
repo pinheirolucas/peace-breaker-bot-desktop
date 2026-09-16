@@ -27,4 +27,9 @@ export const useManualServers = createPersistedState<Server[]>("manualServers");
  *  falls back to the default when the stored value is not a known region. */
 export const useRegionState = createPersistedState<Region>("region");
 
+/** Which site the Explorar tab browses, by its GET /api/v1/providers key.
+ *  Read it through useProvider, which falls back to the default when the
+ *  stored value is not in the fetched registry. */
+export const useProviderState = createPersistedState<string>("provider");
+
 export const useLanguageState = createPersistedState<LanguageId>("language");

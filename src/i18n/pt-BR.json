@@ -120,6 +120,10 @@
     "switchTitle": "Trocar a região do catálogo",
     "menuLabel": "Região do catálogo"
   },
+  "provider": {
+    "switchTitle": "Trocar o site do catálogo",
+    "menuLabel": "Site"
+  },
   "appearance": {
     "title": "Aparência",
     "modeAriaLabel": "Modo",
