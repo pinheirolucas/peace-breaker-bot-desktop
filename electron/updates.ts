@@ -25,19 +25,25 @@ export const checkForUpdatesChannel = "updates:check";
 export const releasePageUrl =
   "https://github.com/pinheirolucas/peace-breaker-bot-desktop/releases/latest";
 
+const releaseAssetBaseUrl =
+  "https://github.com/pinheirolucas/peace-breaker-bot-desktop/releases/download";
+
 /** The subset of electron-updater's UpdateFileInfo this app actually reads. */
 export interface UpdateFile {
   url: string;
 }
 
 /**
- * Picks the .dmg's URL out of the files electron-builder lists in
+ * Picks the .dmg's download URL out of the files electron-builder lists in
  * latest-mac.yml. electron-updater's own downloadUpdate() targets the .zip —
  * the artifact Squirrel.Mac would apply — but unsigned builds can't go
  * through Squirrel at all, so this app fetches the dmg instead: the file a
  * person actually double-clicks.
  */
-export function pickDmgUrl(files: readonly UpdateFile[] | null | undefined): string | null {
+export function pickDmgUrl(
+  version: string,
+  files: readonly UpdateFile[] | null | undefined
+): string | null {
   if (!Array.isArray(files)) {
     return null;
   }
@@ -46,7 +52,7 @@ export function pickDmgUrl(files: readonly UpdateFile[] | null | undefined): str
     (file) => typeof file?.url === "string" && file.url.toLowerCase().endsWith(".dmg")
   );
 
-  return dmg ? dmg.url : null;
+  return dmg ? `${releaseAssetBaseUrl}/v${version}/${dmg.url}` : null;
 }
 
 /**

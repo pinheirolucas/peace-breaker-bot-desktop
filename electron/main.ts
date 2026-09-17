@@ -76,7 +76,7 @@ function downloadMacUpdate(info: UpdateInfo): void {
     return;
   }
 
-  const url = pickDmgUrl(info.files);
+  const url = pickDmgUrl(info.version, info.files);
   if (!url) {
     return; // a zip-only publish — nothing here for a person to open
   }
