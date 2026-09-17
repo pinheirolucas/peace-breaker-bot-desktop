@@ -184,3 +184,18 @@ export const ServerMenu: StoryObj = {
     </Menu>
   )
 };
+
+/** One flat list, no sections — unlike ServerMenu there is nothing here to
+ *  discover or type in by hand, just the small registry GET
+ *  /api/v1/providers already gives. */
+export const ProviderMenu: StoryObj = {
+  render: () => (
+    <Menu open trigger={<button type="button" className="srv">MyInstants</button>}>
+      <MenuLabel>Site</MenuLabel>
+      <MenuItem tick={<CheckIcon />} primary="MyInstants" />
+      <MenuItem tick={null} primary="InstantsMeme" />
+      <MenuItem tick={null} primary="Sound Buttons" />
+      <MenuItem tick={null} primary="SoundboardGuy" />
+    </Menu>
+  )
+};

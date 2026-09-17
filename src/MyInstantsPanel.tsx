@@ -6,11 +6,12 @@ import { EmptyState } from "./components/EmptyState";
 import InstantCard from "./components/InstantCard";
 import type { Playback } from "./components/InstantCard";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { DEFAULT_PROVIDER_NAME } from "./hooks/useProvider";
 import { StarIcon } from "./icons";
 import { apiErrorMessage } from "./i18n/apiError";
 import type { Region } from "./regions";
 import SnackbarContext from "./SnackbarContext";
-import { getContent, getMyInstants } from "./service";
+import { getContent, getInstants } from "./service";
 import type { BotStatus } from "./service";
 import { useInstantsState } from "./storage";
 import type { Instant } from "./storage";
@@ -22,10 +23,20 @@ interface Listing {
   pages?: number;
 }
 
+/** The provider this panel is browsing, as App.tsx resolves it. Optional:
+ *  before the registry answers (or on a backend without one), the panel
+ *  sends the exact request it always has and names MyInstants in its
+ *  copy, since that is what an unresolved provider has always meant here. */
+export interface ActiveProvider {
+  key: string;
+  name: string;
+}
+
 interface Request {
   page: number;
   search: string;
   region: Region;
+  provider?: string;
 }
 
 const SKELETONS = 8;
@@ -33,6 +44,7 @@ const SKELETONS = 8;
 export interface MyInstantsPanelProps {
   search: string;
   region: Region;
+  provider?: ActiveProvider;
   healthy: boolean;
   /** null means unknown — see useBotStatus. Threaded straight to each
    *  card, which is the only thing that gates on it. */
@@ -46,6 +58,7 @@ export interface MyInstantsPanelProps {
 export default function MyInstantsPanel({
   search,
   region,
+  provider,
   healthy,
   botStatus,
   serverAddress,
@@ -64,28 +77,38 @@ export default function MyInstantsPanel({
   const snackbar = useRef(openSnackbar);
   snackbar.current = openSnackbar;
 
-  const [request, setRequest] = useState<Request>({ page: 1, search, region });
+  const providerKey = provider?.key;
+  const providerName = provider?.name ?? DEFAULT_PROVIDER_NAME;
+
+  const [request, setRequest] = useState<Request>({ page: 1, search, region, provider: providerKey });
   const [instants, setInstants] = useState<Instant[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
-  // A new search or region starts over from page 1. Returning the same object
-  // when neither has changed keeps the first mount from fetching twice.
+  // A new search, region or provider starts over from page 1. Returning the
+  // same object when none has changed keeps the first mount from fetching
+  // twice.
   useEffect(() => {
     setRequest((current) =>
-      current.search === search && current.region === region
+      current.search === search && current.region === region && current.provider === providerKey
         ? current
-        : { page: 1, search, region }
+        : { page: 1, search, region, provider: providerKey }
     );
-  }, [search, region]);
+  }, [search, region, providerKey]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
 
-    getMyInstants(request.page, request.search, request.region)
+    // Omitted rather than sent as an explicit undefined: before the
+    // registry answers, this is the exact request the panel always sent.
+    const call = request.provider
+      ? getInstants(request.page, request.search, request.region, request.provider)
+      : getInstants(request.page, request.search, request.region);
+
+    call
       .then((data: Listing | undefined) => {
         if (cancelled) return;
         // The backend answers most errors as HTTP 200 with no data; never
@@ -185,7 +208,7 @@ export default function MyInstantsPanel({
   let content;
 
   if (firstLoad) {
-    // The listing scrapes myinstants.com server-side and is slow. The
+    // The listing scrapes the provider's site server-side and is slow. The
     // skeleton has the card's exact footprint so nothing jumps.
     content = (
       <div className="grid" aria-busy="true">
@@ -199,7 +222,7 @@ export default function MyInstantsPanel({
       content = (
         <EmptyState
           title={t("myinstants.loadFailedTitle")}
-          body={t("myinstants.loadFailedBody")}
+          body={t("myinstants.loadFailedBody", { provider: providerName })}
           action={
             <Button variant="secondary" onClick={reload}>
               {t("common.retry")}
@@ -211,7 +234,7 @@ export default function MyInstantsPanel({
       content = (
         <EmptyState
           title={t("common.nothingHere")}
-          body={t("myinstants.noSearchResultsBody", { search: request.search })}
+          body={t("myinstants.noSearchResultsBody", { search: request.search, provider: providerName })}
           action={
             <Button variant="secondary" onClick={onClearSearch}>
               {t("common.clearSearch")}
@@ -223,7 +246,7 @@ export default function MyInstantsPanel({
       content = (
         <EmptyState
           title={t("myinstants.emptyCatalogTitle")}
-          body={t("myinstants.emptyCatalogBody")}
+          body={t("myinstants.emptyCatalogBody", { provider: providerName })}
           action={
             <Button variant="secondary" onClick={reload}>
               {t("common.retry")}

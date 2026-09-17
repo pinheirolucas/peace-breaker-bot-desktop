@@ -17,6 +17,7 @@
   },
   "app": {
     "tabFavorites": "Favoritos",
+    "tabExplore": "Explorar",
     "sectionAriaLabel": "Seção",
     "searchAriaLabel": "Procurar um som",
     "searchPlaceholder": "Procurar um som…",
@@ -108,10 +109,10 @@
     "resultsSummary_one": "{{count}} resultado",
     "resultsSummary_other": "{{count}} resultados",
     "loadFailedTitle": "O catálogo não carregou",
-    "loadFailedBody": "O servidor não conseguiu trazer a lista do myinstants.com.",
-    "noSearchResultsBody": "Nenhum som do MyInstants bate com “{{search}}”.",
+    "loadFailedBody": "O servidor não conseguiu trazer a lista do {{provider}}.",
+    "noSearchResultsBody": "Nenhum som do {{provider}} bate com “{{search}}”.",
     "emptyCatalogTitle": "Nada no catálogo",
-    "emptyCatalogBody": "O MyInstants não devolveu nenhum som.",
+    "emptyCatalogBody": "O {{provider}} não devolveu nenhum som.",
     "favorite": "Favoritar",
     "loadMore": "Carregar mais",
     "loadingMore": "Carregando…"
@@ -119,6 +120,10 @@
   "region": {
     "switchTitle": "Trocar a região do catálogo",
     "menuLabel": "Região do catálogo"
+  },
+  "provider": {
+    "switchTitle": "Trocar o site do catálogo",
+    "menuLabel": "Site"
   },
   "appearance": {
     "title": "Aparência",
@@ -164,10 +169,11 @@
     "bot_not_connected": "O bot ainda não está em um canal de voz — use !join no canal que você quer.",
     "unsuported_audio_format": "O formato de áudio do instant enviado não é suportado",
     "invalid_region": "A região enviada é inválida",
-    "http_request": "Ocorreu um erro ao se comunicar com o site myinstants.com",
-    "bad_http_status": "O site myinstants.com respondeu com um status de erro",
+    "provider_not_found": "Esse provedor não é reconhecido",
+    "http_request": "Ocorreu um erro ao se comunicar com o site do provedor",
+    "bad_http_status": "O site do provedor respondeu com um status de erro",
     "total_pages_count": "Não foi possível recuperar a quantidade de páginas",
-    "name_link_not_matched": "A quantidade de links e botões não coincide",
+    "name_link_not_matched": "Os resultados do provedor não puderam ser lidos — o layout da página pode ter mudado",
     "unknown_error": "Erro desconhecido, tente novamente mais tarde"
   }
 }

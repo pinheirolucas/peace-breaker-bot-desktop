@@ -3,7 +3,8 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 
 import App from "./App";
-import { getMyInstants, resetApiUrl, setApiUrl } from "./service";
+import { getInstants, getProviders, resetApiUrl, setApiUrl } from "./service";
+import type { ProviderInfo } from "./service";
 
 // The listeners App registers with the mocked service. Reset to no-ops
 // rather than null, so a test can call them without a null check each time.
@@ -15,6 +16,16 @@ let connectionErrorListener: () => void = noop;
 // resolution effect's own behaviour (adopt vs. reset to nothing) is what
 // drives what the UI shows, not a value hardcoded independently of it.
 let mockApiUrl: string | null = null;
+
+// The full registry, matching the real backend's defaultRegistry — most
+// tests never look at it, but it means a test that switches to Explorar
+// sees exactly what production would offer.
+const defaultProviders: ProviderInfo[] = [
+  { key: "instantsmeme", name: "InstantsMeme", supportsSearch: true, supportsRegion: false },
+  { key: "myinstants", name: "MyInstants", supportsSearch: true, supportsRegion: true },
+  { key: "soundboardguy", name: "SoundboardGuy", supportsSearch: true, supportsRegion: false },
+  { key: "soundbuttons", name: "Sound Buttons", supportsSearch: true, supportsRegion: false }
+];
 
 vi.mock("./service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./service")>()),
@@ -42,7 +53,8 @@ vi.mock("./service", async (importOriginal) => ({
   getContent: vi.fn(),
   playOnDiscord: vi.fn(),
   stopPlayingOnDiscord: vi.fn(),
-  getMyInstants: vi.fn(() => Promise.resolve({ instants: [], pages: 0 }))
+  getInstants: vi.fn(() => Promise.resolve({ instants: [], pages: 0 })),
+  getProviders: vi.fn(() => Promise.resolve(defaultProviders))
 }));
 
 const macbook = {
@@ -112,7 +124,9 @@ function reset() {
     return true;
   });
   vi.mocked(resetApiUrl).mockClear();
-  vi.mocked(getMyInstants).mockClear();
+  vi.mocked(getInstants).mockClear();
+  vi.mocked(getProviders).mockClear();
+  vi.mocked(getProviders).mockImplementation(() => Promise.resolve(defaultProviders));
 }
 
 afterEach(() => {
@@ -406,7 +420,7 @@ describe("snackbar precedence while offline", () => {
   beforeEach(reset);
 
   it("keeps the connection toast when a panel reports its own error after it", async () => {
-    vi.mocked(getMyInstants).mockRejectedValueOnce(
+    vi.mocked(getInstants).mockRejectedValueOnce(
       new Error("Erro desconhecido, tente novamente mais tarde")
     );
 
@@ -426,7 +440,7 @@ describe("snackbar precedence while offline", () => {
     expect(toasts().getByText("Não foi possível conectar a 10.0.0.133:9001")).toBeInTheDocument();
     expect(screen.queryByText("Erro desconhecido, tente novamente mais tarde")).not.toBeInTheDocument();
 
-    vi.mocked(getMyInstants).mockResolvedValue({ instants: [], pages: 0 });
+    vi.mocked(getInstants).mockResolvedValue({ instants: [], pages: 0 });
   });
 });
 
@@ -466,13 +480,13 @@ describe("shell", () => {
     expect(searchBox()).toBeInTheDocument();
   });
 
-  it("switches to MyInstants from the segmented control", async () => {
+  it("switches to Explorar from the segmented control", async () => {
     render(<App />);
 
-    await userEvent.click(screen.getByRole("tab", { name: "MyInstants" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "MyInstants" })).toBeInTheDocument();
-    await waitFor(() => expect(getMyInstants).toHaveBeenCalledWith(1, "", "br"));
+    expect(screen.getByRole("heading", { level: 1, name: "Explorar" })).toBeInTheDocument();
+    await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br"));
   });
 
   it("opens the add form from the tools row", async () => {
@@ -494,8 +508,8 @@ describe("shell", () => {
     await user.type(searchBox(), "xuxa");
     await user.click(await screen.findByRole("button", { name: "Procurar “xuxa” no MyInstants" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "MyInstants" })).toBeInTheDocument();
-    await waitFor(() => expect(getMyInstants).toHaveBeenLastCalledWith(1, "xuxa", "br"));
+    expect(screen.getByRole("heading", { level: 1, name: "Explorar" })).toBeInTheDocument();
+    await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "xuxa", "br"));
     // The query survives the switch, rather than making them retype it.
     expect(searchBox()).toHaveValue("xuxa");
   });
@@ -606,30 +620,33 @@ describe("shell", () => {
 describe("catalogue region", () => {
   beforeEach(reset);
 
-  async function openMyInstants() {
+  // Matches either language: one test in this block switches to English,
+  // and the tab label is now a real translation rather than the literal
+  // "MyInstants" it used to be regardless of locale.
+  async function openExplore() {
     const user = userEvent.setup();
-    await user.click(screen.getByRole("tab", { name: "MyInstants" }));
+    await user.click(screen.getByRole("tab", { name: /^(Explorar|Explore)$/ }));
     return user;
   }
 
-  it("browses Brazil by default, and offers the region only on MyInstants", async () => {
+  it("browses Brazil by default, and offers the region only on Explorar", async () => {
     render(<App />);
     expect(screen.queryByRole("button", { name: "Brasil" })).toBeNull();
 
-    await openMyInstants();
+    await openExplore();
 
     expect(screen.getByRole("button", { name: "Brasil" })).toBeInTheDocument();
-    await waitFor(() => expect(getMyInstants).toHaveBeenCalledWith(1, "", "br"));
+    await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br"));
   });
 
   it("refetches the catalogue for a picked region and remembers it", async () => {
     render(<App />);
-    const user = await openMyInstants();
+    const user = await openExplore();
 
     await user.click(screen.getByRole("button", { name: "Brasil" }));
     await user.click(screen.getByRole("menuitem", { name: "Portugal" }));
 
-    await waitFor(() => expect(getMyInstants).toHaveBeenLastCalledWith(1, "", "pt"));
+    await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "", "pt"));
     expect(screen.getByRole("button", { name: "Portugal" })).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem("region") ?? "null")).toBe("pt");
   });
@@ -638,10 +655,10 @@ describe("catalogue region", () => {
     localStorage.setItem("region", JSON.stringify("us"));
     render(<App />);
 
-    await openMyInstants();
+    await openExplore();
 
     expect(screen.getByRole("button", { name: "Estados Unidos" })).toBeInTheDocument();
-    await waitFor(() => expect(getMyInstants).toHaveBeenCalledWith(1, "", "us"));
+    await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "us"));
   });
 
   it.each([
@@ -653,10 +670,10 @@ describe("catalogue region", () => {
     localStorage.setItem("region", raw);
     render(<App />);
 
-    await openMyInstants();
+    await openExplore();
 
     expect(screen.getByRole("button", { name: "Brasil" })).toBeInTheDocument();
-    await waitFor(() => expect(getMyInstants).toHaveBeenCalledWith(1, "", "br"));
+    await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br"));
   });
 
   it("names regions in English once the language switches", async () => {
@@ -664,11 +681,86 @@ describe("catalogue region", () => {
     localStorage.setItem("region", JSON.stringify("us"));
     render(<App />);
 
-    await openMyInstants();
+    await openExplore();
 
     expect(screen.getByRole("button", { name: "United States" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "United States" }));
     expect(screen.getByRole("menuitem", { name: "United Kingdom" })).toBeInTheDocument();
+  });
+});
+
+describe("provider picker", () => {
+  beforeEach(reset);
+
+  async function openExploreWithServer() {
+    const bridge = installBridge();
+    const user = userEvent.setup();
+    render(<App />);
+    act(() => bridge.push([macbook]));
+    await user.click(screen.getByRole("tab", { name: /^(Explorar|Explore)$/ }));
+    return user;
+  }
+
+  it("lists every provider from the registry, ticking the default", async () => {
+    await openExploreWithServer();
+
+    await userEvent.click(await screen.findByRole("button", { name: "MyInstants" }));
+
+    const items = screen.getAllByRole("menuitem");
+    const myinstants = items.find((item) => within(item).queryByText("MyInstants"));
+    expect(myinstants!.querySelector(".mtick svg")).not.toBeNull();
+    expect(within(screen.getByRole("menu")).getByText("Sound Buttons")).toBeInTheDocument();
+    expect(within(screen.getByRole("menu")).getByText("InstantsMeme")).toBeInTheDocument();
+    expect(within(screen.getByRole("menu")).getByText("SoundboardGuy")).toBeInTheDocument();
+  });
+
+  it("switches provider in one click, remembers it, and restarts the listing from page 1", async () => {
+    const user = await openExploreWithServer();
+
+    await user.click(await screen.findByRole("button", { name: "MyInstants" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sound Buttons" }));
+
+    await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "", "br", "soundbuttons"));
+    expect(screen.getByRole("button", { name: "Sound Buttons" })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("provider") ?? "null")).toBe("soundbuttons");
+  });
+
+  it("hides the region chip once a provider that doesn't support it is picked", async () => {
+    const user = await openExploreWithServer();
+    expect(await screen.findByRole("button", { name: "Brasil" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "MyInstants" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sound Buttons" }));
+
+    expect(screen.queryByRole("button", { name: "Brasil" })).toBeNull();
+  });
+
+  it("restores the stored provider on the next launch", async () => {
+    localStorage.setItem("provider", JSON.stringify("soundbuttons"));
+    await openExploreWithServer();
+
+    expect(await screen.findByRole("button", { name: "Sound Buttons" })).toBeInTheDocument();
+    await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br", "soundbuttons"));
+  });
+
+  // Same rule this app already applies to a stale selectedServer or an
+  // unrecognized region code: never assume, never error on local state that
+  // might be pointed at something gone.
+  it("falls back to MyInstants, silently, when the stored provider no longer exists", async () => {
+    localStorage.setItem("provider", JSON.stringify("longgoneprovider"));
+    await openExploreWithServer();
+
+    expect(await screen.findByRole("button", { name: "MyInstants" })).toBeInTheDocument();
+    expect(screen.queryByText(/longgoneprovider/)).not.toBeInTheDocument();
+  });
+
+  it("stays absent, and keeps the region chip shown, when the backend has no /providers route", async () => {
+    vi.mocked(getProviders).mockRejectedValue(new Error("404"));
+    await openExploreWithServer();
+
+    await waitFor(() => expect(getProviders).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: "MyInstants" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Brasil" })).toBeInTheDocument();
   });
 });
 

@@ -43,14 +43,14 @@ export const Buttons: StoryObj = {
 
 export const SegmentedControl: StoryObj = {
   render: function Render() {
-    const [tab, setTab] = useState<"favorites" | "myinstants">("favorites");
+    const [tab, setTab] = useState<"favorites" | "explore">("favorites");
     return (
       <SegmentedRoot value={tab} onChange={setTab}>
         <Segmented
           aria-label="Seção"
           options={[
             { value: "favorites", label: "Favoritos" },
-            { value: "myinstants", label: "MyInstants" }
+            { value: "explore", label: "Explorar" }
           ]}
         />
       </SegmentedRoot>
