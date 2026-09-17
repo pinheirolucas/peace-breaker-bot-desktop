@@ -1,5 +1,6 @@
 {
   "name": "peace-breaker-bot-desktop",
+  "productName": "Peace Breaker Bot",
   "version": "0.1.11",
   "author": "pinheirolucas",
   "main": "build/electron.js",
