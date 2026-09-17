@@ -3,31 +3,34 @@ import { describe, expect, it } from "vitest";
 import { checkForUpdatesLabel, pickDmgUrl } from "../electron/updates";
 
 describe("pickDmgUrl", () => {
-  it("picks the .dmg entry among the files electron-builder lists", () => {
-    const url = pickDmgUrl([
-      { url: "https://example.com/App-1.2.3-mac.zip" },
-      { url: "https://example.com/App-1.2.3.dmg" }
+  const releaseBase =
+    "https://github.com/pinheirolucas/peace-breaker-bot-desktop/releases/download/v1.2.3";
+
+  it("resolves the .dmg entry's bare filename against the tagged release", () => {
+    const url = pickDmgUrl("1.2.3", [
+      { url: "App-1.2.3-arm64.zip" },
+      { url: "App-1.2.3-arm64.dmg" }
     ]);
 
-    expect(url).toBe("https://example.com/App-1.2.3.dmg");
+    expect(url).toBe(`${releaseBase}/App-1.2.3-arm64.dmg`);
   });
 
   it("matches case-insensitively", () => {
-    const url = pickDmgUrl([{ url: "https://example.com/App-1.2.3.DMG" }]);
+    const url = pickDmgUrl("1.2.3", [{ url: "App-1.2.3-arm64.DMG" }]);
 
-    expect(url).toBe("https://example.com/App-1.2.3.DMG");
+    expect(url).toBe(`${releaseBase}/App-1.2.3-arm64.DMG`);
   });
 
   it("returns null for a zip-only publish", () => {
-    const url = pickDmgUrl([{ url: "https://example.com/App-1.2.3-mac.zip" }]);
+    const url = pickDmgUrl("1.2.3", [{ url: "App-1.2.3-arm64.zip" }]);
 
     expect(url).toBeNull();
   });
 
   it("returns null for a missing or malformed files list", () => {
-    expect(pickDmgUrl(null)).toBeNull();
-    expect(pickDmgUrl(undefined)).toBeNull();
-    expect(pickDmgUrl([])).toBeNull();
+    expect(pickDmgUrl("1.2.3", null)).toBeNull();
+    expect(pickDmgUrl("1.2.3", undefined)).toBeNull();
+    expect(pickDmgUrl("1.2.3", [])).toBeNull();
   });
 });
 
