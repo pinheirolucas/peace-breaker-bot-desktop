@@ -8,7 +8,7 @@ import {
   playOnDiscord,
   stopPlayingOnDiscord,
   getContent,
-  getMyInstants,
+  getInstants,
   getProviders,
   getBotStatus,
   getApiUrl,
@@ -343,7 +343,7 @@ describe("getBotStatus", () => {
   });
 });
 
-describe("getMyInstants", () => {
+describe("getInstants", () => {
   const listing = {
     instants: [
       { name: "Primeiro", url: "https://www.myinstants.com/a/" },
@@ -366,13 +366,13 @@ describe("getMyInstants", () => {
   it("unwraps data.data into the instants and page count", async () => {
     captureQuery();
 
-    await expect(getMyInstants(1)).resolves.toEqual(listing);
+    await expect(getInstants(1)).resolves.toEqual(listing);
   });
 
   it("sends page and search together", async () => {
     const captured = captureQuery();
 
-    await getMyInstants(2, "boo");
+    await getInstants(2, "boo");
 
     expect(captured.search).toBe("?page=2&search=boo");
   });
@@ -380,7 +380,7 @@ describe("getMyInstants", () => {
   it("omits search entirely when it is empty", async () => {
     const captured = captureQuery();
 
-    await getMyInstants(2, "");
+    await getInstants(2, "");
 
     expect(captured.search).toBe("?page=2");
   });
@@ -388,7 +388,7 @@ describe("getMyInstants", () => {
   it("sends the region after page and search", async () => {
     const captured = captureQuery();
 
-    await getMyInstants(2, "boo", "br");
+    await getInstants(2, "boo", "br");
 
     expect(captured.search).toBe("?page=2&search=boo&region=br");
   });
@@ -398,7 +398,7 @@ describe("getMyInstants", () => {
   it("sends the region without a search too", async () => {
     const captured = captureQuery();
 
-    await getMyInstants(1, "", "pt");
+    await getInstants(1, "", "pt");
 
     expect(captured.search).toBe("?page=1&region=pt");
   });
@@ -406,7 +406,7 @@ describe("getMyInstants", () => {
   it("sends the provider after page, search and region", async () => {
     const captured = captureQuery();
 
-    await getMyInstants(2, "boo", "br", "soundbuttons");
+    await getInstants(2, "boo", "br", "soundbuttons");
 
     expect(captured.search).toBe("?page=2&search=boo&region=br&provider=soundbuttons");
   });
@@ -417,7 +417,7 @@ describe("getMyInstants", () => {
   it("omits the provider entirely when it is not given", async () => {
     const captured = captureQuery();
 
-    await getMyInstants(1);
+    await getInstants(1);
 
     expect(captured.search).toBe("?page=1");
   });
@@ -432,7 +432,7 @@ describe("getMyInstants", () => {
   it("sends page=undefined when called with no page", async () => {
     const captured = captureQuery();
 
-    await getMyInstants();
+    await getInstants();
 
     expect(captured.search).toBe("?page=undefined");
   });
@@ -445,7 +445,7 @@ describe("getMyInstants", () => {
   it("does not percent-encode the search term, so an ampersand splits it", async () => {
     const captured = captureQuery();
 
-    await getMyInstants(1, "a b&c");
+    await getInstants(1, "a b&c");
 
     expect(captured.search).toBe("?page=1&search=a%20b&c");
     const params = new URLSearchParams(captured.search);
@@ -463,7 +463,7 @@ describe("getMyInstants", () => {
       )
     );
 
-    await expect(getMyInstants(1)).rejects.toThrow("A página enviada é inválida");
+    await expect(getInstants(1)).rejects.toThrow("A página enviada é inválida");
   });
 
   // Like every backend error, a refused region arrives as HTTP 200 with a
@@ -475,7 +475,7 @@ describe("getMyInstants", () => {
       )
     );
 
-    await expect(getMyInstants(1, "", "zz")).rejects.toThrow("A região enviada é inválida");
+    await expect(getInstants(1, "", "zz")).rejects.toThrow("A região enviada é inválida");
   });
 
   it("falls back to the generic message when the error body carries none", async () => {
@@ -483,7 +483,7 @@ describe("getMyInstants", () => {
       http.get(`${apiUrl}/instants`, () => errorAtStatus(500, {}))
     );
 
-    await expect(getMyInstants(1)).rejects.toThrow(
+    await expect(getInstants(1)).rejects.toThrow(
       "Erro desconhecido, tente novamente mais tarde"
     );
   });
@@ -498,7 +498,7 @@ describe("getMyInstants", () => {
       )
     );
 
-    await expect(getMyInstants(1)).rejects.toThrow("A página enviada é inválida");
+    await expect(getInstants(1)).rejects.toThrow("A página enviada é inválida");
   });
 
   it("falls back to the generic message when a 200 error body carries none", async () => {
@@ -506,7 +506,7 @@ describe("getMyInstants", () => {
       http.get(`${apiUrl}/instants`, () => HttpResponse.json({ label: "nope" }))
     );
 
-    await expect(getMyInstants(1)).rejects.toThrow(
+    await expect(getInstants(1)).rejects.toThrow(
       "Erro desconhecido, tente novamente mais tarde"
     );
   });
@@ -514,7 +514,7 @@ describe("getMyInstants", () => {
   it("still rejects when the body is empty altogether", async () => {
     server.use(http.get(`${apiUrl}/instants`, () => HttpResponse.json({})));
 
-    await expect(getMyInstants(1)).rejects.toThrow(
+    await expect(getInstants(1)).rejects.toThrow(
       "Erro desconhecido, tente novamente mais tarde"
     );
   });
@@ -522,7 +522,7 @@ describe("getMyInstants", () => {
   it("keeps resolving a real listing", async () => {
     captureQuery();
 
-    await expect(getMyInstants(1)).resolves.toEqual(listing);
+    await expect(getInstants(1)).resolves.toEqual(listing);
   });
 });
 
@@ -570,7 +570,7 @@ describe("api base url", () => {
         })
       );
 
-      await expect(getMyInstants(1)).rejects.toThrow(
+      await expect(getInstants(1)).rejects.toThrow(
         "Erro desconhecido, tente novamente mais tarde"
       );
 
@@ -628,7 +628,7 @@ describe("api base url", () => {
     await playOnDiscord("https://www.myinstants.com/a/");
     await stopPlayingOnDiscord();
     await getContent("https://www.myinstants.com/a/");
-    await getMyInstants(1);
+    await getInstants(1);
 
     expect(seen).toEqual([discovered, discovered, discovered, discovered]);
   });
@@ -709,7 +709,7 @@ describe("api base url", () => {
       })
     );
 
-    await getMyInstants(1);
+    await getInstants(1);
 
     expect(hit).toBe(true);
   });
@@ -723,7 +723,7 @@ describe("connection health", () => {
   it("goes unhealthy when the backend cannot be reached at all", async () => {
     server.use(http.get(`${apiUrl}/instants`, () => HttpResponse.error()));
 
-    await expect(getMyInstants(1)).rejects.toThrow();
+    await expect(getInstants(1)).rejects.toThrow();
     expect(isHealthy()).toBe(false);
   });
 
@@ -734,7 +734,7 @@ describe("connection health", () => {
       )
     );
 
-    await expect(getMyInstants(1)).rejects.toThrow(
+    await expect(getInstants(1)).rejects.toThrow(
       "O site myinstants.com respondeu com um status de erro"
     );
     expect(isHealthy()).toBe(true);
@@ -747,7 +747,7 @@ describe("connection health", () => {
       )
     );
 
-    await expect(getMyInstants(1)).rejects.toThrow();
+    await expect(getInstants(1)).rejects.toThrow();
     expect(isHealthy()).toBe(true);
   });
 

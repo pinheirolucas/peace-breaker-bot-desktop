@@ -3,8 +3,9 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import MyInstantsPanel from "./MyInstantsPanel";
+import type { ActiveProvider } from "./MyInstantsPanel";
 import SnackbarContext from "./SnackbarContext";
-import { getContent, getMyInstants, playOnDiscord, stopPlayingOnDiscord } from "./service";
+import { getContent, getInstants, playOnDiscord, stopPlayingOnDiscord } from "./service";
 import type { Region } from "./regions";
 import type { BotStatus, Listing } from "./service";
 import type { Instant } from "./storage";
@@ -12,7 +13,7 @@ import type { Instant } from "./storage";
 vi.mock("./service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./service")>()),
   getContent: vi.fn(),
-  getMyInstants: vi.fn(),
+  getInstants: vi.fn(),
   playOnDiscord: vi.fn(),
   stopPlayingOnDiscord: vi.fn()
 }));
@@ -63,12 +64,14 @@ const page2 = {
 function renderPanel({
   search = "",
   region = "br",
+  provider = undefined,
   favorites = [],
   healthy = true,
   botStatus = null
 }: {
   search?: string;
   region?: Region;
+  provider?: ActiveProvider;
   favorites?: Instant[];
   healthy?: boolean;
   botStatus?: BotStatus | null;
@@ -78,11 +81,12 @@ function renderPanel({
   const snackbar = { openSnackbar: vi.fn(), closeSnackbar: vi.fn() };
   const props = { onSummary: vi.fn(), onClearSearch: vi.fn(), onSwitchServer: vi.fn() };
 
-  const ui = (next: { search: string; region: Region }) => (
+  const ui = (next: { search: string; region: Region; provider?: ActiveProvider }) => (
     <SnackbarContext.Provider value={snackbar}>
       <MyInstantsPanel
         search={next.search}
         region={next.region}
+        provider={next.provider}
         healthy={healthy}
         botStatus={botStatus}
         serverAddress="localhost:9001"
@@ -91,8 +95,8 @@ function renderPanel({
     </SnackbarContext.Provider>
   );
 
-  // Tracked so changing one of the two keeps the other.
-  let current = { search, region };
+  // Tracked so changing one of the three keeps the others.
+  let current = { search, region, provider };
   const result = render(ui(current));
   const rerenderWith = (next: Partial<typeof current>) => {
     current = { ...current, ...next };
@@ -104,7 +108,8 @@ function renderPanel({
     snackbar,
     ...props,
     rerenderWithSearch: (nextSearch: string) => rerenderWith({ search: nextSearch }),
-    rerenderWithRegion: (nextRegion: Region) => rerenderWith({ region: nextRegion })
+    rerenderWithRegion: (nextRegion: Region) => rerenderWith({ region: nextRegion }),
+    rerenderWithProvider: (nextProvider: ActiveProvider) => rerenderWith({ provider: nextProvider })
   };
 }
 
@@ -114,8 +119,8 @@ function useFakes(listing: Listing | null = page1) {
     FakeAudio.played = [];
     vi.stubGlobal("Audio", FakeAudio);
     vi.mocked(getContent).mockReset();
-    vi.mocked(getMyInstants).mockReset();
-    if (listing) vi.mocked(getMyInstants).mockResolvedValue(listing);
+    vi.mocked(getInstants).mockReset();
+    if (listing) vi.mocked(getInstants).mockResolvedValue(listing);
     vi.mocked(playOnDiscord).mockReset();
     vi.mocked(stopPlayingOnDiscord).mockReset().mockResolvedValue({} as Response);
   });
@@ -134,13 +139,13 @@ describe("MyInstantsPanel", () => {
 
     expect(await screen.findByRole("article", { name: "Primeiro" })).toBeInTheDocument();
     expect(card("Segundo")).toBeInTheDocument();
-    expect(getMyInstants).toHaveBeenCalledWith(1, "", "br");
+    expect(getInstants).toHaveBeenCalledWith(1, "", "br");
   });
 
   // The listing scrapes myinstants.com server-side and is slow; the skeleton
   // has the card's exact footprint so nothing jumps when it lands.
   it("shows card-shaped skeletons while the first page is in flight", () => {
-    vi.mocked(getMyInstants).mockReturnValue(new Promise(() => {}));
+    vi.mocked(getInstants).mockReturnValue(new Promise(() => {}));
     const { container, onSummary } = renderPanel();
 
     expect(container.querySelectorAll(".skel")).toHaveLength(8);
@@ -163,12 +168,12 @@ describe("MyInstantsPanel", () => {
     const { rerenderWithSearch } = renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    vi.mocked(getMyInstants).mockResolvedValue(page2);
+    vi.mocked(getInstants).mockResolvedValue(page2);
     rerenderWithSearch("terceiro");
 
     expect(await screen.findByRole("article", { name: "Terceiro" })).toBeInTheDocument();
     expect(screen.queryByRole("article", { name: "Primeiro" })).toBeNull();
-    expect(getMyInstants).toHaveBeenLastCalledWith(1, "terceiro", "br");
+    expect(getInstants).toHaveBeenLastCalledWith(1, "terceiro", "br");
   });
 
   // Used to be asserted as a known bug: the page count was only ever learned
@@ -185,12 +190,12 @@ describe("MyInstantsPanel", () => {
     renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    vi.mocked(getMyInstants).mockResolvedValue(page2);
+    vi.mocked(getInstants).mockResolvedValue(page2);
     await user.click(screen.getByRole("button", { name: "Carregar mais" }));
 
     expect(await screen.findByRole("article", { name: "Terceiro" })).toBeInTheDocument();
     expect(card("Primeiro")).toBeInTheDocument();
-    expect(getMyInstants).toHaveBeenLastCalledWith(2, "", "br");
+    expect(getInstants).toHaveBeenLastCalledWith(2, "", "br");
   });
 
   it("drops duplicates when a page repeats an instant", async () => {
@@ -198,7 +203,7 @@ describe("MyInstantsPanel", () => {
     renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    vi.mocked(getMyInstants).mockResolvedValue({
+    vi.mocked(getInstants).mockResolvedValue({
       instants: [page1.instants[0], page2.instants[0]],
       pages: 3
     });
@@ -209,7 +214,7 @@ describe("MyInstantsPanel", () => {
   });
 
   it("hides the load-more button on the last page", async () => {
-    vi.mocked(getMyInstants).mockResolvedValue({ ...page1, pages: 1 });
+    vi.mocked(getInstants).mockResolvedValue({ ...page1, pages: 1 });
     renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
@@ -223,13 +228,13 @@ describe("MyInstantsPanel", () => {
     const { rerenderWithSearch } = renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    vi.mocked(getMyInstants).mockResolvedValue(page2);
+    vi.mocked(getInstants).mockResolvedValue(page2);
     await user.click(screen.getByRole("button", { name: "Carregar mais" }));
     await screen.findByRole("article", { name: "Terceiro" });
 
     rerenderWithSearch("boo");
 
-    await waitFor(() => expect(getMyInstants).toHaveBeenLastCalledWith(1, "boo", "br"));
+    await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "boo", "br"));
   });
 
   it("refetches a new region from page 1 even after paging, replacing the list", async () => {
@@ -237,18 +242,18 @@ describe("MyInstantsPanel", () => {
     const { rerenderWithRegion } = renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    vi.mocked(getMyInstants).mockResolvedValue(page2);
+    vi.mocked(getInstants).mockResolvedValue(page2);
     await user.click(screen.getByRole("button", { name: "Carregar mais" }));
     await screen.findByRole("article", { name: "Terceiro" });
 
-    vi.mocked(getMyInstants).mockResolvedValue({
+    vi.mocked(getInstants).mockResolvedValue({
       instants: [{ name: "Quarto", url: "https://www.myinstants.com/d/" }],
       pages: 2
     });
     rerenderWithRegion("pt");
 
     expect(await screen.findByRole("article", { name: "Quarto" })).toBeInTheDocument();
-    expect(getMyInstants).toHaveBeenLastCalledWith(1, "", "pt");
+    expect(getInstants).toHaveBeenLastCalledWith(1, "", "pt");
     expect(screen.queryByRole("article", { name: "Primeiro" })).toBeNull();
     expect(screen.queryByRole("article", { name: "Terceiro" })).toBeNull();
   });
@@ -259,7 +264,7 @@ describe("MyInstantsPanel", () => {
 
     rerenderWithRegion("us");
 
-    await waitFor(() => expect(getMyInstants).toHaveBeenLastCalledWith(1, "vine", "us"));
+    await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "vine", "us"));
   });
 
   it("does not refetch when rerendered with the same region", async () => {
@@ -268,7 +273,7 @@ describe("MyInstantsPanel", () => {
 
     rerenderWithRegion("br");
 
-    expect(getMyInstants).toHaveBeenCalledTimes(1);
+    expect(getInstants).toHaveBeenCalledTimes(1);
   });
 
   it("favourites an instant, and says so", async () => {
@@ -332,7 +337,7 @@ describe("MyInstantsPanel", () => {
 
   it("shows the listing error and offers to try again", async () => {
     const user = userEvent.setup();
-    vi.mocked(getMyInstants).mockRejectedValueOnce(new Error("A página enviada é inválida"));
+    vi.mocked(getInstants).mockRejectedValueOnce(new Error("A página enviada é inválida"));
 
     const { snackbar } = renderPanel();
 
@@ -344,12 +349,12 @@ describe("MyInstantsPanel", () => {
     await user.click(screen.getByRole("button", { name: "Tente novamente" }));
 
     expect(await screen.findByRole("article", { name: "Primeiro" })).toBeInTheDocument();
-    expect(getMyInstants).toHaveBeenCalledTimes(2);
+    expect(getInstants).toHaveBeenCalledTimes(2);
   });
 
   it("offers to clear a search the catalogue has nothing for", async () => {
     const user = userEvent.setup();
-    vi.mocked(getMyInstants).mockResolvedValue({ instants: [], pages: 1 });
+    vi.mocked(getInstants).mockResolvedValue({ instants: [], pages: 1 });
 
     const { onClearSearch } = renderPanel({ search: "xuxa" });
 
@@ -370,6 +375,70 @@ describe("MyInstantsPanel", () => {
   });
 });
 
+describe("MyInstantsPanel with a resolved provider", () => {
+  useFakes();
+
+  const soundButtons: ActiveProvider = { key: "soundbuttons", name: "Sound Buttons" };
+
+  it("sends the provider key alongside page, search and region", async () => {
+    renderPanel({ provider: soundButtons });
+
+    await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br", "soundbuttons"));
+  });
+
+  it("omits the provider entirely when none is given, exactly as before this feature", async () => {
+    renderPanel();
+
+    await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br"));
+  });
+
+  it("restarts from page 1 when only the provider changes", async () => {
+    const user = userEvent.setup();
+    const { rerenderWithProvider } = renderPanel();
+    await screen.findByRole("article", { name: "Primeiro" });
+
+    vi.mocked(getInstants).mockResolvedValue(page2);
+    await user.click(screen.getByRole("button", { name: "Carregar mais" }));
+    await screen.findByRole("article", { name: "Terceiro" });
+
+    vi.mocked(getInstants).mockResolvedValue({
+      instants: [{ name: "Quarto", url: "https://cdn.soundbuttons.io/d.mp3" }],
+      pages: 2
+    });
+    rerenderWithProvider(soundButtons);
+
+    expect(await screen.findByRole("article", { name: "Quarto" })).toBeInTheDocument();
+    expect(getInstants).toHaveBeenLastCalledWith(1, "", "br", "soundbuttons");
+    expect(screen.queryByRole("article", { name: "Primeiro" })).toBeNull();
+  });
+
+  it("names the active provider in the empty-catalogue message", async () => {
+    vi.mocked(getInstants).mockResolvedValue({ instants: [], pages: 1 });
+
+    renderPanel({ provider: soundButtons });
+
+    expect(await screen.findByText("O Sound Buttons não devolveu nenhum som.")).toBeInTheDocument();
+  });
+
+  it("names the active provider in the no-search-results message", async () => {
+    vi.mocked(getInstants).mockResolvedValue({ instants: [], pages: 1 });
+
+    renderPanel({ search: "peixe", provider: soundButtons });
+
+    expect(
+      await screen.findByText("Nenhum som do Sound Buttons bate com “peixe”.")
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to naming MyInstants when no provider has resolved yet", async () => {
+    vi.mocked(getInstants).mockResolvedValue({ instants: [], pages: 1 });
+
+    renderPanel();
+
+    expect(await screen.findByText("O MyInstants não devolveu nenhum som.")).toBeInTheDocument();
+  });
+});
+
 // The backend reports most errors as HTTP 200 with no `data`, which used to
 // reach this panel as `undefined` and unmount the tree to a blank window.
 // service.js rejects instead now, and the panel never dereferences whatever
@@ -378,7 +447,7 @@ describe("MyInstantsPanel when the listing does not arrive", () => {
   useFakes(null);
 
   it("shows the backend message and stays mounted when the call rejects", async () => {
-    vi.mocked(getMyInstants).mockRejectedValue(
+    vi.mocked(getInstants).mockRejectedValue(
       new Error("O site myinstants.com respondeu com um status de erro")
     );
 
@@ -395,7 +464,7 @@ describe("MyInstantsPanel when the listing does not arrive", () => {
   });
 
   it("renders an empty catalogue rather than throwing if it is handed no listing at all", async () => {
-    vi.mocked(getMyInstants).mockResolvedValue(noListing);
+    vi.mocked(getInstants).mockResolvedValue(noListing);
 
     const { snackbar } = renderPanel();
 
@@ -404,14 +473,14 @@ describe("MyInstantsPanel when the listing does not arrive", () => {
   });
 
   it("survives an undefined listing on the search path too", async () => {
-    vi.mocked(getMyInstants).mockResolvedValue(noListing);
+    vi.mocked(getInstants).mockResolvedValue(noListing);
 
     const { rerenderWithSearch, container } = renderPanel({ search: "" });
 
-    await waitFor(() => expect(getMyInstants).toHaveBeenCalled());
+    await waitFor(() => expect(getInstants).toHaveBeenCalled());
     rerenderWithSearch("boo");
 
-    await waitFor(() => expect(getMyInstants).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(getInstants).toHaveBeenCalledTimes(2));
     expect(container.firstChild).not.toBeNull();
   });
 });

@@ -17,6 +17,7 @@
   },
   "app": {
     "tabFavorites": "Favoritos",
+    "tabExplore": "Explorar",
     "sectionAriaLabel": "Seção",
     "searchAriaLabel": "Procurar um som",
     "searchPlaceholder": "Procurar um som…",
@@ -108,10 +109,10 @@
     "resultsSummary_one": "{{count}} resultado",
     "resultsSummary_other": "{{count}} resultados",
     "loadFailedTitle": "O catálogo não carregou",
-    "loadFailedBody": "O servidor não conseguiu trazer a lista do myinstants.com.",
-    "noSearchResultsBody": "Nenhum som do MyInstants bate com “{{search}}”.",
+    "loadFailedBody": "O servidor não conseguiu trazer a lista do {{provider}}.",
+    "noSearchResultsBody": "Nenhum som do {{provider}} bate com “{{search}}”.",
     "emptyCatalogTitle": "Nada no catálogo",
-    "emptyCatalogBody": "O MyInstants não devolveu nenhum som.",
+    "emptyCatalogBody": "O {{provider}} não devolveu nenhum som.",
     "favorite": "Favoritar",
     "loadMore": "Carregar mais",
     "loadingMore": "Carregando…"

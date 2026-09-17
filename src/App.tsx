@@ -17,11 +17,13 @@ import { useAppearance } from "./hooks/useAppearance";
 import { useLanguage } from "./hooks/useLanguage";
 import { useNativeChrome } from "./hooks/useNativeChrome";
 import { findShortcutLabel, isFindShortcut, useChromeKind, usePlatform } from "./hooks/usePlatform";
+import { useProvider } from "./hooks/useProvider";
 import { useRegion } from "./hooks/useRegion";
 import { useStamp } from "./hooks/useStamp";
 import { CheckIcon, MoreIcon, PlusIcon } from "./icons";
 import ImportForm from "./ImportForm";
 import MyInstantsPanel from "./MyInstantsPanel";
+import ProviderMenu from "./ProviderMenu";
 import RegionMenu from "./RegionMenu";
 import ServerMenu, { formatApiUrl } from "./ServerMenu";
 import {
@@ -37,9 +39,10 @@ import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
 import { useManualServers, useSelectedServer } from "./storage";
 import useBotStatus from "./useBotStatus";
+import useProviders from "./useProviders";
 import "./styles/shell.css";
 
-type Tab = "favorites" | "myinstants";
+type Tab = "favorites" | "explore";
 
 const SEARCH_DEBOUNCE = 300;
 
@@ -97,13 +100,19 @@ export default function App() {
   const [healthy, setHealthy] = useState<boolean>(isHealthy);
   const healthyRef = useRef<boolean>(isHealthy());
   const botStatus = useBotStatus(activeUrl);
+  const providers = useProviders(activeUrl);
+  const { provider, setProvider } = useProvider(providers);
+  // Unknown (still loading, or an old backend with no /providers route)
+  // falls through to today's behaviour — RegionMenu has always shown here —
+  // rather than assuming the active provider doesn't support it.
+  const regionSupported = provider ? provider.supportsRegion : true;
 
   const [toast, setToast] = useState<ToastState>({ open: false, key: 0, message: "" });
 
   const tabs = useMemo(
     () => [
       { value: "favorites" as const, label: t("app.tabFavorites") },
-      { value: "myinstants" as const, label: "MyInstants" }
+      { value: "explore" as const, label: t("app.tabExplore") }
     ],
     [t]
   );
@@ -336,7 +345,7 @@ export default function App() {
             {chrome === "custom" && <TitleBar os={os} />}
             <AppearanceStage open={editing}>
               <header className="hero">
-                <h1>{tab === "favorites" ? t("app.tabFavorites") : "MyInstants"}</h1>
+                <h1>{tab === "favorites" ? t("app.tabFavorites") : t("app.tabExplore")}</h1>
                 <span className="count" aria-live="polite">
                   {summary}
                 </span>
@@ -359,7 +368,12 @@ export default function App() {
                     {t("app.add")}
                   </Button>
                 )}
-                {tab === "myinstants" && <RegionMenu region={region} onSelect={setRegion} />}
+                {tab === "explore" && providers && provider && (
+                  <ProviderMenu providers={providers} value={provider.key} onSelect={setProvider} />
+                )}
+                {tab === "explore" && regionSupported && (
+                  <RegionMenu region={region} onSelect={setRegion} />
+                )}
                 <span className="spacer" />
                 <ServerMenu
                   servers={servers}
@@ -415,13 +429,14 @@ export default function App() {
                     onSummary={setSummary}
                     addOpen={addOpen}
                     onAddOpenChange={setAddOpen}
-                    onSearchCatalog={() => setTab("myinstants")}
+                    onSearchCatalog={() => setTab("explore")}
                   />
                 </SegmentedPanel>
-                <SegmentedPanel value="myinstants">
+                <SegmentedPanel value="explore">
                   <MyInstantsPanel
                     search={search}
                     region={region}
+                    provider={provider ?? undefined}
                     healthy={healthy}
                     botStatus={botStatus}
                     serverAddress={serverAddress}

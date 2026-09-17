@@ -265,7 +265,7 @@ export async function testServer(candidateBase: string): Promise<BotStatus> {
  *  does not second-guess it. `provider` picks which site is scraped; omitted,
  *  the backend defaults to myinstants, so a caller that never resolved a
  *  provider gets the exact same request it always sent. */
-export async function getMyInstants(
+export async function getInstants(
   page?: number,
   search?: string,
   region?: string,
@@ -282,7 +282,7 @@ export async function getMyInstants(
   return requestEnvelope<Listing>(`${base}/instants?${params}`);
 }
 
-/** One entry of `GET /api/v1/providers` — the sites `getMyInstants` can
+/** One entry of `GET /api/v1/providers` — the sites `getInstants` can
  *  scrape. `supportsRegion` is what gates RegionMenu; the registry carries
  *  no host, since a clip's allowed hosts are a server-side concern
  *  (`AllowedContentHosts`) the client never needs to duplicate. */

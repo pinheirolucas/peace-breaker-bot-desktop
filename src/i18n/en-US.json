@@ -17,6 +17,7 @@
   },
   "app": {
     "tabFavorites": "Favorites",
+    "tabExplore": "Explore",
     "sectionAriaLabel": "Section",
     "searchAriaLabel": "Search a sound",
     "searchPlaceholder": "Search a sound…",
@@ -108,10 +109,10 @@
     "resultsSummary_one": "{{count}} result",
     "resultsSummary_other": "{{count}} results",
     "loadFailedTitle": "The catalogue didn't load",
-    "loadFailedBody": "The server couldn't fetch the list from myinstants.com.",
-    "noSearchResultsBody": "No MyInstants sound matches “{{search}}”.",
+    "loadFailedBody": "The server couldn't fetch the list from {{provider}}.",
+    "noSearchResultsBody": "No {{provider}} sound matches “{{search}}”.",
     "emptyCatalogTitle": "Nothing in the catalogue",
-    "emptyCatalogBody": "MyInstants didn't return any sounds.",
+    "emptyCatalogBody": "{{provider}} didn't return any sounds.",
     "favorite": "Favorite",
     "loadMore": "Load more",
     "loadingMore": "Loading…"
