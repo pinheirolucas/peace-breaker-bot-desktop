@@ -2,6 +2,10 @@ import type { Decorator, Preview } from "@storybook/react-vite";
 import { useLayoutEffect } from "react";
 import { THEMES } from "../src/themes";
 
+// Components that call useTranslation() (the card, the rename dialog) render
+// bare keys until the app's global i18next singleton is initialised.
+import "../src/i18n";
+
 import "@fontsource-variable/archivo";
 import "../src/styles/tokens.css";
 import "../src/styles/base.css";
