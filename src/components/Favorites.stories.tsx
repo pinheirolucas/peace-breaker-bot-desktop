@@ -202,16 +202,17 @@ export const ToolsRow: StoryObj = {
 };
 
 /** Opens on the current name, selected. Salvar stays dead until the name is
- *  valid (3+ characters) and different. The preview is the real card head. */
+ *  valid (3+ characters) and different. The preview is the real card, inert,
+ *  at its grid width (288px here), with the link under it. */
 export const RenameDialog: StoryObj = {
   name: "Dialog · Renomear",
-  render: () => <RenameForm instant={clips[4]} onCancel={noop} onSave={noop} />
+  render: () => <RenameForm instant={clips[4]} cardWidth={288} onCancel={noop} onSave={noop} />
 };
 
 /** Too short to save: Salvar is dead. Type to see the field's own message. */
 export const RenameTooShort: StoryObj = {
   name: "Dialog · Renomear, too short",
-  render: () => <RenameForm instant={{ ...clips[1], name: "Vi" }} onCancel={noop} onSave={noop} />
+  render: () => <RenameForm instant={{ ...clips[1], name: "Vi" }} cardWidth={288} onCancel={noop} onSave={noop} />
 };
 
 /** A long name is a warning, not an error: it saves, and the card clips it
@@ -221,6 +222,7 @@ export const RenameLong: StoryObj = {
   render: () => (
     <RenameForm
       instant={{ ...clips[4], name: "Bruxaria da vovó que assusta o servidor inteiro" }}
+      cardWidth={288}
       onCancel={noop}
       onSave={noop}
     />
