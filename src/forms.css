@@ -37,7 +37,18 @@
   text-transform: uppercase;
   color: var(--muted);
 }
-/* Just the head of a card: same fill, radius and type, no footer. */
-.pad.mini {
-  height: 84px;
+/* The card as it is in the grid, at its grid width but never wider than the
+ * dialog. Inert, so it must not look disabled: the state matrix is the point. */
+.preview-card {
+  max-width: 100%;
+}
+.preview-link {
+  margin: 10px 0 0;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: text;
 }
