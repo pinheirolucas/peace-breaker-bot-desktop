@@ -273,6 +273,10 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: isDev ? 1600 : 1280,
     height: 900,
+    // The narrowest and shortest the layout is designed for: two columns of
+    // cards at the smallest tier. See the tiers in src/styles/shell.css.
+    minWidth: 360,
+    minHeight: 480,
     // Revealed on ready-to-show, after first paint, by which time
     // index.html's guard has already stamped the right palette. No flash.
     show: false,

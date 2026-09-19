@@ -37,6 +37,18 @@
   flex-direction: column;
   gap: 8px;
 }
+@container app (max-width: 879px) {
+  .skel {
+    height: 148px;
+    padding: 15px 16px 13px;
+  }
+}
+@container app (max-width: 599px) {
+  .skel {
+    height: 138px;
+    padding: 13px 14px 12px;
+  }
+}
 .sk {
   background: var(--line);
   border-radius: 4px;

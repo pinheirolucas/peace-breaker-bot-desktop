@@ -12,6 +12,9 @@ export interface OrganizeButtonProps {
 /**
  * aria-disabled rather than disabled while blocked: a disabled button gets
  * no hover or focus, so the tooltip saying why could never open.
+ *
+ * In a Tight window the word is hidden and only the icon shows (shell.css),
+ * so the name is set explicitly rather than left to the hidden text.
  */
 export default function OrganizeButton({ blockedReason, onClick }: OrganizeButtonProps) {
   const { t } = useTranslation();
@@ -20,13 +23,15 @@ export default function OrganizeButton({ blockedReason, onClick }: OrganizeButto
   const button = (
     <Button
       variant="secondary"
+      className="btn--organize"
+      aria-label={t("favorites.organize")}
       aria-disabled={blocked || undefined}
       onClick={() => {
         if (!blocked) onClick();
       }}
     >
       <ReorderIcon />
-      {t("favorites.organize")}
+      <span className="lbl">{t("favorites.organize")}</span>
     </Button>
   );
 

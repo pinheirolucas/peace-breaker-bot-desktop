@@ -3,10 +3,26 @@
 
 .app {
   height: 100%;
+  /* The window is the container: hero, tools and grid answer to its width
+   * rather than the viewport's, so the Aparência stage and Storybook resolve
+   * the same tier as the real window. Tiers, by window width:
+   *   Roomy  880+      the design canvas's 1280 layout
+   *   Snug   600-879   two-row tools, 3 columns
+   *   Tight  360-599   stacked hero, dot-only server chip, 2 columns
+   * 360 is the floor main.ts sets as the window's minWidth. */
+  container: app / inline-size;
   display: flex;
   flex-direction: column;
   background: var(--bg);
   color: var(--fg);
+}
+
+/* One continuous gutter instead of a 40px-to-16px step at 640px: 16px at 500
+ * and below, 23px at 720, 32px at 1000, 40px from 1250. */
+.hero,
+.tools,
+.scroll {
+  --g: clamp(16px, 3.2cqw, 40px);
 }
 
 .hero {
@@ -15,7 +31,7 @@
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 18px;
-  padding: 26px 40px 20px;
+  padding: 26px var(--g) 20px;
 }
 .hero h1 {
   margin: 0;
@@ -44,16 +60,43 @@
 
 .tools {
   flex: none;
-  display: flex;
+  /* A grid rather than a wrapping flex row, so narrowing re-seats the
+   * controls (see the tiers below) instead of stranding whichever ones
+   * overflow. Cells: the search, the tab's actions, the server chip, the
+   * overflow menu. */
+  display: grid;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
-  padding: 0 40px 18px;
+  grid-template-columns: minmax(200px, 380px) auto 1fr auto auto;
+  grid-template-areas: "find acts . chip more";
+  padding: 0 var(--g) 18px;
+}
+
+/* Favoritos keeps its buttons on the right, beside the server chip; Explorar
+ * keeps its menus on the left, beside the search. */
+.tools[data-tab="favorites"] {
+  grid-template-columns: minmax(200px, 380px) 1fr auto auto auto;
+  grid-template-areas: "find . acts chip more";
 }
 .tools .search {
-  flex: 1;
-  min-width: 200px;
-  max-width: 380px;
+  grid-area: find;
+  min-width: 0;
+}
+.tools__acts {
+  grid-area: acts;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.tools__chip {
+  grid-area: chip;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.tools__more {
+  grid-area: more;
 }
 
 /* Top padding matches the hover lift/shadow and the focus ring's
@@ -63,7 +106,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 8px 40px 34px;
+  padding: 8px var(--g) 34px;
 }
 
 /* Four columns at the design's 1280px window, and it reflows below that
@@ -87,16 +130,67 @@
   padding-top: 22px;
 }
 
-@media (max-width: 640px) {
-  .hero,
-  .tools {
-    padding-left: 16px;
-    padding-right: 16px;
+/* Snug: search owns row 1 with the overflow menu; what you can do sits left
+ * on row 2 and where you are sits right. Three columns, a touch smaller. It
+ * hands over to Roomy at three columns as well (265px cards vs 264px), so
+ * nothing jumps at 880. */
+@container app (max-width: 879px) {
+  .tools,
+  .tools[data-tab="favorites"] {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "find find more"
+      "acts chip chip";
+    padding-bottom: 14px;
   }
-  .scroll {
-    padding: 0 16px 24px;
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+/* Tight: stacked hero with full-width tabs, the server chip down to its dot,
+ * Organizar to its icon, two columns. Never one column: at the 360 floor the
+ * 16px gutters leave 328px, which is two 158px cards. */
+@container app (max-width: 599px) {
+  .hero {
+    gap: 10px 12px;
+    padding-bottom: 14px;
   }
   .hero h1 {
-    font-size: 32px;
+    font-size: 30px;
+  }
+  .hero .spacer {
+    display: none;
+  }
+  .hero .seg {
+    flex: 1 0 100%;
+  }
+  .hero .seg button {
+    flex: 1;
+  }
+  .tools .kbd,
+  .tools .lbl,
+  .tools .addr {
+    display: none;
+  }
+  .tools .srv--server,
+  .tools .btn--organize {
+    width: var(--hctl);
+    padding: 0;
+    justify-content: center;
+  }
+  .tools__acts {
+    flex-wrap: wrap;
+  }
+  .tools__acts .srv {
+    padding: 0 12px;
+  }
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .scroll {
+    padding-bottom: 24px;
   }
 }

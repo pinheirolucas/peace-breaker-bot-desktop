@@ -205,3 +205,39 @@
 .pad[data-drag="ghost"] > * {
   visibility: hidden;
 }
+
+/* --- Narrow windows -------------------------------------------------------
+ * The card scales, it does not change: same structure, same play-on-body
+ * behaviour, just smaller. Tiers are the app root's container queries (see
+ * shell.css); states.css's .skel repeats the same footprint. */
+@container app (max-width: 879px) {
+  .pad {
+    height: 148px;
+    padding: 15px 16px 13px;
+  }
+  .pname {
+    font-size: 21px;
+    max-height: 45px;
+  }
+}
+@container app (max-width: 599px) {
+  .pad {
+    height: 138px;
+    padding: 13px 14px 12px;
+  }
+  .pname {
+    font-size: 19px;
+    max-height: 40px;
+  }
+  .pwave {
+    height: 22px;
+  }
+  .pfoot {
+    height: 28px;
+    margin-top: 9px;
+  }
+  .pb {
+    width: 28px;
+    height: 28px;
+  }
+}

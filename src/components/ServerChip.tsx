@@ -33,6 +33,12 @@ export interface ServerChipProps extends ButtonHTMLAttributes<HTMLButtonElement>
  * can still say what they see; not screen-reader-only text appended as a
  * second node, for the same reason the red state already avoids it — the
  * accessible-name algorithm drops the whitespace between nodes.
+ *
+ * In a Tight window (see shell.css) the address text is hidden and the chip
+ * is only its dot, so the accessible name can no longer come from content:
+ * `display: none` text is not part of it. The label is therefore always set
+ * explicitly — the bare address when nothing above overrides it, which is
+ * exactly what the visible text says at every wider size.
  */
 export const ServerChip = forwardRef<HTMLButtonElement, ServerChipProps>(
   function ServerChip({ address, healthy, botStatus, ...rest }, ref) {
@@ -43,7 +49,7 @@ export const ServerChip = forwardRef<HTMLButtonElement, ServerChipProps>(
     const botNamed =
       healthy && botStatus?.connected === true && Boolean(botStatus.guildName) && Boolean(botStatus.channelName);
 
-    let ariaLabel: string | undefined;
+    let ariaLabel = label;
     if (address && !healthy) {
       ariaLabel = t("server.unresponsive", { address });
     } else if (address && botAway) {
@@ -60,13 +66,13 @@ export const ServerChip = forwardRef<HTMLButtonElement, ServerChipProps>(
       <button
         ref={ref}
         type="button"
-        className="srv"
+        className="srv srv--server"
         title={t("server.switchTitle")}
         aria-label={ariaLabel}
         {...rest}
       >
         <span className="dot" data-healthy={healthy} data-bot-away={botAway} aria-hidden="true" />
-        {label}
+        <span className="addr">{label}</span>
       </button>
     );
   }
