@@ -156,13 +156,16 @@ export function GripIcon({ size = 14, ...rest }: IconProps) {
   );
 }
 
+/** Tiles and a slot: outlined tiles, one filled and one dashed slot, echoing
+ *  the ghost a card leaves while it is dragged. Drawn at 16px, where the
+ *  dashes are what tell it apart from a plain layout-grid icon. */
 export function ReorderIcon({ size = 16, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...stroke} {...rest}>
-      <path d="M7.5 4v16" />
-      <path d="m4 16.5 3.5 3.5 3.5-3.5" />
-      <path d="M16.5 20V4" />
-      <path d="m13 7.5 3.5-3.5L20 7.5" />
+      <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="2" strokeDasharray="2.2 2.6" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="2" fill="currentColor" />
     </svg>
   );
 }
