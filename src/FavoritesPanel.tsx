@@ -39,6 +39,8 @@ import type { Instant } from "./storage";
 import useAudioPlayer from "./useAudioPlayer";
 import useDiscordPlayer from "./useDiscordPlayer";
 
+const noop = () => undefined;
+
 export interface FavoritesPanelProps {
   search: string;
   healthy: boolean;
@@ -84,7 +86,7 @@ export default function FavoritesPanel({
 
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [overUrl, setOverUrl] = useState<string | null>(null);
-  const [renaming, setRenaming] = useState<Instant | null>(null);
+  const [renaming, setRenaming] = useState<{ instant: Instant; cardWidth: number } | null>(null);
 
   // A drag needs 5px of travel, so a click on a footer button or a stray
   // press never starts one. Space/Enter lift by keyboard, arrows move.
@@ -212,7 +214,9 @@ export default function FavoritesPanel({
     if (!renaming) return;
 
     setInstants((current) =>
-      current.map((instant) => (instant.url === renaming.url ? { ...instant, name } : instant))
+      current.map((instant) =>
+        instant.url === renaming.instant.url ? { ...instant, name } : instant
+      )
     );
     setRenaming(null);
   }
@@ -303,7 +307,7 @@ export default function FavoritesPanel({
                 organize={{
                   position: index + 1,
                   total,
-                  onRename: () => setRenaming(instant)
+                  onRename: (cardWidth) => setRenaming({ instant, cardWidth })
                 }}
                 trail={{
                   label: t("favorites.remove"),
@@ -327,10 +331,10 @@ export default function FavoritesPanel({
               organize={{
                 position: (overUrl ? indexOf(overUrl) : indexOf(activeInstant.url)) + 1,
                 total,
-                onRename: () => undefined,
+                onRename: noop,
                 drag: "overlay"
               }}
-              trail={{ label: t("favorites.remove"), icon: <TrashIcon />, onClick: () => undefined }}
+              trail={{ label: t("favorites.remove"), icon: <TrashIcon />, onClick: noop }}
             />
           )}
         </DragOverlay>
@@ -381,7 +385,12 @@ export default function FavoritesPanel({
       {!healthy && <OfflineBanner address={serverAddress} onSwitch={onSwitchServer} />}
       {content}
       <SaveForm open={addOpen} onCancel={() => onAddOpenChange(false)} onSave={handleSave} />
-      <RenameForm instant={renaming} onCancel={() => setRenaming(null)} onSave={handleRename} />
+      <RenameForm
+        instant={renaming?.instant ?? null}
+        cardWidth={renaming?.cardWidth}
+        onCancel={() => setRenaming(null)}
+        onSave={handleRename}
+      />
     </>
   );
 }

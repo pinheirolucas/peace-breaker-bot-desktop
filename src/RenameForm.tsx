@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { Button } from "./components/Button";
 import { Dialog } from "./components/Dialog";
 import { Field } from "./components/Field";
-import { slotFor } from "./lib/slot";
+import InstantCard from "./components/InstantCard";
+import { TrashIcon } from "./icons";
 import type { Instant } from "./storage";
-import "./components/card.css";
 import "./forms.css";
 
 const MIN_NAME = 3;
@@ -15,22 +15,34 @@ const MAX_NAME = 80;
 export interface RenameFormProps {
   /** The favourite being renamed; null keeps the dialog closed. */
   instant: Instant | null;
+  /** The card's width in the grid, so the preview wraps and clips the name
+   *  exactly as the real card will. Absent or 0 fills the dialog. */
+  cardWidth?: number;
   onCancel: () => void;
   onSave: (name: string) => void;
+}
+
+const noop = () => undefined;
+
+/** The address without the scheme and www, which only add width. */
+function displayUrl(url: string) {
+  return url.replace(/^https?:\/\/(www\.)?/, "");
 }
 
 /**
  * A name is only a label — the url is the identity — so two favourites may
  * share one and nothing here touches the backend. The preview is the real
- * card head at its real size, because the card clips a name at two lines and
- * whoever is typing should see that before saving.
+ * InstantCard, footer and waveform included, at the width it has in the grid:
+ * the card clips a name at two lines and its waveform is drawn from the name,
+ * so whoever is typing should see all of it before saving. It is inert, so
+ * none of its buttons do anything.
  */
-export default function RenameForm({ instant, onCancel, onSave }: RenameFormProps) {
+export default function RenameForm({ instant, cardWidth, onCancel, onSave }: RenameFormProps) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
   const [touched, setTouched] = useState(false);
   const [clipped, setClipped] = useState(false);
-  const previewRef = useRef<HTMLHeadingElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const open = instant !== null;
   const url = instant?.url;
 
@@ -53,9 +65,9 @@ export default function RenameForm({ instant, onCancel, onSave }: RenameFormProp
   // The preview's clamp is what decides "too long", not a character count:
   // width depends on the letters and on the platform's font.
   useLayoutEffect(() => {
-    const el = previewRef.current;
+    const el = previewRef.current?.querySelector<HTMLElement>(".pname");
     setClipped(Boolean(el) && el!.scrollHeight > el!.clientHeight + 1);
-  }, [trimmed, open]);
+  }, [trimmed, open, cardWidth]);
 
   function submit() {
     if (!valid) {
@@ -119,11 +131,30 @@ export default function RenameForm({ instant, onCancel, onSave }: RenameFormProp
         <div>
           <p className="preview-label">{t("rename.previewLabel")}</p>
           {instant && (
-            <div className={`pad mini ${slotFor(instant.url)}`}>
-              <h3 className="pname" ref={previewRef}>
-                {trimmed || instant.name}
-              </h3>
+            // inert: every button on the real card is drawn, none is live —
+            // no click, no focus stop, nothing for a screen reader to repeat.
+            <div
+              ref={previewRef}
+              inert
+              className="preview-card"
+              style={cardWidth ? { width: cardWidth } : undefined}
+            >
+              <InstantCard
+                instant={{ name: trimmed || instant.name, url: instant.url }}
+                playback="idle"
+                otherPlaying={false}
+                botStatus={null}
+                onPlay={noop}
+                onPlayOnDiscord={noop}
+                onStop={noop}
+                trail={{ label: t("favorites.remove"), icon: <TrashIcon />, onClick: noop }}
+              />
             </div>
+          )}
+          {instant && (
+            <p className="preview-link" title={instant.url}>
+              {displayUrl(instant.url)}
+            </p>
           )}
         </div>
       </form>

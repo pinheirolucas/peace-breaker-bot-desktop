@@ -478,6 +478,41 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
       expect(card("Bruxaria")).toBeInTheDocument();
     });
 
+    it("previews the whole card, footer included, and shows the link under it", async () => {
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      await user.click(action("Primeiro", "Renomear"));
+      const dialog = within(screen.getByRole("dialog", { name: "Renomear som" }));
+
+      const preview = dialog.getByRole("article", { name: "Primeiro" });
+      expect(within(preview).getByRole("button", { name: "Reproduzir no Discord" })).toBeEnabled();
+      expect(within(preview).getByRole("button", { name: "Parar" })).toBeInTheDocument();
+      expect(within(preview).getByRole("button", { name: "Remover" })).toBeEnabled();
+      expect(preview.parentElement).toHaveAttribute("inert");
+
+      // Scheme and www dropped; the full address stays on the title.
+      const link = dialog.getByText("myinstants.com/a/");
+      expect(link).toHaveAttribute("title", "https://www.myinstants.com/a/");
+    });
+
+    it("follows what is typed in the preview, and none of its buttons act", async () => {
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      await user.click(action("Primeiro", "Renomear"));
+      const dialog = within(screen.getByRole("dialog", { name: "Renomear som" }));
+      await user.clear(dialog.getByLabelText("Nome"));
+      await user.type(dialog.getByLabelText("Nome"), "Novo nome");
+
+      const preview = within(dialog.getByRole("article", { name: "Novo nome" }));
+      await user.click(preview.getByRole("button", { name: "Reproduzir no Discord" }));
+      await user.click(preview.getByRole("button", { name: "Remover" }));
+
+      expect(playOnDiscord).not.toHaveBeenCalled();
+      expect(storedInstants()).toEqual(seeded);
+    });
+
     it("leaves the name alone when the dialog is cancelled", async () => {
       const user = userEvent.setup();
       renderPanel({ organizing: true });

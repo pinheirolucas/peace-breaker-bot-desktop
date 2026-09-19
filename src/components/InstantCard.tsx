@@ -28,7 +28,9 @@ export interface OrganizeProps {
   /** 1-based, for the handle's name and the drag chip. */
   position: number;
   total: number;
-  onRename: () => void;
+  /** Gets the card's rendered width, so the rename dialog can preview the
+   *  card at the size it really is in the grid. */
+  onRename: (cardWidth: number) => void;
   /** "ghost" is the slot a dragged card left; "overlay" is the copy that
    *  follows the pointer. Neither is interactive. */
   drag?: "ghost" | "overlay";
@@ -185,7 +187,9 @@ export default function InstantCard({
             className="pb"
             aria-label={t("card.rename")}
             title={t("card.rename")}
-            onClick={organize.onRename}
+            onClick={(event) =>
+              organize.onRename(event.currentTarget.closest("article")?.offsetWidth ?? 0)
+            }
           >
             <PencilIcon />
           </button>
