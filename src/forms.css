@@ -47,8 +47,8 @@
   font-family: ui-monospace, Menlo, monospace;
   font-size: 10.5px;
   color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wrap rather than truncate: the end of the address (the slug) is the part
+   * that tells two similar favourites apart, and it is what an ellipsis eats. */
+  overflow-wrap: anywhere;
   user-select: text;
 }
