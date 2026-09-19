@@ -23,6 +23,7 @@ import { useStamp } from "./hooks/useStamp";
 import { CheckIcon, MoreIcon, PlusIcon } from "./icons";
 import ImportForm from "./ImportForm";
 import MyInstantsPanel from "./MyInstantsPanel";
+import OrganizeButton from "./OrganizeButton";
 import ProviderMenu from "./ProviderMenu";
 import RegionMenu from "./RegionMenu";
 import ServerMenu, { formatApiUrl } from "./ServerMenu";
@@ -37,7 +38,7 @@ import {
 import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
-import { useManualServers, useSelectedServer } from "./storage";
+import { useInstantsState, useManualServers, useSelectedServer } from "./storage";
 import useBotStatus from "./useBotStatus";
 import useProviders from "./useProviders";
 import "./styles/shell.css";
@@ -85,6 +86,11 @@ export default function App() {
   const { region, setRegion } = useRegion();
 
   const [addOpen, setAddOpen] = useState(false);
+  // Organizar belongs to Favoritos but its button sits in the tools row, next
+  // to Adicionar — the same reason addOpen lives here.
+  const [organizing, setOrganizing] = useState(false);
+  const [favoritesPlaying, setFavoritesPlaying] = useState(false);
+  const [favorites] = useInstantsState([]);
   const [importOpen, setImportOpen] = useState(false);
   const [addServerOpen, setAddServerOpen] = useState(false);
 
@@ -122,7 +128,7 @@ export default function App() {
       // Per-platform: Cmd on macOS, where Ctrl+F moves the cursor forward a
       // character and is not a find at all. Not while Aparência is open: the
       // search sits in the staged app, behind the dock's focus trap.
-      if (editing || !isFindShortcut(event, os)) {
+      if (editing || organizing || !isFindShortcut(event, os)) {
         return;
       }
 
@@ -133,7 +139,12 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [os, editing]);
+  }, [os, editing, organizing]);
+
+  // The mode is Favoritos' alone.
+  useEffect(() => {
+    if (tab !== "favorites") setOrganizing(false);
+  }, [tab]);
 
   useEffect(() => () => clearTimeout(debounce.current), []);
 
@@ -357,17 +368,12 @@ export default function App() {
                 <SearchField
                   ref={searchRef}
                   aria-label={t("app.searchAriaLabel")}
-                  placeholder={t("app.searchPlaceholder")}
+                  placeholder={organizing ? t("app.searchOrganizing") : t("app.searchPlaceholder")}
                   shortcut={findShortcutLabel(os)}
                   value={query}
+                  disabled={organizing}
                   onChange={(event) => handleSearchChange(event.target.value)}
                 />
-                {tab === "favorites" && (
-                  <Button onClick={() => setAddOpen(true)}>
-                    <PlusIcon />
-                    {t("app.add")}
-                  </Button>
-                )}
                 {tab === "explore" && providers && provider && (
                   <ProviderMenu providers={providers} value={provider.key} onSelect={setProvider} />
                 )}
@@ -375,6 +381,29 @@ export default function App() {
                   <RegionMenu region={region} onSelect={setRegion} />
                 )}
                 <span className="spacer" />
+                {tab === "favorites" && organizing && (
+                  <Button onClick={() => setOrganizing(false)}>{t("favorites.organizeDone")}</Button>
+                )}
+                {tab === "favorites" && !organizing && (
+                  <>
+                    {favorites.length > 0 && (
+                      <OrganizeButton
+                        blockedReason={
+                          favoritesPlaying
+                            ? t("favorites.organizeBlockedPlaying")
+                            : query
+                              ? t("favorites.organizeBlockedSearch")
+                              : null
+                        }
+                        onClick={() => setOrganizing(true)}
+                      />
+                    )}
+                    <Button onClick={() => setAddOpen(true)}>
+                      <PlusIcon />
+                      {t("app.add")}
+                    </Button>
+                  </>
+                )}
                 <ServerMenu
                   servers={servers}
                   currentApiUrl={activeUrl}
@@ -430,6 +459,9 @@ export default function App() {
                     addOpen={addOpen}
                     onAddOpenChange={setAddOpen}
                     onSearchCatalog={() => setTab("explore")}
+                    organizing={organizing}
+                    onOrganizingChange={setOrganizing}
+                    onPlayingChange={setFavoritesPlaying}
                   />
                 </SegmentedPanel>
                 <SegmentedPanel value="explore">

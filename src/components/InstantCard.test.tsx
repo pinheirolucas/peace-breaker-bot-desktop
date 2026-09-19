@@ -240,3 +240,56 @@ describe("InstantCard under en-US", () => {
     expect(within(card).getByText("On Discord")).toBeInTheDocument();
   });
 });
+
+describe("InstantCard in Organizar", () => {
+  const organize = { position: 3, total: 12, onRename: vi.fn() };
+
+  it("makes the name button a handle named after its position, not a play control", async () => {
+    const { card, onPlay } = renderCard({ organize });
+    const user = userEvent.setup();
+
+    const handle = within(card).getByRole("button", { name: "Mover Primeiro, posição 3 de 12" });
+    await user.click(handle);
+
+    expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  it("keeps naming the card after the clip", () => {
+    renderCard({ organize });
+
+    expect(screen.getByRole("article", { name: "Primeiro" })).toBeInTheDocument();
+  });
+
+  it("swaps send and stop for rename, and keeps the trailing action", async () => {
+    const { button, onTrail } = renderCard({ organize });
+    const user = userEvent.setup();
+
+    await user.click(button("Renomear"));
+    await user.click(button("Remover"));
+
+    expect(organize.onRename).toHaveBeenCalledOnce();
+    expect(onTrail).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Parar" })).toBeNull();
+  });
+
+  it("shows the position on the copy that follows the pointer, hidden from assistive tech", () => {
+    const { container } = render(
+      <InstantCard
+        instant={instant}
+        playback="idle"
+        otherPlaying={false}
+        botStatus={null}
+        onPlay={vi.fn()}
+        onPlayOnDiscord={vi.fn()}
+        onStop={vi.fn()}
+        trail={{ label: "Remover", icon: <span>x</span>, onClick: vi.fn() }}
+        organize={{ ...organize, drag: "overlay" }}
+      />
+    );
+
+    expect(screen.getByText("3 de 12")).toBeInTheDocument();
+    // The real card is announced through the live region; this copy would
+    // read as a second card of the same name.
+    expect(container.querySelector("article")).toHaveAttribute("aria-hidden", "true");
+  });
+});

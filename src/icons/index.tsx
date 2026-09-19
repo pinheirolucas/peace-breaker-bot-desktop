@@ -132,3 +132,40 @@ export function AppMarkIcon({ size = 15, ...rest }: IconProps) {
     </svg>
   );
 }
+
+export function PencilIcon({ size = 15, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <path d="M4 20h4.2L19.4 8.8a2.4 2.4 0 0 0-3.4-3.4L4.8 16.6z" />
+      <path d="m14.4 7 3.4 3.4" />
+    </svg>
+  );
+}
+
+/** Decoration on a card in Organizar: the whole card is the drag target. */
+export function GripIcon({ size = 14, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} fill="currentColor" {...rest}>
+      <circle cx="9" cy="6" r="1.7" />
+      <circle cx="15" cy="6" r="1.7" />
+      <circle cx="9" cy="12" r="1.7" />
+      <circle cx="15" cy="12" r="1.7" />
+      <circle cx="9" cy="18" r="1.7" />
+      <circle cx="15" cy="18" r="1.7" />
+    </svg>
+  );
+}
+
+/** Tiles and a slot: outlined tiles, one filled and one dashed slot, echoing
+ *  the ghost a card leaves while it is dragged. Drawn at 16px, where the
+ *  dashes are what tell it apart from a plain layout-grid icon. */
+export function ReorderIcon({ size = 16, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="2" strokeDasharray="2.2 2.6" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="2" fill="currentColor" />
+    </svg>
+  );
+}

@@ -20,9 +20,9 @@
   white-space: nowrap;
   transition: filter 90ms ease;
 }
-.btn:hover:not(:disabled) { filter: brightness(1.08); }
-.btn:active:not(:disabled) { filter: brightness(0.94); }
-.btn:disabled { opacity: 0.4; cursor: default; }
+.btn:hover:not(:disabled):not([aria-disabled="true"]) { filter: brightness(1.08); }
+.btn:active:not(:disabled):not([aria-disabled="true"]) { filter: brightness(0.94); }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.4; cursor: default; }
 
 .btn--secondary { background: var(--panel); color: var(--fg); border-color: var(--line); }
 .btn--ghost { background: transparent; color: var(--accent); }
@@ -125,6 +125,7 @@
   color: var(--muted);
 }
 .search:focus-within { border-color: var(--accent); }
+.search:has(input:disabled) { opacity: 0.55; }
 .search input {
   flex: 1;
   min-width: 0;

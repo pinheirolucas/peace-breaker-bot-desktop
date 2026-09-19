@@ -5,7 +5,10 @@
     "discordUnavailable": "Bot isn't in a voice channel",
     "stop": "Stop",
     "playingLocal": "Playing",
-    "playingDiscord": "On Discord"
+    "playingDiscord": "On Discord",
+    "rename": "Rename",
+    "moveHandle": "Move {{name}}, position {{pos}} of {{total}}",
+    "position": "{{pos}} of {{total}}"
   },
   "common": {
     "switch": "Switch",
@@ -30,7 +33,8 @@
     "language": "Language",
     "languagePtBR": "Português",
     "languageEnUS": "English",
-    "connectionError": "Couldn't connect to {{address}}"
+    "connectionError": "Couldn't connect to {{address}}",
+    "searchOrganizing": "Finish to search"
   },
   "server": {
     "connectedTo": "Connected to",
@@ -102,7 +106,12 @@
     "addFirst": "Add an instant",
     "noResultsBody_one": "None of your {{count}} favorite matches “{{search}}”. The MyInstants catalogue is much bigger.",
     "noResultsBody_other": "None of your {{count}} favorites match “{{search}}”. The MyInstants catalogue is much bigger.",
-    "searchCatalogButton": "Search “{{search}}” on MyInstants"
+    "searchCatalogButton": "Search “{{search}}” on MyInstants",
+    "organize": "Organize",
+    "organizeDone": "Done",
+    "organizeHint": "Drag to reorder",
+    "organizeBlockedPlaying": "Stop the sound to organize",
+    "organizeBlockedSearch": "Clear the search to organize"
   },
   "myinstants": {
     "loadingSummary": "loading…",
@@ -175,5 +184,19 @@
     "total_pages_count": "Couldn't read the page count from that provider's site",
     "name_link_not_matched": "That provider's results couldn't be read — its page layout may have changed",
     "unknown_error": "Something went wrong. Try again in a moment"
+  },
+  "rename": {
+    "title": "Rename sound",
+    "description": "This only changes the name shown here. The sound’s link stays the same.",
+    "previewLabel": "How it will look",
+    "longHint": "Long names are cut off on the card"
+  },
+  "dnd": {
+    "roleDescription": "sortable item",
+    "instructions": "Press Space to pick up the sound. Use the arrow keys to move, Space to drop and Esc to cancel.",
+    "lifted": "Picked up “{{name}}”, position {{pos}} of {{total}}",
+    "moved": "Position {{pos}} of {{total}}",
+    "dropped": "Dropped: “{{name}}”, position {{pos}} of {{total}}",
+    "cancelled": "Move cancelled"
   }
 }
