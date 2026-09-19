@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, onTestFinished, vi } from "vitest";
 import { useState } from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -56,15 +56,28 @@ function renderPanel({
   search = "",
   instants = seeded,
   healthy = true,
-  botStatus = null
-}: { search?: string; instants?: typeof seeded; healthy?: boolean; botStatus?: BotStatus | null } = {}) {
+  botStatus = null,
+  organizing: startOrganizing = false
+}: {
+  search?: string;
+  instants?: typeof seeded;
+  healthy?: boolean;
+  botStatus?: BotStatus | null;
+  organizing?: boolean;
+} = {}) {
   localStorage.setItem("instants", JSON.stringify(instants));
 
   const snackbar = { openSnackbar: vi.fn(), closeSnackbar: vi.fn() };
-  const props = { onSummary: vi.fn(), onSearchCatalog: vi.fn(), onSwitchServer: vi.fn() };
+  const props = {
+    onSummary: vi.fn(),
+    onSearchCatalog: vi.fn(),
+    onSwitchServer: vi.fn(),
+    onPlayingChange: vi.fn()
+  };
 
   function Harness() {
     const [addOpen, setAddOpen] = useState(false);
+    const [organizing, setOrganizing] = useState(startOrganizing);
     return (
       <SnackbarContext.Provider value={snackbar}>
         <button type="button" onClick={() => setAddOpen(true)}>
@@ -77,6 +90,8 @@ function renderPanel({
           serverAddress="localhost:9001"
           addOpen={addOpen}
           onAddOpenChange={setAddOpen}
+          organizing={organizing}
+          onOrganizingChange={setOrganizing}
           {...props}
         />
       </SnackbarContext.Provider>
@@ -393,5 +408,152 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
     expect(snackbar.openSnackbar.mock.calls[0][0].message).toBe(
       "O instant enviado não foi encontrado"
     );
+  });
+
+  describe("Organizar", () => {
+    it("turns the card body into a drag handle and swaps the footer", () => {
+      renderPanel({ organizing: true });
+
+      const first = card("Primeiro");
+      expect(
+        within(first).getByRole("button", { name: "Mover Primeiro, posição 1 de 2" })
+      ).toBeInTheDocument();
+      expect(within(first).getByRole("button", { name: "Renomear" })).toBeInTheDocument();
+      expect(within(first).getByRole("button", { name: "Remover" })).toBeInTheDocument();
+      expect(within(first).queryByRole("button", { name: "Reproduzir no Discord" })).toBeNull();
+      expect(within(first).queryByRole("button", { name: "Parar" })).toBeNull();
+    });
+
+    it("never plays from a card while organizing", async () => {
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      await user.click(
+        within(card("Primeiro")).getByRole("button", { name: /^Mover Primeiro/ })
+      );
+
+      expect(getContent).not.toHaveBeenCalled();
+    });
+
+    it("reports what the count line should say", () => {
+      const { onSummary } = renderPanel({ organizing: true });
+
+      expect(onSummary).toHaveBeenLastCalledWith("Arraste para reordenar");
+    });
+
+    it("shows every favourite even when a search is set", () => {
+      renderPanel({ organizing: true, search: "segundo" });
+
+      expect(screen.getByRole("article", { name: "Primeiro" })).toBeInTheDocument();
+      expect(screen.getByRole("article", { name: "Segundo" })).toBeInTheDocument();
+    });
+
+    it("renames a favourite through the dialog and keeps its link", async () => {
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      await user.click(action("Primeiro", "Renomear"));
+      const dialog = within(screen.getByRole("dialog", { name: "Renomear som" }));
+
+      const save = dialog.getByRole("button", { name: "Salvar" });
+      expect(save).toBeDisabled();
+
+      const field = dialog.getByLabelText("Nome");
+      expect(field).toHaveValue("Primeiro");
+      await user.clear(field);
+      await user.type(field, "Br");
+      expect(dialog.getByText("Mínimo 3 caracteres")).toBeInTheDocument();
+      expect(save).toBeDisabled();
+
+      await user.type(field, "uxaria");
+      await user.click(save);
+
+      await waitFor(() =>
+        expect(storedInstants()).toEqual([
+          { name: "Bruxaria", url: "https://www.myinstants.com/a/" },
+          seeded[1]
+        ])
+      );
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(card("Bruxaria")).toBeInTheDocument();
+    });
+
+    it("leaves the name alone when the dialog is cancelled", async () => {
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      await user.click(action("Primeiro", "Renomear"));
+      await user.type(screen.getByLabelText("Nome"), " novo");
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+      expect(storedInstants()).toEqual(seeded);
+    });
+
+    it("trims the saved name", async () => {
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      await user.click(action("Segundo", "Renomear"));
+      const field = screen.getByLabelText("Nome");
+      await user.clear(field);
+      await user.type(field, "  Terceiro  {Enter}");
+
+      await waitFor(() => expect(storedInstants()[1].name).toBe("Terceiro"));
+    });
+
+    it("reorders from the keyboard and saves the new order", async () => {
+      // jsdom has no layout, and dnd-kit moves a lifted card to whichever
+      // slot the arrow key points at by measuring them. Lay the cards out in
+      // a row so "right" has somewhere to go.
+      const rects = vi.spyOn(Element.prototype, "getBoundingClientRect");
+      onTestFinished(() => rects.mockRestore());
+      rects.mockImplementation(function (
+        this: Element
+      ) {
+        const cards = Array.from(document.querySelectorAll("article"));
+        const index = cards.indexOf(this.closest("article") as HTMLElement);
+        const left = index < 0 ? 0 : index * 300;
+        const width = index < 0 ? 0 : 280;
+        const height = index < 0 ? 0 : 156;
+        return {
+          x: left, y: 0, left, top: 0, width, height, right: left + width, bottom: height,
+          toJSON: () => ({})
+        } as DOMRect;
+      });
+
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      const handle = within(card("Primeiro")).getByRole("button", { name: /^Mover Primeiro/ });
+      handle.focus();
+      await user.keyboard(" ");
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard(" ");
+
+      await waitFor(() => expect(storedInstants()).toEqual([seeded[1], seeded[0]]));
+    });
+
+    it("leaves the mode on Escape when nothing is lifted", async () => {
+      const user = userEvent.setup();
+      renderPanel({ organizing: true });
+
+      await user.keyboard("{Escape}");
+
+      // Back to play mode: the body plays again and send-to-Discord is back.
+      expect(within(card("Primeiro")).getByRole("button", { name: "Reproduzir no Discord" }))
+        .toBeInTheDocument();
+    });
+
+    it("tells the tools row whether a clip is playing", async () => {
+      const user = userEvent.setup();
+      vi.mocked(getContent).mockResolvedValue({ exists: true, content: "data:audio/mp3;base64,AA" });
+
+      const { onPlayingChange } = renderPanel();
+      expect(onPlayingChange).toHaveBeenLastCalledWith(false);
+
+      await user.click(play("Primeiro"));
+
+      await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
+    });
   });
 });

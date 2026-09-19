@@ -132,3 +132,37 @@ export function AppMarkIcon({ size = 15, ...rest }: IconProps) {
     </svg>
   );
 }
+
+export function PencilIcon({ size = 15, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <path d="M4 20h4.2L19.4 8.8a2.4 2.4 0 0 0-3.4-3.4L4.8 16.6z" />
+      <path d="m14.4 7 3.4 3.4" />
+    </svg>
+  );
+}
+
+/** Decoration on a card in Organizar: the whole card is the drag target. */
+export function GripIcon({ size = 14, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} fill="currentColor" {...rest}>
+      <circle cx="9" cy="6" r="1.7" />
+      <circle cx="15" cy="6" r="1.7" />
+      <circle cx="9" cy="12" r="1.7" />
+      <circle cx="15" cy="12" r="1.7" />
+      <circle cx="9" cy="18" r="1.7" />
+      <circle cx="15" cy="18" r="1.7" />
+    </svg>
+  );
+}
+
+export function ReorderIcon({ size = 16, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <path d="M7.5 4v16" />
+      <path d="m4 16.5 3.5 3.5 3.5-3.5" />
+      <path d="M16.5 20V4" />
+      <path d="m13 7.5 3.5-3.5L20 7.5" />
+    </svg>
+  );
+}

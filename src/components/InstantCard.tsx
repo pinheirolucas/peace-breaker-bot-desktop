@@ -1,7 +1,7 @@
 import { useId } from "react";
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, CSSProperties, ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { SendIcon, StopIcon } from "../icons";
+import { GripIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
 import { slotFor } from "../lib/slot";
 import { wavePath } from "../lib/wave";
 import type { BotStatus } from "../service";
@@ -19,6 +19,26 @@ export interface CardAction {
   pressed?: boolean;
 }
 
+/**
+ * Organizar mode. The clip-name button stops playing and becomes the drag
+ * handle, so the stretched hit, the footer's z-index and the one focus stop
+ * per card all carry over. Send and stop leave the footer; rename joins it.
+ */
+export interface OrganizeProps {
+  /** 1-based, for the handle's name and the drag chip. */
+  position: number;
+  total: number;
+  onRename: () => void;
+  /** "ghost" is the slot a dragged card left; "overlay" is the copy that
+   *  follows the pointer. Neither is interactive. */
+  drag?: "ghost" | "overlay";
+  /** dnd-kit's activator bits, spread onto the handle. Absent on the overlay. */
+  handleProps?: ButtonHTMLAttributes<HTMLButtonElement>;
+  handleRef?: Ref<HTMLButtonElement>;
+  rootRef?: Ref<HTMLElement>;
+  style?: CSSProperties;
+}
+
 export interface InstantCardProps {
   instant: Instant;
   playback: Playback;
@@ -33,6 +53,8 @@ export interface InstantCardProps {
   onStop: () => void;
   /** The panel's own action: remove in Favoritos, favourite in MyInstants. */
   trail: CardAction;
+  /** Set while the panel is in Organizar. */
+  organize?: OrganizeProps;
 }
 
 /**
@@ -74,37 +96,73 @@ export default function InstantCard({
   onPlay,
   onPlayOnDiscord,
   onStop,
-  trail
+  trail,
+  organize
 }: InstantCardProps) {
   const { t } = useTranslation();
   const headingId = useId();
   const state = cardState(playback, otherPlaying, botStatus);
   const discordLabel = state.botGated ? t("card.discordUnavailable") : t("card.playOnDiscord");
+  const dragging = organize?.drag === "overlay";
 
   return (
     <article
+      ref={organize?.rootRef}
+      style={organize?.style}
       className={`pad ${slotFor(instant.url)}`}
-      aria-labelledby={headingId}
+      // The handle's own name is "Mover …", which would otherwise become the
+      // card's name through the heading, so the card names itself here.
+      aria-labelledby={organize ? undefined : headingId}
+      aria-label={organize ? instant.name : undefined}
       data-live={state.live}
       data-dim={state.dim}
       data-inert={state.playDisabled}
+      data-organize={organize ? true : undefined}
+      data-drag={organize?.drag}
+      aria-hidden={dragging || undefined}
     >
-      {state.live && (
+      {state.live && !organize && (
         <span className="chip">
           {playback === "discord" ? t("card.playingDiscord") : t("card.playingLocal")}
         </span>
       )}
+      {dragging && organize && (
+        <span className="chip">
+          {t("card.position", { pos: organize.position, total: organize.total })}
+        </span>
+      )}
+      {organize && !organize.drag && (
+        <span className="pgrip" aria-hidden="true">
+          <GripIcon />
+        </span>
+      )}
 
       <h3 className="pname" id={headingId}>
-        <button
-          type="button"
-          className="phit"
-          title={t("card.play")}
-          disabled={state.playDisabled}
-          onClick={() => onPlay(instant)}
-        >
-          {instant.name}
-        </button>
+        {organize ? (
+          <button
+            type="button"
+            className="phit"
+            ref={organize.handleRef}
+            aria-label={t("card.moveHandle", {
+              name: instant.name,
+              pos: organize.position,
+              total: organize.total
+            })}
+            {...organize.handleProps}
+          >
+            {instant.name}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="phit"
+            title={t("card.play")}
+            disabled={state.playDisabled}
+            onClick={() => onPlay(instant)}
+          >
+            {instant.name}
+          </button>
+        )}
       </h3>
 
       <svg
@@ -121,26 +179,40 @@ export default function InstantCard({
       </svg>
 
       <div className="pfoot">
-        <button
-          type="button"
-          className="pb"
-          aria-label={discordLabel}
-          title={discordLabel}
-          disabled={state.discordDisabled}
-          onClick={() => onPlayOnDiscord(instant)}
-        >
-          <SendIcon />
-        </button>
-        <button
-          type="button"
-          className="pb"
-          aria-label={t("card.stop")}
-          title={t("card.stop")}
-          disabled={state.stopDisabled}
-          onClick={onStop}
-        >
-          <StopIcon />
-        </button>
+        {organize ? (
+          <button
+            type="button"
+            className="pb"
+            aria-label={t("card.rename")}
+            title={t("card.rename")}
+            onClick={organize.onRename}
+          >
+            <PencilIcon />
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="pb"
+              aria-label={discordLabel}
+              title={discordLabel}
+              disabled={state.discordDisabled}
+              onClick={() => onPlayOnDiscord(instant)}
+            >
+              <SendIcon />
+            </button>
+            <button
+              type="button"
+              className="pb"
+              aria-label={t("card.stop")}
+              title={t("card.stop")}
+              disabled={state.stopDisabled}
+              onClick={onStop}
+            >
+              <StopIcon />
+            </button>
+          </>
+        )}
         <button
           type="button"
           className="pb trail"

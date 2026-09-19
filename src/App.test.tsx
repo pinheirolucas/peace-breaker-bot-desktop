@@ -808,3 +808,68 @@ describe("native window chrome", () => {
     expect(container.querySelector(".tb")).toBeNull();
   });
 });
+
+describe("Organizar", () => {
+  beforeEach(() => {
+    reset();
+    localStorage.setItem(
+      "instants",
+      JSON.stringify([
+        { name: "Primeiro", url: "https://www.myinstants.com/a/" },
+        { name: "Segundo", url: "https://www.myinstants.com/b/" }
+      ])
+    );
+  });
+
+  afterEach(() => localStorage.clear());
+
+  it("is not offered with no favourites at all", () => {
+    localStorage.setItem("instants", "[]");
+
+    render(<App />);
+
+    expect(screen.queryByRole("button", { name: "Organizar" })).toBeNull();
+  });
+
+  it("swaps Adicionar for Concluir and turns the search off while it is on", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Organizar" }));
+
+    expect(screen.getByRole("button", { name: "Concluir" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Adicionar" })).toBeNull();
+    expect(screen.getByRole("searchbox")).toBeDisabled();
+    expect(screen.getByText("Arraste para reordenar")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Concluir" }));
+
+    expect(screen.getByRole("button", { name: "Adicionar" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox")).toBeEnabled();
+  });
+
+  it("stays out of reach while a search is set", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(screen.getByRole("searchbox"), "seg");
+    const button = screen.getByRole("button", { name: "Organizar" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+
+    await user.click(button);
+
+    expect(screen.queryByRole("button", { name: "Concluir" })).toBeNull();
+  });
+
+  it("leaves the mode when the tab changes", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Organizar" }));
+    await user.click(screen.getByRole("tab", { name: "Explorar" }));
+    await user.click(screen.getByRole("tab", { name: "Favoritos" }));
+
+    expect(screen.getByRole("button", { name: "Organizar" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Concluir" })).toBeNull();
+  });
+});

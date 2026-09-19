@@ -5,7 +5,10 @@
     "discordUnavailable": "Bot fora de um canal de voz",
     "stop": "Parar",
     "playingLocal": "Reproduzindo",
-    "playingDiscord": "No Discord"
+    "playingDiscord": "No Discord",
+    "rename": "Renomear",
+    "moveHandle": "Mover {{name}}, posição {{pos}} de {{total}}",
+    "position": "{{pos}} de {{total}}"
   },
   "common": {
     "switch": "Trocar",
@@ -30,7 +33,8 @@
     "language": "Idioma",
     "languagePtBR": "Português",
     "languageEnUS": "English",
-    "connectionError": "Não foi possível conectar a {{address}}"
+    "connectionError": "Não foi possível conectar a {{address}}",
+    "searchOrganizing": "Conclua para procurar"
   },
   "server": {
     "connectedTo": "Conectado a",
@@ -102,7 +106,12 @@
     "addFirst": "Adicionar um instant",
     "noResultsBody_one": "Nenhum dos seus {{count}} favorito bate com “{{search}}”. O catálogo do MyInstants é bem maior.",
     "noResultsBody_other": "Nenhum dos seus {{count}} favoritos bate com “{{search}}”. O catálogo do MyInstants é bem maior.",
-    "searchCatalogButton": "Procurar “{{search}}” no MyInstants"
+    "searchCatalogButton": "Procurar “{{search}}” no MyInstants",
+    "organize": "Organizar",
+    "organizeDone": "Concluir",
+    "organizeHint": "Arraste para reordenar",
+    "organizeBlockedPlaying": "Pare o som para organizar",
+    "organizeBlockedSearch": "Limpe a busca para organizar"
   },
   "myinstants": {
     "loadingSummary": "carregando…",
@@ -175,5 +184,19 @@
     "total_pages_count": "Não foi possível recuperar a quantidade de páginas",
     "name_link_not_matched": "Os resultados do provedor não puderam ser lidos — o layout da página pode ter mudado",
     "unknown_error": "Erro desconhecido, tente novamente mais tarde"
+  },
+  "rename": {
+    "title": "Renomear som",
+    "description": "Só muda o nome que aparece aqui. O link do som continua o mesmo.",
+    "previewLabel": "Como vai aparecer",
+    "longHint": "Nomes longos são cortados no cartão"
+  },
+  "dnd": {
+    "roleDescription": "item reordenável",
+    "instructions": "Pressione Espaço para levantar o som. Use as setas para mover, Espaço para soltar e Esc para cancelar.",
+    "lifted": "Levantou “{{name}}”, posição {{pos}} de {{total}}",
+    "moved": "Posição {{pos}} de {{total}}",
+    "dropped": "Solto: “{{name}}”, posição {{pos}} de {{total}}",
+    "cancelled": "Movimento cancelado"
   }
 }
