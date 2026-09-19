@@ -374,6 +374,13 @@ export default function App() {
                   disabled={organizing}
                   onChange={(event) => handleSearchChange(event.target.value)}
                 />
+                {tab === "explore" && providers && provider && (
+                  <ProviderMenu providers={providers} value={provider.key} onSelect={setProvider} />
+                )}
+                {tab === "explore" && regionSupported && (
+                  <RegionMenu region={region} onSelect={setRegion} />
+                )}
+                <span className="spacer" />
                 {tab === "favorites" && organizing && (
                   <Button onClick={() => setOrganizing(false)}>{t("favorites.organizeDone")}</Button>
                 )}
@@ -397,13 +404,6 @@ export default function App() {
                     </Button>
                   </>
                 )}
-                {tab === "explore" && providers && provider && (
-                  <ProviderMenu providers={providers} value={provider.key} onSelect={setProvider} />
-                )}
-                {tab === "explore" && regionSupported && (
-                  <RegionMenu region={region} onSelect={setRegion} />
-                )}
-                <span className="spacer" />
                 <ServerMenu
                   servers={servers}
                   currentApiUrl={activeUrl}
