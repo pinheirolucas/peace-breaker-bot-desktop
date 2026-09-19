@@ -364,7 +364,7 @@ export default function App() {
                 <Segmented aria-label={t("app.sectionAriaLabel")} options={tabs} />
               </header>
 
-              <div className="tools">
+              <div className="tools" data-tab={tab}>
                 <SearchField
                   ref={searchRef}
                   aria-label={t("app.searchAriaLabel")}
@@ -374,79 +374,84 @@ export default function App() {
                   disabled={organizing}
                   onChange={(event) => handleSearchChange(event.target.value)}
                 />
-                {tab === "explore" && providers && provider && (
-                  <ProviderMenu providers={providers} value={provider.key} onSelect={setProvider} />
-                )}
-                {tab === "explore" && regionSupported && (
-                  <RegionMenu region={region} onSelect={setRegion} />
-                )}
-                <span className="spacer" />
-                {tab === "favorites" && organizing && (
-                  <Button onClick={() => setOrganizing(false)}>{t("favorites.organizeDone")}</Button>
-                )}
-                {tab === "favorites" && !organizing && (
-                  <>
-                    {favorites.length > 0 && (
-                      <OrganizeButton
-                        blockedReason={
-                          favoritesPlaying
-                            ? t("favorites.organizeBlockedPlaying")
-                            : query
-                              ? t("favorites.organizeBlockedSearch")
-                              : null
-                        }
-                        onClick={() => setOrganizing(true)}
-                      />
-                    )}
-                    <Button onClick={() => setAddOpen(true)}>
-                      <PlusIcon />
-                      {t("app.add")}
-                    </Button>
-                  </>
-                )}
-                <ServerMenu
-                  servers={servers}
-                  currentApiUrl={activeUrl}
-                  healthy={healthy}
-                  botStatus={botStatus}
-                  open={serverMenuOpen}
-                  onOpenChange={setServerMenuOpen}
-                  onSelect={(server) => setSelectedServer(server.apiUrl)}
-                  onRefresh={refreshDiscovery}
-                  onAddServer={() => setAddServerOpen(true)}
-                  onRemoveServer={removeManualServer}
-                />
-                <Menu
-                  trigger={
-                    <IconButton label={t("app.moreOptions")}>
-                      <MoreIcon />
-                    </IconButton>
-                  }
-                >
-                  <MenuItem primary={t("app.import")} onSelect={() => setImportOpen(true)} />
-                  <MenuItem primary={t("app.export")} onSelect={() => exportToJSON()} />
-                  <MenuSeparator />
-                  <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
-                  <MenuSeparator />
-                  <MenuItem
-                    tick={language === "pt-BR" ? <CheckIcon /> : null}
-                    primary={t("app.languagePtBR")}
-                    onSelect={() => setLanguage("pt-BR")}
-                  />
-                  <MenuItem
-                    tick={language === "en-US" ? <CheckIcon /> : null}
-                    primary={t("app.languageEnUS")}
-                    onSelect={() => setLanguage("en-US")}
-                  />
-                  {os !== "mac" && (
+                <div className="tools__acts">
+                  {tab === "explore" && providers && provider && (
+                    <ProviderMenu providers={providers} value={provider.key} onSelect={setProvider} />
+                  )}
+                  {tab === "explore" && regionSupported && (
+                    <RegionMenu region={region} onSelect={setRegion} />
+                  )}
+                  {tab === "favorites" && organizing && (
+                    <Button onClick={() => setOrganizing(false)}>{t("favorites.organizeDone")}</Button>
+                  )}
+                  {tab === "favorites" && !organizing && (
                     <>
-                      <MenuSeparator />
-                      <MenuItem primary={t("app.checkForUpdates")} onSelect={checkForUpdates} />
+                      {favorites.length > 0 && (
+                        <OrganizeButton
+                          blockedReason={
+                            favoritesPlaying
+                              ? t("favorites.organizeBlockedPlaying")
+                              : query
+                                ? t("favorites.organizeBlockedSearch")
+                                : null
+                          }
+                          onClick={() => setOrganizing(true)}
+                        />
+                      )}
+                      <Button onClick={() => setAddOpen(true)}>
+                        <PlusIcon />
+                        {t("app.add")}
+                      </Button>
                     </>
                   )}
-                </Menu>
+                </div>
+                <div className="tools__chip">
+                  <ServerMenu
+                    servers={servers}
+                    currentApiUrl={activeUrl}
+                    healthy={healthy}
+                    botStatus={botStatus}
+                    open={serverMenuOpen}
+                    onOpenChange={setServerMenuOpen}
+                    onSelect={(server) => setSelectedServer(server.apiUrl)}
+                    onRefresh={refreshDiscovery}
+                    onAddServer={() => setAddServerOpen(true)}
+                    onRemoveServer={removeManualServer}
+                  />
+                </div>
+                <div className="tools__more">
+                  <Menu
+                    trigger={
+                      <IconButton label={t("app.moreOptions")}>
+                        <MoreIcon />
+                      </IconButton>
+                    }
+                  >
+                    <MenuItem primary={t("app.import")} onSelect={() => setImportOpen(true)} />
+                    <MenuItem primary={t("app.export")} onSelect={() => exportToJSON()} />
+                    <MenuSeparator />
+                    <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
+                    <MenuSeparator />
+                    <MenuItem
+                      tick={language === "pt-BR" ? <CheckIcon /> : null}
+                      primary={t("app.languagePtBR")}
+                      onSelect={() => setLanguage("pt-BR")}
+                    />
+                    <MenuItem
+                      tick={language === "en-US" ? <CheckIcon /> : null}
+                      primary={t("app.languageEnUS")}
+                      onSelect={() => setLanguage("en-US")}
+                    />
+                    {os !== "mac" && (
+                      <>
+                        <MenuSeparator />
+                        <MenuItem primary={t("app.checkForUpdates")} onSelect={checkForUpdates} />
+                      </>
+                    )}
+                  </Menu>
+                </div>
               </div>
-  
+
               <main className="scroll">
                 <SegmentedPanel value="favorites">
                   <FavoritesPanel

@@ -77,4 +77,16 @@ describe("ServerChip", () => {
 
     expect(screen.getByRole("button", { name: "Nenhum servidor encontrado" })).toBeInTheDocument();
   });
+
+  // In a Tight window the address text is hidden and the chip is only its
+  // dot, and hidden text is not part of the accessible name — so the name
+  // has to be set explicitly, even in the plain green state.
+  it("always carries an explicit aria-label, so the name survives the address text being hidden", () => {
+    render(<ServerChip address="localhost:9001" healthy botStatus={null} />);
+
+    expect(screen.getByRole("button", { name: "localhost:9001" })).toHaveAttribute(
+      "aria-label",
+      "localhost:9001"
+    );
+  });
 });
