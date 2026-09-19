@@ -113,7 +113,9 @@ export default function RenameForm({ instant, cardWidth, onCancel, onSave }: Ren
           submit();
         }}
         onKeyDown={handleKeyDown}
-        style={{ display: "grid", gap: 12 }}
+        // minmax(0, …): a plain grid column is min-content wide, so one long
+        // unbreakable address would stretch the whole dialog past its edge.
+        style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 12 }}
       >
         <Field
           label={t("save.nameLabel")}

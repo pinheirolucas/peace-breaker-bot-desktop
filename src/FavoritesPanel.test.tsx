@@ -496,6 +496,20 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
       expect(link).toHaveAttribute("title", "https://www.myinstants.com/a/");
     });
 
+    it("keeps a very long link in the dialog, whole, instead of truncating it", async () => {
+      const user = userEvent.setup();
+      const url =
+        "https://www.myinstants.com/media/sounds/psycho-scream-soundbible-with-a-really-long-name.mp3";
+      renderPanel({ organizing: true, instants: [{ name: "Grito", url }] });
+
+      await user.click(action("Grito", "Renomear"));
+      const dialog = within(screen.getByRole("dialog", { name: "Renomear som" }));
+
+      expect(
+        dialog.getByText("myinstants.com/media/sounds/psycho-scream-soundbible-with-a-really-long-name.mp3")
+      ).toBeInTheDocument();
+    });
+
     it("follows what is typed in the preview, and none of its buttons act", async () => {
       const user = userEvent.setup();
       renderPanel({ organizing: true });
