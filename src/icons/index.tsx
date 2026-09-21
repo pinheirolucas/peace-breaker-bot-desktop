@@ -70,12 +70,50 @@ export function SearchIcon({ size = 17, ...rest }: IconProps) {
   );
 }
 
+/** Three dots in a row: the overflow menu on macOS and Windows. Linux draws
+ *  the hamburger below instead, which is what its main menu looks like. */
 export function MoreIcon({ size = 18, ...rest }: IconProps) {
   return (
     <svg {...base(size)} fill="currentColor" {...rest}>
-      <circle cx="12" cy="5.5" r="1.7" />
+      <circle cx="5.5" cy="12" r="1.7" />
       <circle cx="12" cy="12" r="1.7" />
-      <circle cx="12" cy="18.5" r="1.7" />
+      <circle cx="18.5" cy="12" r="1.7" />
+    </svg>
+  );
+}
+
+export function MenuIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" {...rest}>
+      <path d="M4.5 7h15M4.5 12h15M4.5 17h15" />
+    </svg>
+  );
+}
+
+/** The small arrow on a split button or a menu trigger. */
+export function ChevronDownIcon({ size = 13, ...rest }: IconProps) {
+  return (
+    <svg
+      {...base(size)}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...rest}
+    >
+      <path d="m7 10 5 5 5-5" />
+    </svg>
+  );
+}
+
+/** Two sliders: a filter, without saying what it filters by. */
+export function FilterIcon({ size = 16, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+      <circle cx="15" cy="7" r="2" />
+      <circle cx="9" cy="17" r="2" />
     </svg>
   );
 }

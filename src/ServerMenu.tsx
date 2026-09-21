@@ -41,7 +41,7 @@ export interface ServerMenuProps {
  *  confirmed status earns a line — unknown, or connected with unresolved
  *  names (a cache miss right after a fresh !join), shows nothing rather
  *  than a stale or empty one. */
-function botLine(
+export function botLine(
   healthy: boolean,
   botStatus: BotStatus | null,
   t: (key: string, opts?: Record<string, unknown>) => string

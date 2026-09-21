@@ -19,7 +19,9 @@ import type { DiscoveredService, Server } from "./discovery";
 import {
   chromeChannel,
   defaultChromeColors,
+  desktopFor,
   isChromeColors,
+  minWindowWidth,
   titleBarHeight,
   windowChromeFor
 } from "./chrome";
@@ -41,6 +43,9 @@ import {
 // Dev is "not packaged". This used to be the electron-is-dev package, which
 // went ESM-only in v3 and so cannot be required from a CommonJS bundle.
 const isDev = !app.isPackaged;
+
+// Only meaningful on Linux; see desktopFor.
+const desktop = desktopFor(process.platform, process.env.XDG_CURRENT_DESKTOP);
 
 let mainWindow: BrowserWindow | null = null;
 let bonjour: Bonjour | null = null;
@@ -275,13 +280,13 @@ function createWindow(): void {
     height: 900,
     // The narrowest and shortest the layout is designed for: two columns of
     // cards at the smallest tier. See the tiers in src/styles/shell.css.
-    minWidth: 360,
+    minWidth: minWindowWidth,
     minHeight: 480,
     // Revealed on ready-to-show, after first paint, by which time
     // index.html's guard has already stamped the right palette. No flash.
     show: false,
     backgroundColor: colors.color,
-    ...windowChromeFor(process.platform, colors),
+    ...windowChromeFor(process.platform, colors, desktop),
     // Linux only. macOS and Windows take the app icon from the bundle
     // (resources/icon.icns, icon.ico); a Linux window has no bundle to read
     // one from, so the running window is handed it here. public/icon.png is
@@ -360,7 +365,8 @@ ipcMain.on(checkForUpdatesChannel, (event) => {
 // The renderer reports its resolved --bg/--fg whenever the palette or mode
 // changes. Windows' caption buttons are drawn by the OS and do not follow
 // CSS; without this they stay on last launch's palette, and the first switch
-// to a light theme leaves dark glyphs on a light bar.
+// to a light theme leaves dark glyphs on a light bar. The GNOME header bar's
+// overlay takes the same update.
 ipcMain.on(chromeChannel, (event, colors: unknown) => {
   if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) {
     return;
@@ -374,6 +380,8 @@ ipcMain.on(chromeChannel, (event, colors: unknown) => {
 
   if (process.platform === "win32") {
     mainWindow.setTitleBarOverlay({ ...colors, height: titleBarHeight.win32 });
+  } else if (process.platform === "linux" && desktop === "gnome") {
+    mainWindow.setTitleBarOverlay({ ...colors, height: titleBarHeight.linux });
   }
 });
 

@@ -1,6 +1,6 @@
 import * as RadixRadio from "@radix-ui/react-radio-group";
 import * as Tabs from "@radix-ui/react-tabs";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import "./controls.css";
 
 // The pill pair in the hero is a real tablist: Radix gives roving arrow-key
@@ -13,16 +13,20 @@ export interface SegmentedRootProps<T extends string> {
   onChange: (value: T) => void;
   children: ReactNode;
   className?: string;
+  /** The root element, for a caller that has to measure it. */
+  rootRef?: Ref<HTMLDivElement>;
 }
 
 export function SegmentedRoot<T extends string>({
   value,
   onChange,
   children,
-  className
+  className,
+  rootRef
 }: SegmentedRootProps<T>) {
   return (
     <Tabs.Root
+      ref={rootRef}
       value={value}
       onValueChange={(next) => onChange(next as T)}
       className={className}
@@ -35,6 +39,8 @@ export function SegmentedRoot<T extends string>({
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
+  /** A hover hint, such as the shortcut that switches to this option. */
+  title?: string;
 }
 
 export interface SegmentedProps<T extends string> {
@@ -49,7 +55,12 @@ export function Segmented<T extends string>({
   return (
     <Tabs.List className="seg" aria-label={ariaLabel}>
       {options.map((option) => (
-        <Tabs.Trigger key={option.value} value={option.value} data-tab={option.value}>
+        <Tabs.Trigger
+          key={option.value}
+          value={option.value}
+          data-tab={option.value}
+          title={option.title}
+        >
           {option.label}
         </Tabs.Trigger>
       ))}

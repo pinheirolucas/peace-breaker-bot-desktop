@@ -111,6 +111,18 @@ function searchBox() {
   return screen.getByRole("searchbox", { name: "Procurar um som" });
 }
 
+// The Explorar filter is one icon whose name is not its content, in either
+// language.
+const FILTER = /^(Filtrar por site e região|Filter by site and region)$/;
+
+function filterButton() {
+  return screen.getByRole("button", { name: FILTER });
+}
+
+function tickedItem(name: string) {
+  return screen.getByRole("menuitem", { name }).querySelector(".mtick svg");
+}
+
 function reset() {
   localStorage.clear();
   delete document.documentElement.dataset.mode;
@@ -472,12 +484,52 @@ describe("repeated failures while already offline", () => {
 describe("shell", () => {
   beforeEach(reset);
 
+  function seedFavorite() {
+    localStorage.setItem(
+      "instants",
+      JSON.stringify([{ name: "Vish", url: "https://www.myinstants.com/v/" }])
+    );
+  }
+
   it("opens on Favoritos, with the section tabs and the search", () => {
+    seedFavorite();
     render(<App />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Favoritos" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Favoritos" })).toHaveAttribute("aria-selected", "true");
     expect(searchBox()).toBeInTheDocument();
+    // The page is no longer a heading: the title bar is the toolbar.
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+  });
+
+  it("names the page and its count in the window title", async () => {
+    localStorage.setItem(
+      "instants",
+      JSON.stringify([
+        { name: "Vish", url: "https://www.myinstants.com/v/" },
+        { name: "Bruxaria", url: "https://www.myinstants.com/b/" }
+      ])
+    );
+    render(<App />);
+
+    await waitFor(() => expect(document.title).toBe("Favoritos — 2 sons salvos"));
+
+    await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
+
+    await waitFor(() => expect(document.title).toMatch(/^Explorar/));
+  });
+
+  it("says how many favourites the search covers, and which site on Explorar", async () => {
+    localStorage.setItem(
+      "instants",
+      JSON.stringify([{ name: "Vish", url: "https://www.myinstants.com/v/" }])
+    );
+    render(<App />);
+
+    expect(searchBox()).toHaveAttribute("placeholder", "Buscar em 1 favorito");
+
+    await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
+
+    expect(searchBox()).toHaveAttribute("placeholder", "Buscar em MyInstants");
   });
 
   it("switches to Explorar from the segmented control", async () => {
@@ -485,11 +537,29 @@ describe("shell", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "Explorar" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Explorar" })).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br"));
   });
 
-  it("opens the add form from the tools row", async () => {
+  it("switches tab from the keyboard, and opens the add form with Ctrl or Cmd+N", async () => {
+    render(<App />);
+
+    // Both modifiers, so the test holds whichever platform it runs on.
+    fireEvent.keyDown(window, { key: "2", ctrlKey: true, metaKey: true });
+    expect(screen.getByRole("tab", { name: "Explorar" })).toHaveAttribute("aria-selected", "true");
+
+    // Adicionar belongs to Favoritos.
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true, metaKey: true });
+    expect(screen.queryByRole("dialog", { name: "Adicionar instant" })).toBeNull();
+
+    fireEvent.keyDown(window, { key: "1", ctrlKey: true, metaKey: true });
+    expect(screen.getByRole("tab", { name: "Favoritos" })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true, metaKey: true });
+    expect(await screen.findByRole("dialog", { name: "Adicionar instant" })).toBeInTheDocument();
+  });
+
+  it("opens the add form from the toolbar", async () => {
     render(<App />);
 
     await userEvent.click(screen.getByRole("button", { name: "Adicionar" }));
@@ -508,13 +578,44 @@ describe("shell", () => {
     await user.type(searchBox(), "xuxa");
     await user.click(await screen.findByRole("button", { name: "Procurar “xuxa” no MyInstants" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "Explorar" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Explorar" })).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "xuxa", "br"));
     // The query survives the switch, rather than making them retype it.
     expect(searchBox()).toHaveValue("xuxa");
   });
 
+  it("leaves the search out on Favoritos while there is nothing to search, and keeps it on Explorar", async () => {
+    render(<App />);
+
+    expect(screen.queryByRole("searchbox")).toBeNull();
+
+    await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
+    expect(searchBox()).toBeInTheDocument();
+  });
+
+  it("does not carry a search over to a Favoritos that has no field to show it", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: "Explorar" }));
+    await user.type(searchBox(), "xuxa");
+
+    await user.click(screen.getByRole("tab", { name: "Favoritos" }));
+    await user.click(screen.getByRole("tab", { name: "Explorar" }));
+
+    expect(searchBox()).toHaveValue("");
+  });
+
+  it("does nothing on the find shortcut with no search field to focus", () => {
+    render(<App />);
+    const event = new KeyboardEvent("keydown", { key: "f", ctrlKey: true, metaKey: true, cancelable: true });
+
+    window.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it("focuses the search on the find shortcut", () => {
+    seedFavorite();
     render(<App />);
 
     // The modifier is per-platform (Cmd on macOS, Ctrl elsewhere). Press both
@@ -629,35 +730,55 @@ describe("catalogue region", () => {
     return user;
   }
 
-  it("browses Brazil by default, and offers the region only on Explorar", async () => {
+  it("browses Brazil by default, and offers the filter only on Explorar", async () => {
     render(<App />);
-    expect(screen.queryByRole("button", { name: "Brasil" })).toBeNull();
+    expect(screen.queryByRole("button", { name: FILTER })).toBeNull();
 
-    await openExplore();
+    const user = await openExplore();
 
-    expect(screen.getByRole("button", { name: "Brasil" })).toBeInTheDocument();
+    await user.click(filterButton());
+    expect(tickedItem("Brasil")).not.toBeNull();
     await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br"));
   });
 
-  it("refetches the catalogue for a picked region and remembers it", async () => {
+  it("refetches the catalogue for a picked region and remembers it, keeping the menu open", async () => {
     render(<App />);
     const user = await openExplore();
 
-    await user.click(screen.getByRole("button", { name: "Brasil" }));
+    await user.click(filterButton());
     await user.click(screen.getByRole("menuitem", { name: "Portugal" }));
 
     await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "", "pt"));
-    expect(screen.getByRole("button", { name: "Portugal" })).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem("region") ?? "null")).toBe("pt");
+    // Open still, and moved: setting a site and a region is one visit.
+    expect(tickedItem("Portugal")).not.toBeNull();
+    expect(tickedItem("Brasil")).toBeNull();
+  });
+
+  it("marks the filter when the region is not the default, and restores it from the menu", async () => {
+    localStorage.setItem("region", JSON.stringify("pt"));
+    render(<App />);
+    const user = await openExplore();
+
+    expect(filterButton()).toHaveAttribute("data-changed", "true");
+
+    await user.click(filterButton());
+    await user.click(screen.getByRole("menuitem", { name: "Restaurar padrão" }));
+
+    await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "", "br"));
+    // An open menu is modal: what is behind it is hidden from the tree.
+    await user.keyboard("{Escape}");
+    expect(filterButton()).not.toHaveAttribute("data-changed");
   });
 
   it("restores the stored region on the next launch", async () => {
     localStorage.setItem("region", JSON.stringify("us"));
     render(<App />);
 
-    await openExplore();
+    const user = await openExplore();
+    await user.click(filterButton());
 
-    expect(screen.getByRole("button", { name: "Estados Unidos" })).toBeInTheDocument();
+    expect(tickedItem("Estados Unidos")).not.toBeNull();
     await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "us"));
   });
 
@@ -670,9 +791,10 @@ describe("catalogue region", () => {
     localStorage.setItem("region", raw);
     render(<App />);
 
-    await openExplore();
+    const user = await openExplore();
+    await user.click(filterButton());
 
-    expect(screen.getByRole("button", { name: "Brasil" })).toBeInTheDocument();
+    expect(tickedItem("Brasil")).not.toBeNull();
     await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br"));
   });
 
@@ -681,10 +803,10 @@ describe("catalogue region", () => {
     localStorage.setItem("region", JSON.stringify("us"));
     render(<App />);
 
-    await openExplore();
+    const user = await openExplore();
+    await user.click(filterButton());
 
-    expect(screen.getByRole("button", { name: "United States" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "United States" }));
+    expect(tickedItem("United States")).not.toBeNull();
     expect(screen.getByRole("menuitem", { name: "United Kingdom" })).toBeInTheDocument();
   });
 });
@@ -702,44 +824,49 @@ describe("provider picker", () => {
   }
 
   it("lists every provider from the registry, ticking the default", async () => {
-    await openExploreWithServer();
+    const user = await openExploreWithServer();
 
-    await userEvent.click(await screen.findByRole("button", { name: "MyInstants" }));
+    await user.click(await screen.findByRole("button", { name: FILTER }));
 
-    const items = screen.getAllByRole("menuitem");
-    const myinstants = items.find((item) => within(item).queryByText("MyInstants"));
-    expect(myinstants!.querySelector(".mtick svg")).not.toBeNull();
-    expect(within(screen.getByRole("menu")).getByText("Sound Buttons")).toBeInTheDocument();
-    expect(within(screen.getByRole("menu")).getByText("InstantsMeme")).toBeInTheDocument();
-    expect(within(screen.getByRole("menu")).getByText("SoundboardGuy")).toBeInTheDocument();
+    expect(tickedItem("MyInstants")).not.toBeNull();
+    const menu = within(screen.getByRole("menu"));
+    expect(menu.getByText("Sound Buttons")).toBeInTheDocument();
+    expect(menu.getByText("InstantsMeme")).toBeInTheDocument();
+    expect(menu.getByText("SoundboardGuy")).toBeInTheDocument();
   });
 
   it("switches provider in one click, remembers it, and restarts the listing from page 1", async () => {
     const user = await openExploreWithServer();
 
-    await user.click(await screen.findByRole("button", { name: "MyInstants" }));
+    await user.click(await screen.findByRole("button", { name: FILTER }));
     await user.click(screen.getByRole("menuitem", { name: "Sound Buttons" }));
 
     await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "", "br", "soundbuttons"));
-    expect(screen.getByRole("button", { name: "Sound Buttons" })).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem("provider") ?? "null")).toBe("soundbuttons");
+    expect(tickedItem("Sound Buttons")).not.toBeNull();
+    await user.keyboard("{Escape}");
+    expect(searchBox()).toHaveAttribute("placeholder", "Buscar em Sound Buttons");
   });
 
-  it("hides the region chip once a provider that doesn't support it is picked", async () => {
+  it("drops the region from the menu once a provider that doesn't support it is picked", async () => {
     const user = await openExploreWithServer();
-    expect(await screen.findByRole("button", { name: "Brasil" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: FILTER }));
+    expect(screen.getByRole("menuitem", { name: "Brasil" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "MyInstants" }));
     await user.click(screen.getByRole("menuitem", { name: "Sound Buttons" }));
 
-    expect(screen.queryByRole("button", { name: "Brasil" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Brasil" })).toBeNull();
+    // Still open, and now offering a way back to the default site.
+    expect(screen.getByRole("menuitem", { name: "Restaurar padrão" })).toBeInTheDocument();
   });
 
   it("restores the stored provider on the next launch", async () => {
     localStorage.setItem("provider", JSON.stringify("soundbuttons"));
-    await openExploreWithServer();
+    const user = await openExploreWithServer();
 
-    expect(await screen.findByRole("button", { name: "Sound Buttons" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: FILTER }));
+
+    expect(tickedItem("Sound Buttons")).not.toBeNull();
     await waitFor(() => expect(getInstants).toHaveBeenCalledWith(1, "", "br", "soundbuttons"));
   });
 
@@ -748,19 +875,23 @@ describe("provider picker", () => {
   // might be pointed at something gone.
   it("falls back to MyInstants, silently, when the stored provider no longer exists", async () => {
     localStorage.setItem("provider", JSON.stringify("longgoneprovider"));
-    await openExploreWithServer();
+    const user = await openExploreWithServer();
 
-    expect(await screen.findByRole("button", { name: "MyInstants" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: FILTER }));
+
+    expect(tickedItem("MyInstants")).not.toBeNull();
     expect(screen.queryByText(/longgoneprovider/)).not.toBeInTheDocument();
   });
 
-  it("stays absent, and keeps the region chip shown, when the backend has no /providers route", async () => {
+  it("offers only the region, and no sites, when the backend has no /providers route", async () => {
     vi.mocked(getProviders).mockRejectedValue(new Error("404"));
-    await openExploreWithServer();
+    const user = await openExploreWithServer();
 
     await waitFor(() => expect(getProviders).toHaveBeenCalled());
-    expect(screen.queryByRole("button", { name: "MyInstants" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Brasil" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: FILTER }));
+
+    expect(screen.queryByRole("menuitem", { name: "MyInstants" })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Brasil" })).toBeInTheDocument();
   });
 });
 
@@ -769,20 +900,24 @@ describe("native window chrome", () => {
     reset();
     delete document.documentElement.dataset.os;
     delete document.documentElement.dataset.chrome;
+    delete document.documentElement.dataset.desktop;
   });
 
   afterEach(() => {
     delete window.instantsPlatform;
   });
 
-  it("draws its drag row when Electron merged the window into the macOS bar", () => {
+  it("stamps the platform and lets the toolbar be the title bar on macOS", () => {
     window.instantsPlatform = { os: "mac", chrome: "custom", setChrome: vi.fn() };
 
     const { container } = render(<App />);
 
-    expect(container.querySelector(".tb")).not.toBeNull();
+    expect(container.querySelector(".toolbar")).not.toBeNull();
+    // The hero and the drag row it used to sit under are gone.
+    expect(container.querySelector(".hero, .tb, .tools")).toBeNull();
     expect(document.documentElement.dataset.os).toBe("mac");
     expect(document.documentElement.dataset.chrome).toBe("custom");
+    expect(document.documentElement.dataset.desktop).toBeUndefined();
   });
 
   it("names the app in the Windows bar, beside the OS caption buttons", () => {
@@ -790,22 +925,55 @@ describe("native window chrome", () => {
 
     const { container } = render(<App />);
 
-    expect(container.querySelector(".tb")).toHaveTextContent("Peace Breaker Bot");
+    expect(container.querySelector(".toolbar__brand")).toHaveTextContent("Peace Breaker Bot");
   });
 
-  it("leaves the bar to the window manager on Linux", () => {
-    window.instantsPlatform = { os: "linux", chrome: "native", setChrome: vi.fn() };
+  it("stamps GNOME on Linux, where the header bar is the app's own", () => {
+    window.instantsPlatform = {
+      os: "linux",
+      desktop: "gnome",
+      chrome: "custom",
+      setChrome: vi.fn()
+    };
 
     const { container } = render(<App />);
 
-    expect(container.querySelector(".tb")).toBeNull();
+    expect(document.documentElement.dataset.desktop).toBe("gnome");
+    expect(document.documentElement.dataset.chrome).toBe("custom");
+    expect(container.querySelector(".toolbar__brand")).toBeNull();
+    // The menu button is the GNOME hamburger, not the three dots.
+    expect(screen.getByRole("button", { name: "Mais opções" }).querySelector("path")).not.toBeNull();
+  });
+
+  it("keeps the window manager's title bar on KDE, under one toolbar", () => {
+    window.instantsPlatform = {
+      os: "linux",
+      desktop: "kde",
+      chrome: "native",
+      setChrome: vi.fn()
+    };
+
+    const { container } = render(<App />);
+
+    expect(document.documentElement.dataset.desktop).toBe("kde");
     expect(document.documentElement.dataset.chrome).toBe("native");
+    expect(container.querySelector(".toolbar")).not.toBeNull();
   });
 
-  it("draws no title bar in a plain browser tab", () => {
+  it("stamps no desktop off Linux", () => {
+    window.instantsPlatform = { os: "win", chrome: "custom", setChrome: vi.fn() };
+    document.documentElement.dataset.desktop = "gnome";
+
+    render(<App />);
+
+    expect(document.documentElement.dataset.desktop).toBeUndefined();
+  });
+
+  it("draws the toolbar in a plain browser tab too, with no app name", () => {
     const { container } = render(<App />);
 
-    expect(container.querySelector(".tb")).toBeNull();
+    expect(container.querySelector(".toolbar")).not.toBeNull();
+    expect(container.querySelector(".toolbar__brand")).toBeNull();
   });
 });
 
@@ -823,24 +991,34 @@ describe("Organizar", () => {
 
   afterEach(() => localStorage.clear());
 
-  it("is not offered with no favourites at all", () => {
+  async function openAddMenu(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: "Mais ações de adição" }));
+  }
+
+  it("is not offered with no favourites at all", async () => {
     localStorage.setItem("instants", "[]");
-
-    render(<App />);
-
-    expect(screen.queryByRole("button", { name: "Organizar" })).toBeNull();
-  });
-
-  it("swaps Adicionar for Concluir and turns the search off while it is on", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Organizar" }));
+    await openAddMenu(user);
+
+    expect(screen.queryByRole("menuitem", { name: /Organizar/ })).toBeNull();
+    // What else changes the list is still there.
+    expect(screen.getByRole("menuitem", { name: "Importar" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Exportar" })).toBeInTheDocument();
+  });
+
+  it("swaps Adicionar for Concluir and takes the search away while it is on", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openAddMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: /Organizar/ }));
 
     expect(screen.getByRole("button", { name: "Concluir" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Adicionar" })).toBeNull();
-    expect(screen.getByRole("searchbox")).toBeDisabled();
-    expect(screen.getByText("Arraste para reordenar")).toBeInTheDocument();
+    expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(screen.getByText("Arraste para reordenar", { selector: ".toolbar__hint" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Concluir" }));
 
@@ -848,15 +1026,18 @@ describe("Organizar", () => {
     expect(screen.getByRole("searchbox")).toBeEnabled();
   });
 
-  it("stays out of reach while a search is set", async () => {
+  it("stays out of reach while a search is set, and says why", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.type(screen.getByRole("searchbox"), "seg");
-    const button = screen.getByRole("button", { name: "Organizar" });
-    expect(button).toHaveAttribute("aria-disabled", "true");
+    await openAddMenu(user);
+    const item = screen.getByRole("menuitem", { name: /Organizar/ });
 
-    await user.click(button);
+    expect(item).toHaveAttribute("data-disabled");
+    expect(item).toHaveTextContent("Limpe a busca para organizar");
+
+    await user.click(item);
 
     expect(screen.queryByRole("button", { name: "Concluir" })).toBeNull();
   });
@@ -865,11 +1046,122 @@ describe("Organizar", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Organizar" }));
+    await openAddMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: /Organizar/ }));
     await user.click(screen.getByRole("tab", { name: "Explorar" }));
     await user.click(screen.getByRole("tab", { name: "Favoritos" }));
 
-    expect(screen.getByRole("button", { name: "Organizar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adicionar" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Concluir" })).toBeNull();
+  });
+});
+
+describe("Adicionar menu", () => {
+  beforeEach(reset);
+
+  it("carries Importar and Exportar, which the overflow menu no longer does", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Mais opções" }));
+    expect(screen.queryByRole("menuitem", { name: "Importar" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Exportar" })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Aparência" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    await user.click(screen.getByRole("button", { name: "Mais ações de adição" }));
+    await user.click(screen.getByRole("menuitem", { name: "Importar" }));
+
+    expect(await screen.findByRole("dialog", { name: "Importar instants" })).toBeInTheDocument();
+  });
+});
+
+describe("Tight window", () => {
+  const original = Element.prototype.getBoundingClientRect;
+
+  beforeEach(() => {
+    reset();
+    // jsdom lays nothing out; the app root is the one thing whose width the
+    // tier reads.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: Element
+    ) {
+      return this.classList.contains("app")
+        ? ({ width: 500, height: 800, top: 0, left: 0, right: 500, bottom: 800, x: 0, y: 0 } as DOMRect)
+        : original.call(this);
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete window.instantsPlatform;
+  });
+
+  it("moves the server into the overflow menu, and opens its picker from there", async () => {
+    const bridge = installBridge();
+    const user = userEvent.setup();
+    render(<App />);
+    act(() => bridge.push([macbook]));
+
+    await user.click(screen.getByRole("button", { name: "Mais opções" }));
+    await user.click(await screen.findByRole("menuitem", { name: /10\.0\.0\.133:9001/ }));
+
+    // The picker, not the overflow menu, is what is open now.
+    expect(await screen.findByText("Rede local")).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Aparência" })).toBeNull();
+  });
+
+  it("folds Adicionar's menu into the overflow menu on Windows, where the caption buttons take the room", async () => {
+    window.instantsPlatform = { os: "win", chrome: "custom", setChrome: vi.fn() };
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.queryByRole("button", { name: "Mais ações de adição" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Adicionar" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Mais opções" }));
+
+    expect(screen.getByRole("menuitem", { name: "Importar" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Exportar" })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: /^Adicionar/ }));
+    expect(await screen.findByRole("dialog", { name: "Adicionar instant" })).toBeInTheDocument();
+
+    delete window.instantsPlatform;
+  });
+
+  it("keeps Adicionar in the toolbar on macOS at the same width", () => {
+    render(<App />);
+
+    expect(screen.getByRole("button", { name: "Adicionar" })).toBeInTheDocument();
+  });
+
+  it("badges the overflow menu when the server stops answering", () => {
+    const bridge = installBridge();
+    render(<App />);
+    act(() => bridge.push([macbook]));
+
+    expect(screen.getByRole("button", { name: "Mais opções" })).not.toHaveAttribute("data-attention");
+
+    act(() => healthListener(false));
+
+    expect(screen.getByRole("button", { name: "Mais opções" })).toHaveAttribute(
+      "data-attention",
+      "down"
+    );
+  });
+});
+
+describe("a wider window", () => {
+  beforeEach(reset);
+
+  it("keeps the server out of the overflow menu, where the chip already is", async () => {
+    const bridge = installBridge();
+    const user = userEvent.setup();
+    render(<App />);
+    act(() => bridge.push([macbook]));
+
+    await user.click(screen.getByRole("button", { name: "Mais opções" }));
+
+    expect(screen.queryByRole("menuitem", { name: /10\.0\.0\.133:9001/ })).toBeNull();
   });
 });

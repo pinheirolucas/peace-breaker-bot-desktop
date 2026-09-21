@@ -117,7 +117,7 @@
 /* Radix copies the content's computed z-index onto its popper wrapper. */
 .menu {
   z-index: 55;
-  min-width: 336px;
+  min-width: 240px;
   max-width: calc(100vw - 24px);
   background: var(--panel);
   border: 1px solid var(--line);

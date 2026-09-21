@@ -12,11 +12,16 @@ export interface SearchFieldProps extends InputHTMLAttributes<HTMLInputElement> 
 export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(
   function SearchField({ shortcut, className, ...rest }, ref) {
     return (
-      <div className={["search", className].filter(Boolean).join(" ")}>
+      // A label, so a click anywhere on the field — including the magnifier
+      // that is all a Tight window shows of it — lands in the input.
+      <label
+        className={["search", className].filter(Boolean).join(" ")}
+        data-filled={Boolean(rest.value) || undefined}
+      >
         <SearchIcon style={{ flex: "none" }} />
         <input ref={ref} type="search" {...rest} />
         {shortcut && <span className="kbd">{shortcut}</span>}
-      </div>
+      </label>
     );
   }
 );

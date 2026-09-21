@@ -6,17 +6,51 @@ import type { BrowserWindowConstructorOptions } from "electron";
 
 export const chromeChannel = "chrome:set";
 
-/** macOS and Windows merge the app into the OS title bar. Linux leaves the
- *  bar to the window manager, which is what the design draws there. */
+/** How the window relates to the OS title bar. "custom": Electron hides the
+ *  OS bar and the app's own toolbar takes its place, with the real window
+ *  controls drawn over it (macOS, Windows, and GNOME on Linux). "native":
+ *  the window manager keeps its own bar and the toolbar sits under it. */
 export type ChromeKind = "custom" | "native";
 
-export function chromeKind(platform: string): ChromeKind {
-  return platform === "darwin" || platform === "win32" ? "custom" : "native";
+/** Which Linux desktop the app is running on. Only GNOME gets a
+ *  client-side header bar: KDE Plasma and everything else keep the window
+ *  manager's own title bar, which is what their users expect. */
+export type Desktop = "gnome" | "kde" | "other";
+
+/**
+ * Reads XDG_CURRENT_DESKTOP, a colon-separated list such as
+ * "ubuntu:GNOME" or "KDE". Undefined off Linux, where there is no such
+ * distinction to make.
+ */
+export function desktopFor(platform: string, env: string | undefined): Desktop | undefined {
+  if (platform !== "linux") {
+    return undefined;
+  }
+
+  const names = (env ?? "").toLowerCase().split(":");
+
+  if (names.includes("gnome")) return "gnome";
+  if (names.includes("kde")) return "kde";
+  return "other";
 }
 
-/** Height of the app's own title-bar row, which the OS-drawn controls are
- *  centred in: 42px on macOS, 40px on Windows, per the design canvas. */
-export const titleBarHeight = { darwin: 42, win32: 40 } as const;
+export function chromeKind(platform: string, desktop?: Desktop): ChromeKind {
+  if (platform === "darwin" || platform === "win32") {
+    return "custom";
+  }
+
+  return platform === "linux" && desktop === "gnome" ? "custom" : "native";
+}
+
+/** Height of the toolbar the OS-drawn window controls are centred in:
+ *  52px on macOS, 48px on Windows (Microsoft's height for a title bar that
+ *  holds a search box), 46px in a GNOME header bar. */
+export const titleBarHeight = { darwin: 52, win32: 48, linux: 46 } as const;
+
+/** The narrowest the layout is designed for. Below 400 the tabs, a magnifier,
+ *  Adicionar and the overflow menu no longer fit one bar on macOS, and on
+ *  Windows the caption buttons take another 138px of it. */
+export const minWindowWidth = 400;
 
 export interface ChromeColors {
   color: string;
@@ -37,12 +71,16 @@ export function defaultChromeColors(dark: boolean): ChromeColors {
 
 export function windowChromeFor(
   platform: string,
-  colors: ChromeColors
+  colors: ChromeColors,
+  desktop?: Desktop
 ): BrowserWindowConstructorOptions {
   if (platform === "darwin") {
     // hiddenInset keeps the real traffic lights. They are 12px tall, so
-    // y: 15 centres them in the 42px row; x: 18 is the row's side padding.
-    return { titleBarStyle: "hiddenInset", trafficLightPosition: { x: 18, y: 15 } };
+    // y: 20 centres them in the 52px toolbar; x: 18 is its side padding.
+    return {
+      titleBarStyle: "hiddenInset",
+      trafficLightPosition: { x: 18, y: (titleBarHeight.darwin - 12) / 2 }
+    };
   }
 
   if (platform === "win32") {
@@ -52,6 +90,16 @@ export function windowChromeFor(
     return {
       titleBarStyle: "hidden",
       titleBarOverlay: { ...colors, height: titleBarHeight.win32 }
+    };
+  }
+
+  if (platform === "linux" && desktop === "gnome") {
+    // The same window-controls overlay, which Electron draws on Linux from
+    // 30.2 and lays out by the desktop's own button order. Only the height
+    // and colours are ours; symbolColor is honoured on Windows alone.
+    return {
+      titleBarStyle: "hidden",
+      titleBarOverlay: { ...colors, height: titleBarHeight.linux }
     };
   }
 
