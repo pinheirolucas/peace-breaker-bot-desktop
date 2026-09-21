@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { discoveryRefreshChannel, discoveryServersChannel } from "./discovery";
 import type { Server } from "./discovery";
-import { chromeChannel, chromeKind } from "./chrome";
+import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
   checkForUpdatesChannel,
@@ -141,11 +141,17 @@ contextBridge.exposeInMainWorld("instantsUpdates", {
   checkNow: () => ipcRenderer.send(checkForUpdatesChannel)
 });
 
+// Linux only. GNOME gets the app's own header bar; KDE Plasma and the rest
+// keep the window manager's title bar and the toolbar sits under it.
+const desktop = desktopFor(process.platform, process.env.XDG_CURRENT_DESKTOP);
+
 contextBridge.exposeInMainWorld("instantsPlatform", {
   os,
+  desktop,
   // Whether the window is merged into the OS title bar, so the renderer
-  // knows to draw its own drag row. Read synchronously by index.html's guard.
-  chrome: chromeKind(process.platform),
+  // lays its toolbar out as the title bar itself. Read synchronously by
+  // index.html's guard.
+  chrome: chromeKind(process.platform, desktop),
   // Validated again in the main process; the renderer is not trusted.
   setChrome: (colors: ChromeColors) => ipcRenderer.send(chromeChannel, colors)
 });

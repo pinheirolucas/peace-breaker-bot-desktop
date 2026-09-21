@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   chromeKind,
   defaultChromeColors,
+  desktopFor,
   isChromeColors,
+  minWindowWidth,
   titleBarHeight,
   windowChromeFor
 } from "../electron/chrome";
@@ -10,35 +12,78 @@ import {
 const colors = { color: "#13181d", symbolColor: "#e9edf2" };
 
 describe("windowChromeFor", () => {
-  it("keeps the real traffic lights on macOS, centred in the 42px row", () => {
+  it("keeps the real traffic lights on macOS, centred in the 52px toolbar", () => {
     const options = windowChromeFor("darwin", colors);
 
     expect(options.titleBarStyle).toBe("hiddenInset");
-    // The lights are 12px tall: (42 - 12) / 2 = 15.
+    // The lights are 12px tall: (52 - 12) / 2 = 20.
     expect(options.trafficLightPosition).toEqual({
       x: 18,
       y: (titleBarHeight.darwin - 12) / 2
     });
+    expect(options.trafficLightPosition?.y).toBe(20);
   });
 
-  it("has the OS draw the caption buttons on Windows, in the app's colours", () => {
+  it("has the OS draw the caption buttons on Windows, in the app's colours, at 48px", () => {
     const options = windowChromeFor("win32", colors);
 
     expect(options.titleBarStyle).toBe("hidden");
-    expect(options.titleBarOverlay).toEqual({ ...colors, height: 40 });
+    expect(options.titleBarOverlay).toEqual({ ...colors, height: 48 });
   });
 
-  it("leaves the title bar to the window manager on Linux", () => {
+  it("draws its own header bar on GNOME, with the OS window controls over it", () => {
+    const options = windowChromeFor("linux", colors, "gnome");
+
+    expect(options.titleBarStyle).toBe("hidden");
+    expect(options.titleBarOverlay).toEqual({ ...colors, height: 46 });
+  });
+
+  it("leaves the title bar to the window manager on KDE and other Linux desktops", () => {
+    expect(windowChromeFor("linux", colors, "kde")).toEqual({});
+    expect(windowChromeFor("linux", colors, "other")).toEqual({});
     expect(windowChromeFor("linux", colors)).toEqual({});
   });
 });
 
 describe("chromeKind", () => {
-  it("merges into the OS bar on macOS and Windows only", () => {
+  it("merges into the OS bar on macOS, Windows and GNOME", () => {
     expect(chromeKind("darwin")).toBe("custom");
     expect(chromeKind("win32")).toBe("custom");
+    expect(chromeKind("linux", "gnome")).toBe("custom");
+  });
+
+  it("leaves the bar to the window manager elsewhere", () => {
+    expect(chromeKind("linux", "kde")).toBe("native");
+    expect(chromeKind("linux", "other")).toBe("native");
     expect(chromeKind("linux")).toBe("native");
     expect(chromeKind("freebsd")).toBe("native");
+  });
+});
+
+describe("desktopFor", () => {
+  it.each([
+    ["GNOME", "gnome"],
+    ["ubuntu:GNOME", "gnome"],
+    ["KDE", "kde"],
+    ["XFCE", "other"],
+    ["X-Cinnamon", "other"],
+    [undefined, "other"],
+    ["", "other"]
+  ])("reads XDG_CURRENT_DESKTOP=%s as %s on Linux", (env, expected) => {
+    expect(desktopFor("linux", env)).toBe(expected);
+  });
+
+  it("says nothing off Linux", () => {
+    expect(desktopFor("darwin", "GNOME")).toBeUndefined();
+    expect(desktopFor("win32", undefined)).toBeUndefined();
+  });
+});
+
+describe("minWindowWidth", () => {
+  it("raises Windows' floor to fit the caption buttons", () => {
+    expect(minWindowWidth("win32")).toBe(400);
+    expect(minWindowWidth("darwin")).toBe(360);
+    expect(minWindowWidth("linux")).toBe(360);
   });
 });
 

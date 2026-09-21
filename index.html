@@ -42,8 +42,16 @@
           (/mac|iphone|ipad/i.test(ua) ? "mac" : /windows|win32|win64/i.test(ua) ? "win" : "linux");
 
         // Whether Electron merged the window into the OS bar. Stamped here
-        // too, so the hero's spacing is right from the first frame.
+        // too, so the toolbar's padding is right from the first frame.
         r.dataset.chrome = bridge && bridge.chrome === "custom" ? "custom" : "native";
+
+        // Linux only: GNOME gets the app's own header bar, the rest keep the
+        // window manager's title bar. GNOME also stands in with no bridge.
+        if (r.dataset.os === "linux") {
+          var desktop = bridge && bridge.desktop;
+          r.dataset.desktop =
+            desktop === "kde" || desktop === "other" ? desktop : "gnome";
+        }
 
         // One-shot migration. "theme" used to hold "light" | "dark"; it now
         // holds the palette, and the light/dark choice lives in "colorMode".
