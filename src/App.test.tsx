@@ -484,7 +484,15 @@ describe("repeated failures while already offline", () => {
 describe("shell", () => {
   beforeEach(reset);
 
+  function seedFavorite() {
+    localStorage.setItem(
+      "instants",
+      JSON.stringify([{ name: "Vish", url: "https://www.myinstants.com/v/" }])
+    );
+  }
+
   it("opens on Favoritos, with the section tabs and the search", () => {
+    seedFavorite();
     render(<App />);
 
     expect(screen.getByRole("tab", { name: "Favoritos" })).toHaveAttribute("aria-selected", "true");
@@ -576,7 +584,38 @@ describe("shell", () => {
     expect(searchBox()).toHaveValue("xuxa");
   });
 
+  it("leaves the search out on Favoritos while there is nothing to search, and keeps it on Explorar", async () => {
+    render(<App />);
+
+    expect(screen.queryByRole("searchbox")).toBeNull();
+
+    await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
+    expect(searchBox()).toBeInTheDocument();
+  });
+
+  it("does not carry a search over to a Favoritos that has no field to show it", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: "Explorar" }));
+    await user.type(searchBox(), "xuxa");
+
+    await user.click(screen.getByRole("tab", { name: "Favoritos" }));
+    await user.click(screen.getByRole("tab", { name: "Explorar" }));
+
+    expect(searchBox()).toHaveValue("");
+  });
+
+  it("does nothing on the find shortcut with no search field to focus", () => {
+    render(<App />);
+    const event = new KeyboardEvent("keydown", { key: "f", ctrlKey: true, metaKey: true, cancelable: true });
+
+    window.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it("focuses the search on the find shortcut", () => {
+    seedFavorite();
     render(<App />);
 
     // The modifier is per-platform (Cmd on macOS, Ctrl elsewhere). Press both

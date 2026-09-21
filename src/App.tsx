@@ -160,11 +160,11 @@ export default function App() {
       }
 
       if (isFindShortcut(event, os)) {
-        // With Organizar on there is no search to focus.
-        if (!organizing) {
+        // With Organizar on, or no favourites to search, there is no field.
+        if (searchRef.current) {
           event.preventDefault();
-          searchRef.current?.focus();
-          searchRef.current?.select();
+          searchRef.current.focus();
+          searchRef.current.select();
         }
         return;
       }
@@ -189,6 +189,19 @@ export default function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [os, editing, organizing, tab, addOpen, importOpen, addServerOpen]);
+
+  // With no favourites there is nothing on Favoritos to search, so the field
+  // is left out. The query is shared with Explorar, so one left behind would
+  // filter it with no field to show it.
+  const showSearch = tab === "explore" || favorites.length > 0;
+
+  useEffect(() => {
+    if (!showSearch) {
+      clearTimeout(debounce.current);
+      setQuery("");
+      setSearch("");
+    }
+  }, [showSearch]);
 
   // The page and its count are no longer drawn as a heading; the OS window
   // title (Mission Control, the taskbar, Alt+Tab) is where they live now.
@@ -457,7 +470,7 @@ export default function App() {
                     <span className="toolbar__hint" aria-hidden="true">
                       {summary}
                     </span>
-                  ) : (
+                  ) : showSearch ? (
                     <div className="capsule">
                       {tab === "explore" && !foldActions && <FilterMenu {...filterProps} />}
                       <SearchField
@@ -475,7 +488,7 @@ export default function App() {
                         onChange={(event) => handleSearchChange(event.target.value)}
                       />
                     </div>
-                  )}
+                  ) : null}
                   {/* The count that used to be the hero's second line. It is
                       still announced; it is drawn only in the window title. */}
                   <span className="sr-only" aria-live="polite">
