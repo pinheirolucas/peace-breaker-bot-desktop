@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Server } from "../electron/discovery";
 import { sortServers } from "../electron/discovery";
+import AddMenu from "./AddMenu";
 import AddServerForm from "./AddServerForm";
 import { AppearanceDock } from "./components/AppearanceDock";
 import { AppearanceStage } from "./components/AppearanceStage";
@@ -9,24 +10,30 @@ import { Button, IconButton } from "./components/Button";
 import { Menu, MenuItem, MenuSeparator } from "./components/Menu";
 import { SearchField } from "./components/SearchField";
 import { Segmented, SegmentedPanel, SegmentedRoot } from "./components/Segmented";
-import { TitleBar } from "./components/TitleBar";
 import { Toast, ToastProvider } from "./components/Toast";
 import { TooltipProvider } from "./components/Tooltip";
 import FavoritesPanel from "./FavoritesPanel";
+import FilterMenu, { FilterMenuItems, hasFilters } from "./FilterMenu";
 import { useAppearance } from "./hooks/useAppearance";
 import { useLanguage } from "./hooks/useLanguage";
 import { useNativeChrome } from "./hooks/useNativeChrome";
-import { findShortcutLabel, isFindShortcut, useChromeKind, usePlatform } from "./hooks/usePlatform";
-import { useProvider } from "./hooks/useProvider";
+import {
+  findShortcutLabel,
+  isFindShortcut,
+  isModShortcut,
+  shortcutLabel,
+  useChromeKind,
+  useDesktop,
+  usePlatform
+} from "./hooks/usePlatform";
+import { DEFAULT_PROVIDER_NAME, useProvider } from "./hooks/useProvider";
 import { useRegion } from "./hooks/useRegion";
 import { useStamp } from "./hooks/useStamp";
-import { CheckIcon, MoreIcon, PlusIcon } from "./icons";
+import { useTier } from "./hooks/useTier";
+import { AppMarkIcon, CheckIcon, MenuIcon, MoreIcon } from "./icons";
 import ImportForm from "./ImportForm";
 import MyInstantsPanel from "./MyInstantsPanel";
-import OrganizeButton from "./OrganizeButton";
-import ProviderMenu from "./ProviderMenu";
-import RegionMenu from "./RegionMenu";
-import ServerMenu, { formatApiUrl } from "./ServerMenu";
+import ServerMenu, { botLine, formatApiUrl } from "./ServerMenu";
 import {
   getApiUrl,
   isHealthy,
@@ -67,17 +74,29 @@ export default function App() {
 
   const os = usePlatform();
   const chrome = useChromeKind();
+  const desktop = useDesktop();
 
-  // index.html stamps both pre-paint from the bridge; these keep them in
-  // step with the dev overrides (?os=, ?chrome=), which it does not read.
+  // index.html stamps all three pre-paint from the bridge; these keep them
+  // in step with the dev overrides (?os=, ?desktop=, ?chrome=), which it
+  // does not read.
   useStamp("os", os);
+  useStamp("desktop", desktop ?? "");
   useStamp("chrome", chrome);
 
   // After the mode and theme stamps above, so it reads the new palette.
   useNativeChrome(resolved, theme);
 
+  const appRef = useRef<HTMLDivElement>(null);
+  const tier = useTier(appRef);
+
   const [tab, setTab] = useState<Tab>("favorites");
   const [summary, setSummary] = useState("");
+  // Whether the grid has scrolled under the toolbar, which is when its lower
+  // edge earns a line.
+  const [scrolled, setScrolled] = useState(false);
+  // Set by the overflow menu's server item, which closes that menu and then
+  // opens the server picker: see the onCloseAutoFocus below.
+  const openServerNext = useRef(false);
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -109,7 +128,7 @@ export default function App() {
   const providers = useProviders(activeUrl);
   const { provider, setProvider } = useProvider(providers);
   // Unknown (still loading, or an old backend with no /providers route)
-  // falls through to today's behaviour — RegionMenu has always shown here —
+  // falls through to today's behaviour — the region filter has always shown here —
   // rather than assuming the active provider doesn't support it.
   const regionSupported = provider ? provider.supportsRegion : true;
 
@@ -117,29 +136,66 @@ export default function App() {
 
   const tabs = useMemo(
     () => [
-      { value: "favorites" as const, label: t("app.tabFavorites") },
-      { value: "explore" as const, label: t("app.tabExplore") }
+      {
+        value: "favorites" as const,
+        label: t("app.tabFavorites"),
+        title: `${t("app.tabFavorites")} ${shortcutLabel(os, "1")}`
+      },
+      {
+        value: "explore" as const,
+        label: t("app.tabExplore"),
+        title: `${t("app.tabExplore")} ${shortcutLabel(os, "2")}`
+      }
     ],
-    [t]
+    [t, os]
   );
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       // Per-platform: Cmd on macOS, where Ctrl+F moves the cursor forward a
-      // character and is not a find at all. Not while Aparência is open: the
-      // search sits in the staged app, behind the dock's focus trap.
-      if (editing || organizing || !isFindShortcut(event, os)) {
+      // character and is not a find at all. None of them while Aparência is
+      // open: the staged app is behind the dock's focus trap.
+      if (editing) {
         return;
       }
 
-      event.preventDefault();
-      searchRef.current?.focus();
-      searchRef.current?.select();
+      if (isFindShortcut(event, os)) {
+        // With Organizar on there is no search to focus.
+        if (!organizing) {
+          event.preventDefault();
+          searchRef.current?.focus();
+          searchRef.current?.select();
+        }
+        return;
+      }
+
+      // Nor behind a dialog, which is modal.
+      if (addOpen || importOpen || addServerOpen) {
+        return;
+      }
+
+      if (isModShortcut(event, os, "1")) {
+        event.preventDefault();
+        setTab("favorites");
+      } else if (isModShortcut(event, os, "2")) {
+        event.preventDefault();
+        setTab("explore");
+      } else if (isModShortcut(event, os, "n") && tab === "favorites" && !organizing) {
+        event.preventDefault();
+        setAddOpen(true);
+      }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [os, editing, organizing]);
+  }, [os, editing, organizing, tab, addOpen, importOpen, addServerOpen]);
+
+  // The page and its count are no longer drawn as a heading; the OS window
+  // title (Mission Control, the taskbar, Alt+Tab) is where they live now.
+  useEffect(() => {
+    const page = tab === "favorites" ? t("app.tabFavorites") : t("app.tabExplore");
+    document.title = summary ? `${page} — ${summary}` : page;
+  }, [tab, summary, t]);
 
   // The mode is Favoritos' alone.
   useEffect(() => {
@@ -348,111 +404,215 @@ export default function App() {
   const serverAddress = activeUrl ? formatApiUrl(activeUrl) : null;
   const openServerMenu = () => setServerMenuOpen(true);
 
+  // The overflow menu is where a Tight window keeps the server: the chip is
+  // out of the toolbar, and a badge on the menu button says when it needs
+  // a look.
+  const attention = Boolean(activeUrl) && (!healthy || botStatus?.connected === false);
+  const serverStatus = !healthy ? t("server.notResponding") : botLine(healthy, botStatus, t);
+
+  // Windows' caption buttons take 138px of a Tight toolbar, which leaves the
+  // tabs, a magnifier and the overflow menu: what Adicionar's menu and the
+  // Explorar filter hold go into that menu instead.
+  const foldActions = os === "win" && tier === "tight";
+
+  const filterProps = {
+    providers,
+    provider,
+    onProvider: setProvider,
+    regionSupported,
+    region,
+    onRegion: setRegion
+  };
+
+  const organizeBlockedReason = favoritesPlaying
+    ? t("favorites.organizeBlockedPlaying")
+    : query
+      ? t("favorites.organizeBlockedSearch")
+      : null;
+
   return (
     <SnackbarContext.Provider value={snackbar}>
       <TooltipProvider>
         <ToastProvider>
-          <SegmentedRoot value={tab} onChange={setTab} className="app">
-            {chrome === "custom" && <TitleBar os={os} />}
+          <SegmentedRoot value={tab} onChange={setTab} className="app" rootRef={appRef}>
             <AppearanceStage open={editing}>
-              <header className="hero">
-                <h1>{tab === "favorites" ? t("app.tabFavorites") : t("app.tabExplore")}</h1>
-                <span className="count" aria-live="polite">
-                  {summary}
-                </span>
-                <span className="spacer" />
-                <Segmented aria-label={t("app.sectionAriaLabel")} options={tabs} />
+              <header
+                className="toolbar"
+                data-tab={tab}
+                data-scrolled={scrolled || undefined}
+                data-organizing={organizing || undefined}
+              >
+                <div className="toolbar__start">
+                  {os === "win" && chrome === "custom" && (
+                    <span className="toolbar__brand" aria-hidden="true">
+                      <AppMarkIcon />
+                      <span className="toolbar__name">Peace Breaker Bot</span>
+                    </span>
+                  )}
+                  <Segmented aria-label={t("app.sectionAriaLabel")} options={tabs} />
+                </div>
+
+                <div className="toolbar__center">
+                  {organizing ? (
+                    <span className="toolbar__hint" aria-hidden="true">
+                      {summary}
+                    </span>
+                  ) : (
+                    <div className="capsule">
+                      {tab === "explore" && !foldActions && <FilterMenu {...filterProps} />}
+                      <SearchField
+                        ref={searchRef}
+                        aria-label={t("app.searchAriaLabel")}
+                        placeholder={
+                          tab === "favorites"
+                            ? t("app.searchInFavorites", { count: favorites.length })
+                            : t("app.searchInProvider", {
+                                provider: provider?.name ?? DEFAULT_PROVIDER_NAME
+                              })
+                        }
+                        shortcut={findShortcutLabel(os)}
+                        value={query}
+                        onChange={(event) => handleSearchChange(event.target.value)}
+                      />
+                    </div>
+                  )}
+                  {/* The count that used to be the hero's second line. It is
+                      still announced; it is drawn only in the window title. */}
+                  <span className="sr-only" aria-live="polite">
+                    {summary}
+                  </span>
+                </div>
+
+                <div className="toolbar__end">
+                  {tab === "favorites" && organizing && (
+                    <Button
+                      className="done"
+                      aria-label={t("favorites.organizeDone")}
+                      onClick={() => setOrganizing(false)}
+                    >
+                      <CheckIcon />
+                      <span className="lbl">{t("favorites.organizeDone")}</span>
+                    </Button>
+                  )}
+                  {tab === "favorites" && !organizing && !foldActions && (
+                    <AddMenu
+                      onAdd={() => setAddOpen(true)}
+                      onOrganize={() => setOrganizing(true)}
+                      onImport={() => setImportOpen(true)}
+                      onExport={() => exportToJSON()}
+                      canOrganize={favorites.length > 0}
+                      organizeBlockedReason={organizeBlockedReason}
+                      shortcut={shortcutLabel(os, "n")}
+                    />
+                  )}
+                  <div className="toolbar__chip">
+                    <ServerMenu
+                      servers={servers}
+                      currentApiUrl={activeUrl}
+                      healthy={healthy}
+                      botStatus={botStatus}
+                      open={serverMenuOpen}
+                      onOpenChange={setServerMenuOpen}
+                      onSelect={(server) => setSelectedServer(server.apiUrl)}
+                      onRefresh={refreshDiscovery}
+                      onAddServer={() => setAddServerOpen(true)}
+                      onRemoveServer={removeManualServer}
+                    />
+                  </div>
+                  <div className="toolbar__more">
+                    <Menu
+                      className={foldActions && tab === "explore" ? "menu--scroll" : undefined}
+                      onCloseAutoFocus={(event) => {
+                        // The server item closes this menu to open the
+                        // picker. Focus going back to the button in between
+                        // would dismiss the picker the moment it opens.
+                        if (openServerNext.current) {
+                          event.preventDefault();
+                          openServerNext.current = false;
+                          setServerMenuOpen(true);
+                        }
+                      }}
+                      trigger={
+                        <IconButton label={t("app.moreOptions")} data-attention={attention ? (healthy ? "bot" : "down") : undefined}>
+                          {os === "linux" ? <MenuIcon /> : <MoreIcon />}
+                        </IconButton>
+                      }
+                    >
+                      {foldActions && tab === "favorites" && (
+                        <>
+                          <MenuItem
+                            primary={t("app.add")}
+                            secondary={shortcutLabel(os, "n")}
+                            onSelect={() => setAddOpen(true)}
+                          />
+                          {favorites.length > 0 && (
+                            <MenuItem
+                              primary={t("favorites.organize")}
+                              secondary={organizeBlockedReason ?? undefined}
+                              disabled={organizeBlockedReason !== null}
+                              onSelect={() => setOrganizing(true)}
+                            />
+                          )}
+                          <MenuItem primary={t("app.import")} onSelect={() => setImportOpen(true)} />
+                          <MenuItem primary={t("app.export")} onSelect={() => exportToJSON()} />
+                          <MenuSeparator />
+                        </>
+                      )}
+                      {foldActions && tab === "explore" && hasFilters(filterProps) && (
+                        <>
+                          <FilterMenuItems {...filterProps} />
+                          <MenuSeparator />
+                        </>
+                      )}
+                      {tier === "tight" && (
+                        <>
+                          <MenuItem
+                            tick={
+                              <span
+                                className="dot"
+                                data-healthy={healthy}
+                                data-bot-away={healthy && botStatus?.connected === false}
+                              />
+                            }
+                            primary={serverAddress ?? t("server.none")}
+                            secondary={serverStatus ?? undefined}
+                            onSelect={() => {
+                              openServerNext.current = true;
+                            }}
+                          />
+                          <MenuSeparator />
+                        </>
+                      )}
+                      <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
+                      <MenuSeparator />
+                      <MenuItem
+                        tick={language === "pt-BR" ? <CheckIcon /> : null}
+                        primary={t("app.languagePtBR")}
+                        onSelect={() => setLanguage("pt-BR")}
+                      />
+                      <MenuItem
+                        tick={language === "en-US" ? <CheckIcon /> : null}
+                        primary={t("app.languageEnUS")}
+                        onSelect={() => setLanguage("en-US")}
+                      />
+                      {os !== "mac" && (
+                        <>
+                          <MenuSeparator />
+                          <MenuItem primary={t("app.checkForUpdates")} onSelect={checkForUpdates} />
+                        </>
+                      )}
+                    </Menu>
+                  </div>
+                </div>
               </header>
 
-              <div className="tools" data-tab={tab}>
-                <SearchField
-                  ref={searchRef}
-                  aria-label={t("app.searchAriaLabel")}
-                  placeholder={organizing ? t("app.searchOrganizing") : t("app.searchPlaceholder")}
-                  shortcut={findShortcutLabel(os)}
-                  value={query}
-                  disabled={organizing}
-                  onChange={(event) => handleSearchChange(event.target.value)}
-                />
-                <div className="tools__acts">
-                  {tab === "explore" && providers && provider && (
-                    <ProviderMenu providers={providers} value={provider.key} onSelect={setProvider} />
-                  )}
-                  {tab === "explore" && regionSupported && (
-                    <RegionMenu region={region} onSelect={setRegion} />
-                  )}
-                  {tab === "favorites" && organizing && (
-                    <Button onClick={() => setOrganizing(false)}>{t("favorites.organizeDone")}</Button>
-                  )}
-                  {tab === "favorites" && !organizing && (
-                    <>
-                      {favorites.length > 0 && (
-                        <OrganizeButton
-                          blockedReason={
-                            favoritesPlaying
-                              ? t("favorites.organizeBlockedPlaying")
-                              : query
-                                ? t("favorites.organizeBlockedSearch")
-                                : null
-                          }
-                          onClick={() => setOrganizing(true)}
-                        />
-                      )}
-                      <Button onClick={() => setAddOpen(true)}>
-                        <PlusIcon />
-                        {t("app.add")}
-                      </Button>
-                    </>
-                  )}
-                </div>
-                <div className="tools__chip">
-                  <ServerMenu
-                    servers={servers}
-                    currentApiUrl={activeUrl}
-                    healthy={healthy}
-                    botStatus={botStatus}
-                    open={serverMenuOpen}
-                    onOpenChange={setServerMenuOpen}
-                    onSelect={(server) => setSelectedServer(server.apiUrl)}
-                    onRefresh={refreshDiscovery}
-                    onAddServer={() => setAddServerOpen(true)}
-                    onRemoveServer={removeManualServer}
-                  />
-                </div>
-                <div className="tools__more">
-                  <Menu
-                    trigger={
-                      <IconButton label={t("app.moreOptions")}>
-                        <MoreIcon />
-                      </IconButton>
-                    }
-                  >
-                    <MenuItem primary={t("app.import")} onSelect={() => setImportOpen(true)} />
-                    <MenuItem primary={t("app.export")} onSelect={() => exportToJSON()} />
-                    <MenuSeparator />
-                    <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
-                    <MenuSeparator />
-                    <MenuItem
-                      tick={language === "pt-BR" ? <CheckIcon /> : null}
-                      primary={t("app.languagePtBR")}
-                      onSelect={() => setLanguage("pt-BR")}
-                    />
-                    <MenuItem
-                      tick={language === "en-US" ? <CheckIcon /> : null}
-                      primary={t("app.languageEnUS")}
-                      onSelect={() => setLanguage("en-US")}
-                    />
-                    {os !== "mac" && (
-                      <>
-                        <MenuSeparator />
-                        <MenuItem primary={t("app.checkForUpdates")} onSelect={checkForUpdates} />
-                      </>
-                    )}
-                  </Menu>
-                </div>
-              </div>
-
-              <main className="scroll">
+              <main
+                className="scroll"
+                onScroll={(event) => {
+                  const next = event.currentTarget.scrollTop > 4;
+                  setScrolled((current) => (current === next ? current : next));
+                }}
+              >
                 <SegmentedPanel value="favorites">
                   <FavoritesPanel
                     search={search}

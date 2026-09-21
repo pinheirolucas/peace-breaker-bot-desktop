@@ -22,9 +22,15 @@
  */
 
 /* ---- platform layer: control geometry, per OS ---------------------- */
-[data-os="mac"]   { --rctl: 999px; --hctl: 40px; --rpad: 20px; --rbtn: 999px; }
-[data-os="win"]   { --rctl: 4px;   --hctl: 32px; --rpad: 8px;  --rbtn: 4px; }
-[data-os="linux"] { --rctl: 6px;   --hctl: 34px; --rpad: 12px; --rbtn: 8px; }
+/* --tbh is the toolbar's height and --tch its controls'. A control in the
+ * toolbar is shorter than --hctl because it sits in a bar, not on a page. */
+[data-os="mac"]   { --rctl: 999px; --hctl: 40px; --rpad: 20px; --rbtn: 999px; --tbh: 52px; --tch: 32px; }
+[data-os="win"]   { --rctl: 4px;   --hctl: 32px; --rpad: 8px;  --rbtn: 4px;   --tbh: 48px; --tch: 32px; }
+[data-os="linux"] { --rctl: 6px;   --hctl: 34px; --rpad: 12px; --rbtn: 8px;   --tbh: 46px; --tch: 34px; }
+/* Linux desktops that keep the window manager's own title bar (KDE Plasma
+ * and the rest) get one toolbar under it, drawn a little tighter. */
+[data-os="linux"][data-desktop="kde"],
+[data-os="linux"][data-desktop="other"] { --rctl: 5px; --rpad: 8px; --rbtn: 5px; --tbh: 44px; --tch: 32px; }
 
 /* ---- card slots: read from the nearest themed element --------------- */
 .p0 { --fill: var(--p0-fill); --ink: var(--p0-ink); }

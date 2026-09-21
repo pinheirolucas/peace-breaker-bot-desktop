@@ -34,7 +34,10 @@
     "languagePtBR": "Português",
     "languageEnUS": "English",
     "connectionError": "Não foi possível conectar a {{address}}",
-    "searchOrganizing": "Conclua para procurar"
+    "addMore": "Mais ações de adição",
+    "searchInFavorites_one": "Buscar em {{count}} favorito",
+    "searchInFavorites_other": "Buscar em {{count}} favoritos",
+    "searchInProvider": "Buscar em {{provider}}"
   },
   "server": {
     "connectedTo": "Conectado a",
@@ -62,7 +65,8 @@
     "testing": "Testando…",
     "testSuccess": "Conectado",
     "testUnreachable": "Não foi possível conectar",
-    "remove": "Remover {{address}}"
+    "remove": "Remover {{address}}",
+    "notResponding": "não está respondendo"
   },
   "save": {
     "title": "Adicionar instant",
@@ -198,5 +202,9 @@
     "moved": "Posição {{pos}} de {{total}}",
     "dropped": "Solto: “{{name}}”, posição {{pos}} de {{total}}",
     "cancelled": "Movimento cancelado"
+  },
+  "filters": {
+    "label": "Filtrar por site e região",
+    "reset": "Restaurar padrão"
   }
 }

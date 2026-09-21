@@ -10,9 +10,21 @@ export interface MenuProps {
   align?: "start" | "center" | "end";
   /** Added to `menu`, e.g. `menu--scroll` for a list too long to fit. */
   className?: string;
+  /** Runs when the menu has closed and would hand focus back to its
+   *  trigger. `preventDefault()` keeps it, for a menu that closes only to
+   *  open something else. */
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
-export function Menu({ trigger, open, onOpenChange, children, align = "end", className }: MenuProps) {
+export function Menu({
+  trigger,
+  open,
+  onOpenChange,
+  children,
+  align = "end",
+  className,
+  onCloseAutoFocus
+}: MenuProps) {
   return (
     <RadixMenu.Root open={open} onOpenChange={onOpenChange}>
       <RadixMenu.Trigger asChild>{trigger}</RadixMenu.Trigger>
@@ -21,6 +33,7 @@ export function Menu({ trigger, open, onOpenChange, children, align = "end", cla
           className={["menu", className].filter(Boolean).join(" ")}
           align={align}
           sideOffset={6}
+          onCloseAutoFocus={onCloseAutoFocus}
         >
           {children}
         </RadixMenu.Content>

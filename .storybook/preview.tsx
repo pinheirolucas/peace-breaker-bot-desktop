@@ -48,10 +48,22 @@ export const globalTypes = {
       ],
       dynamicTitle: true
     }
+  },
+  desktop: {
+    description: "Desktop Linux (só vale com o sistema em Linux)",
+    toolbar: {
+      title: "Desktop",
+      icon: "component",
+      items: [
+        { value: "gnome", title: "GNOME" },
+        { value: "kde", title: "KDE Plasma" }
+      ],
+      dynamicTitle: true
+    }
   }
 };
 
-export const initialGlobals = { theme: "esmalte", mode: "dark", os: "mac" };
+export const initialGlobals = { theme: "esmalte", mode: "dark", os: "mac", desktop: "gnome" };
 
 // tokens.css uses bare attribute selectors rather than :root[...] so a
 // subtree can be themed, and the story root is that subtree. But Radix
@@ -67,13 +79,21 @@ const withTokens: Decorator = (Story, { globals }) => {
     root.dataset.theme = globals.theme;
     root.dataset.mode = globals.mode;
     root.dataset.os = globals.os;
-  }, [globals.theme, globals.mode, globals.os]);
+    // Only Linux has one: GNOME's header bar or KDE's toolbar under the
+    // window manager's own bar.
+    if (globals.os === "linux") {
+      root.dataset.desktop = globals.desktop;
+    } else {
+      delete root.dataset.desktop;
+    }
+  }, [globals.theme, globals.mode, globals.os, globals.desktop]);
 
   return (
   <div
     data-theme={globals.theme}
     data-mode={globals.mode}
     data-os={globals.os}
+    data-desktop={globals.os === "linux" ? globals.desktop : undefined}
     style={{
       background: "var(--bg)",
       color: "var(--fg)",

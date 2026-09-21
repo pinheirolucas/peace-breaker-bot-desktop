@@ -1,15 +1,23 @@
-/* The app shell: a flex column whose scroller owns its own overflow. This
- * replaces the fixed AppBar and the panels' magic marginTop: 125px. */
+/* The app shell: a flex column whose scroller owns its own overflow. One
+ * toolbar on top — the title bar, the tabs, the search and the actions, in a
+ * single row — and the grid under it. This replaced the OS title bar, a hero
+ * (title, count, tabs) and a tools row, which took 164 to 246px of the top
+ * of the window. */
 
 .app {
   height: 100%;
-  /* The window is the container: hero, tools and grid answer to its width
-   * rather than the viewport's, so the Aparência stage and Storybook resolve
-   * the same tier as the real window. Tiers, by window width:
-   *   Roomy  880+      the design canvas's 1280 layout
-   *   Snug   600-879   two-row tools, 3 columns
-   *   Tight  360-599   stacked hero, dot-only server chip, 2 columns
-   * 360 is the floor main.ts sets as the window's minWidth. */
+  /* The window is the container: the toolbar and the grid answer to its
+   * width rather than the viewport's, so the Aparência stage and Storybook
+   * resolve the same tier as the real window. Tiers, by window width:
+   *   Roomy  880+      labels and the server's address in the toolbar; from
+   *                    1000 the search is centred on the window itself
+   *   Snug   600-879   the server chip down to its dot, a narrower search,
+   *                    3 columns
+   *   Tight  360-599   the search is a magnifier that opens over the bar, the
+   *                    server moves into the overflow menu, 2 columns
+   * 360 is the floor main.ts sets as the window's minWidth (400 on Windows,
+   * whose caption buttons take 138px). The same numbers are in
+   * src/hooks/useTier.ts, for what a container query cannot reach. */
   container: app / inline-size;
   display: flex;
   flex-direction: column;
@@ -17,86 +25,324 @@
   color: var(--fg);
 }
 
-/* One continuous gutter instead of a 40px-to-16px step at 640px: 16px at 500
- * and below, 23px at 720, 32px at 1000, 40px from 1250. */
-.hero,
-.tools,
-.scroll {
-  --g: clamp(16px, 3.2cqw, 40px);
-}
+/* ==== the toolbar ======================================================== */
 
-.hero {
+.toolbar {
+  position: relative;
+  z-index: 3;
   flex: none;
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 18px;
-  padding: 26px var(--g) 20px;
-}
-.hero h1 {
-  margin: 0;
-  font-size: 42px;
-  font-weight: 700;
-  letter-spacing: -0.026em;
-  line-height: 1;
-}
-/* Under a merged title bar the hero sits right beneath the drag row; on
- * Linux and in a browser tab it needs room of its own. */
-[data-chrome="custom"] .hero {
-  padding-top: 4px;
-}
-
-.hero .count {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--muted);
-  padding-bottom: 6px;
-  font-variant-numeric: tabular-nums;
-}
-
-.spacer {
-  flex: 1;
-}
-
-.tools {
-  flex: none;
-  /* A grid rather than a wrapping flex row, so narrowing re-seats the
-   * controls (see the tiers below) instead of stranding whichever ones
-   * overflow. Cells: the search, the tab's actions, the server chip, the
-   * overflow menu. */
-  display: grid;
-  align-items: center;
-  gap: 8px;
-  grid-template-columns: minmax(200px, 380px) auto 1fr auto auto;
-  grid-template-areas: "find acts . chip more";
-  padding: 0 var(--g) 18px;
-}
-
-/* Favoritos keeps its buttons on the right, beside the server chip; Explorar
- * keeps its menus on the left, beside the search. */
-.tools[data-tab="favorites"] {
-  grid-template-columns: minmax(200px, 380px) 1fr auto auto auto;
-  grid-template-areas: "find . acts chip more";
-}
-.tools .search {
-  grid-area: find;
-  min-width: 0;
-}
-.tools__acts {
-  grid-area: acts;
+  box-sizing: border-box;
+  height: var(--tbh);
   display: flex;
   align-items: center;
+  gap: 12px;
+  padding: 0 14px 0 16px;
+  background: var(--bg);
+  border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease;
+  /* It is the title bar too: dragging it moves the window, and everything
+   * interactive in it opts out. */
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.toolbar :is(button, input, label, [role="tablist"], .capsule, .toolbar__hint) {
+  -webkit-app-region: no-drag;
+}
+.toolbar input {
+  user-select: text;
+}
+/* The grid scrolling under it earns the bar a lower edge. */
+.toolbar[data-scrolled="true"] {
+  border-bottom-color: var(--line);
+}
+
+/* Where Electron merged the window into the OS bar, the controls the OS
+ * draws sit inside the toolbar's own row. Windows and GNOME report where
+ * (the overlay's geometry), so the toolbar stops short of them whichever
+ * side they are on; macOS's traffic lights are at a fixed x. */
+[data-chrome="custom"]:not([data-os="mac"]) .toolbar {
+  padding-left: calc(env(titlebar-area-x, 0px) + 16px);
+  padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 14px);
+}
+[data-os="mac"][data-chrome="custom"] .toolbar {
+  padding-left: 82px;
+}
+/* macOS: the grid scrolls under a frosted bar. */
+[data-os="mac"] .toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: color-mix(in oklch, var(--bg) 74%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+}
+[data-os="mac"] .toolbar[data-scrolled="true"] {
+  border-bottom-color: color-mix(in oklch, var(--line) 75%, transparent);
+}
+/* GNOME's header bar is a shade off the window, with its own lower edge. */
+[data-desktop="gnome"] .toolbar {
+  padding-left: 12px;
+  background: color-mix(in oklch, var(--bg) 93%, var(--fg));
+  border-bottom-color: var(--line);
+}
+[data-desktop="gnome"][data-chrome="custom"] .toolbar {
+  padding-left: calc(env(titlebar-area-x, 0px) + 12px);
+}
+[data-desktop="kde"] .toolbar,
+[data-desktop="other"] .toolbar {
+  border-bottom-color: var(--line);
+}
+
+/* Three groups. Below 1000px they share the row as it comes: the search
+ * takes what the tabs and the buttons leave. From 1000 it is centred on the
+ * window itself, as Windows' title bar guidance asks. */
+.toolbar__start,
+.toolbar__end {
+  flex: none;
+  display: flex;
+  align-items: center;
   gap: 8px;
   min-width: 0;
 }
-.tools__chip {
-  grid-area: chip;
-  min-width: 0;
-  display: flex;
+.toolbar__start {
+  align-self: stretch;
+}
+.toolbar__end {
   justify-content: flex-end;
 }
-.tools__more {
-  grid-area: more;
+.toolbar__center {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+.toolbar__hint {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.toolbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-right: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* --- controls in the bar ---------------------------------------------- */
+.toolbar .btn,
+.toolbar .ibtn,
+.toolbar .srv {
+  height: var(--tch);
+}
+.toolbar .ibtn {
+  width: var(--tch);
+}
+.toolbar .srv {
+  padding: 0 12px;
+  font-size: 12px;
+}
+.toolbar .btn.done .lbl {
+  margin-left: 0;
+}
+
+/* The tabs. macOS keeps the accent pills, one shade smaller. */
+.toolbar .seg button {
+  height: 24px;
+}
+
+/* Windows' pivot, and the underlined tabs of KDE and the other desktops:
+ * text with a 3px accent line under the active one. */
+[data-os="win"] .toolbar .seg,
+[data-desktop="kde"] .toolbar .seg,
+[data-desktop="other"] .toolbar .seg {
+  align-self: stretch;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+[data-os="win"] .toolbar .seg button,
+[data-desktop="kde"] .toolbar .seg button,
+[data-desktop="other"] .toolbar .seg button {
+  position: relative;
+  height: 100%;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+[data-os="win"] .toolbar .seg button:hover,
+[data-desktop="kde"] .toolbar .seg button:hover,
+[data-desktop="other"] .toolbar .seg button:hover {
+  background: color-mix(in oklch, var(--fg) 6%, transparent);
+  color: var(--fg);
+}
+[data-os="win"] .toolbar .seg button[data-state="active"],
+[data-desktop="kde"] .toolbar .seg button[data-state="active"],
+[data-desktop="other"] .toolbar .seg button[data-state="active"] {
+  background: none;
+  color: var(--fg);
+}
+[data-os="win"] .toolbar .seg button[data-state="active"]::after,
+[data-desktop="kde"] .toolbar .seg button[data-state="active"]::after,
+[data-desktop="other"] .toolbar .seg button[data-state="active"]::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 5px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* GNOME's toggle group: a grey track, the active segment raised. */
+[data-desktop="gnome"] .toolbar .seg {
+  gap: 2px;
+  padding: 2px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--fg) 8%, transparent);
+}
+[data-desktop="gnome"] .toolbar .seg button {
+  height: calc(var(--tch) - 4px);
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+[data-desktop="gnome"] .toolbar .seg button[data-state="active"] {
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 0 0 1px var(--line), 0 1px 2px color-mix(in oklch, oklch(0 0 0) 14%, transparent);
+}
+
+/* --- the search capsule, and the filter that lives in it ------------------ */
+.capsule {
+  --capw: 360px;
+  display: flex;
+  align-items: center;
+  width: min(var(--capw), 100%);
+  height: var(--tch);
+  border: 1px solid var(--line);
+  border-radius: var(--rctl);
+  background: color-mix(in oklch, var(--panel) 82%, transparent);
+  transition: width 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+[data-os="linux"] .capsule {
+  --capw: 320px;
+}
+[data-desktop="gnome"] .capsule {
+  background: var(--panel);
+}
+.capsule:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
+}
+.capsule .search {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0 var(--rctl) var(--rctl) 0;
+  background: transparent;
+  cursor: text;
+}
+.capsule .search input {
+  font-size: 12.5px;
+}
+.capsule .filter {
+  position: relative;
+  flex: none;
+  height: 100%;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: var(--rctl) 0 0 var(--rctl);
+  background: transparent;
+}
+/* A dot when the site or the region is not the default. */
+.capsule .filter[data-changed="true"]::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* --- Adicionar, a split button ------------------------------------------- */
+.split {
+  display: inline-flex;
+  flex: none;
+}
+.toolbar .split__main {
+  width: var(--tch);
+  padding: 0;
+  border-radius: var(--rctl) 0 0 var(--rctl);
+}
+.toolbar .split__arrow {
+  width: 28px;
+  padding: 0;
+  border-radius: 0 var(--rctl) var(--rctl) 0;
+  border-left: 1px solid color-mix(in oklch, var(--onAccent) 35%, transparent);
+}
+
+/* --- the overflow menu's badge, in a Tight window ------------------------ */
+.toolbar__more .ibtn {
+  position: relative;
+}
+
+/* GNOME: header bar buttons are flat, with no background until hovered. */
+[data-desktop="gnome"] .toolbar :is(.ibtn, .srv) {
+  background: transparent;
+  border-color: transparent;
+}
+[data-desktop="gnome"] .toolbar :is(.ibtn, .srv):hover {
+  background: color-mix(in oklch, var(--fg) 9%, transparent);
+}
+[data-desktop="gnome"] .capsule .filter {
+  border-color: var(--line);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+
+/* Wide enough: the search is centred on the window itself. */
+@container app (min-width: 1000px) {
+  .toolbar__start,
+  .toolbar__end {
+    flex: 1 1 0;
+  }
+  .toolbar__center {
+    flex: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+  /* A percentage of a shrink-wrapped, absolutely placed box has nothing to
+   * resolve against, so here the width is the plain one. */
+  .capsule {
+    width: var(--capw);
+  }
+}
+
+/* One continuous gutter instead of a 40px-to-16px step at 640px: 16px at 500
+ * and below, 23px at 720, 32px at 1000, 40px from 1250. */
+.scroll {
+  --g: clamp(16px, 3.2cqw, 40px);
 }
 
 /* Top padding matches the hover lift/shadow and the focus ring's
@@ -107,6 +353,11 @@
   min-height: 0;
   overflow: auto;
   padding: 8px var(--g) 34px;
+}
+/* Under macOS' frosted toolbar, which floats over the grid instead of above
+ * it, the first row starts below the bar. */
+[data-os="mac"] .scroll {
+  padding-top: calc(var(--tbh) + 8px);
 }
 
 /* Four columns at the design's 1280px window, and it reflows below that
@@ -130,18 +381,23 @@
   padding-top: 22px;
 }
 
-/* Snug: search owns row 1 with the overflow menu; what you can do sits left
- * on row 2 and where you are sits right. Three columns, a touch smaller. It
- * hands over to Roomy at three columns as well (265px cards vs 264px), so
+/* Snug: the server chip down to its dot, a narrower search, three columns.
+ * It hands over to Roomy at three columns as well (265px cards vs 264px), so
  * nothing jumps at 880. */
 @container app (max-width: 879px) {
-  .tools,
-  .tools[data-tab="favorites"] {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      "find find more"
-      "acts chip chip";
-    padding-bottom: 14px;
+  .capsule {
+    --capw: 240px;
+  }
+  .toolbar .kbd,
+  .toolbar .addr,
+  .toolbar__hint,
+  .toolbar .btn.done .lbl {
+    display: none;
+  }
+  .toolbar .srv--server {
+    width: var(--tch);
+    padding: 0;
+    justify-content: center;
   }
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -149,42 +405,139 @@
   }
 }
 
-/* Tight: stacked hero with full-width tabs, the server chip down to its dot,
- * Organizar to its icon, two columns. Never one column: at the 360 floor the
- * 16px gutters leave 328px, which is two 158px cards. */
+/* Below 1000 the app's name goes from the Windows bar, keeping its icon. */
+@container app (max-width: 999px) {
+  .toolbar__name {
+    display: none;
+  }
+}
+
+/* Tight: the search is a magnifier that opens over the whole bar when it is
+ * focused; the server is out of the toolbar — its button stays, invisible,
+ * only as the place the picker opens from, and the overflow menu offers it —
+ * and Concluir is only its check. Two columns, never one: at the 360 floor
+ * the 16px gutters leave 328px, which is two 158px cards. */
 @container app (max-width: 599px) {
-  .hero {
-    gap: 10px 12px;
-    padding-bottom: 14px;
+  .toolbar {
+    gap: 8px;
   }
-  .hero h1 {
-    font-size: 30px;
-  }
-  .hero .spacer {
+  .toolbar__brand {
     display: none;
   }
-  .hero .seg {
-    flex: 1 0 100%;
+  .toolbar .seg button {
+    padding: 0 9px;
   }
-  .hero .seg button {
-    flex: 1;
+  [data-os="win"] .toolbar .seg button,
+  [data-desktop="kde"] .toolbar .seg button,
+  [data-desktop="other"] .toolbar .seg button,
+  [data-desktop="gnome"] .toolbar .seg button {
+    padding: 0 9px;
   }
-  .tools .kbd,
-  .tools .lbl,
-  .tools .addr {
-    display: none;
+  [data-os="win"] .toolbar .seg button[data-state="active"]::after,
+  [data-desktop="kde"] .toolbar .seg button[data-state="active"]::after,
+  [data-desktop="other"] .toolbar .seg button[data-state="active"]::after {
+    left: 9px;
+    right: 9px;
   }
-  .tools .srv--server,
-  .tools .btn--organize {
-    width: var(--hctl);
+  [data-os="mac"][data-chrome="custom"] .toolbar {
+    padding-left: 76px;
+  }
+
+  .toolbar__center {
+    justify-content: flex-end;
+  }
+  .capsule {
+    width: auto;
+    gap: 8px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .capsule:focus-within {
+    box-shadow: none;
+  }
+  .capsule .filter {
+    border: 1px solid var(--line);
+    border-radius: var(--rctl);
+    background: color-mix(in oklch, var(--panel) 82%, transparent);
+  }
+  .capsule .search {
+    flex: none;
+    width: var(--tch);
+    height: var(--tch);
     padding: 0;
     justify-content: center;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--rctl);
+    background: color-mix(in oklch, var(--panel) 82%, transparent);
+    transition: width 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  .tools__acts {
-    flex-wrap: wrap;
+  .capsule .search input {
+    flex: none;
+    width: 0;
   }
-  .tools__acts .srv {
+  .capsule .search[data-filled="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .capsule .search:focus-within {
+    flex: 1;
+    width: auto;
     padding: 0 12px;
+    justify-content: flex-start;
+    gap: 10px;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
+  }
+  .capsule .search:focus-within input {
+    flex: 1;
+    width: auto;
+  }
+  .toolbar:has(.search:focus-within) .toolbar__start,
+  .toolbar:has(.search:focus-within) .toolbar__end,
+  .toolbar:has(.search:focus-within) .capsule .filter {
+    display: none;
+  }
+  .toolbar:has(.search:focus-within) .capsule {
+    flex: 1;
+  }
+  .toolbar:has(.search:focus-within) .toolbar__center {
+    justify-content: stretch;
+  }
+
+  .toolbar__chip {
+    position: relative;
+    width: 0;
+  }
+  .toolbar .srv--server {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 1px;
+    height: var(--tch);
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .toolbar .btn.done {
+    width: var(--tch);
+    padding: 0;
+  }
+  .toolbar__more .ibtn[data-attention]::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: oklch(0.74 0.16 82);
+    box-shadow: 0 0 0 2px var(--bg);
+  }
+  .toolbar__more .ibtn[data-attention="down"]::after {
+    background: oklch(0.58 0.19 25);
   }
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -8,7 +8,8 @@ import { AppearanceDock } from "./AppearanceDock";
 import { AppearanceStage } from "./AppearanceStage";
 import { Button } from "./Button";
 import InstantCard from "./InstantCard";
-import { SegmentedChoice } from "./Segmented";
+import { SearchField } from "./SearchField";
+import { Segmented, SegmentedChoice, SegmentedRoot } from "./Segmented";
 import { ThemePicker } from "./ThemePicker";
 import { ThemeSwatch } from "./ThemeSwatch";
 import "../styles/shell.css";
@@ -76,10 +77,28 @@ const noop = () => {};
 function DemoApp() {
   return (
     <>
-      <header className="hero">
-        <h1>Favoritos</h1>
-        <span className="count">{DEMO.length} sons salvos</span>
-      </header>
+      <SegmentedRoot value="favorites" onChange={noop}>
+        <header className="toolbar">
+          <div className="toolbar__start">
+            <Segmented
+              aria-label="Seção"
+              options={[
+                { value: "favorites", label: "Favoritos" },
+                { value: "explore", label: "Explorar" }
+              ]}
+            />
+          </div>
+          <div className="toolbar__center">
+            <div className="capsule">
+              <SearchField
+                aria-label="Procurar um som"
+                placeholder={`Buscar em ${DEMO.length} favoritos`}
+                shortcut="⌘F"
+              />
+            </div>
+          </div>
+        </header>
+      </SegmentedRoot>
       <main className="scroll">
         <div className="grid">
           {DEMO.map((instant) => (

@@ -16,7 +16,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates
 } from "@dnd-kit/sortable";
-import OrganizeButton from "../OrganizeButton";
+import AddMenu from "../AddMenu";
 import RenameForm from "../RenameForm";
 import { TrashIcon } from "../icons";
 import type { Instant } from "../storage";
@@ -174,27 +174,48 @@ export const SortableGrid: StoryObj = {
   }
 };
 
-/** Organizar sits left of Adicionar; Concluir takes Adicionar's place while
- *  the mode is on. Blocked states use aria-disabled so hover still explains why. */
-export const ToolsRow: StoryObj = {
-  name: "Tools row · Organizar",
+/** Adicionar is a split button: the plus adds, the arrow opens Organizar,
+ *  Importar and Exportar. Organizar is disabled, with the reason under it,
+ *  while a clip plays or a search is set; with no favourites it is left out.
+ *  Concluir takes the split button's place while the mode is on. */
+export const AddMenuStory: StoryObj = {
+  name: "Toolbar · Adicionar",
   render: () => (
     <TooltipProvider>
       <div style={{ display: "grid", gap: 20, justifyItems: "start" }}>
         <div style={row}>
-          <OrganizeButton blockedReason={null} onClick={noop} />
-          <Button>Adicionar</Button>
+          <AddMenu
+            onAdd={noop}
+            onOrganize={noop}
+            onImport={noop}
+            onExport={noop}
+            canOrganize
+            organizeBlockedReason={null}
+            shortcut="⌘N"
+          />
+        </div>
+        <div style={row}>
+          <AddMenu
+            onAdd={noop}
+            onOrganize={noop}
+            onImport={noop}
+            onExport={noop}
+            canOrganize
+            organizeBlockedReason="Pare o som para organizar"
+          />
+        </div>
+        <div style={row}>
+          <AddMenu
+            onAdd={noop}
+            onOrganize={noop}
+            onImport={noop}
+            onExport={noop}
+            canOrganize={false}
+            organizeBlockedReason={null}
+          />
         </div>
         <div style={row}>
           <Button>Concluir</Button>
-        </div>
-        <div style={row}>
-          <OrganizeButton blockedReason="Pare o som para organizar" onClick={noop} />
-          <Button>Adicionar</Button>
-        </div>
-        <div style={row}>
-          <OrganizeButton blockedReason="Limpe a busca para organizar" onClick={noop} />
-          <Button>Adicionar</Button>
         </div>
       </div>
     </TooltipProvider>
