@@ -13,10 +13,10 @@
    *                    1000 the search is centred on the window itself
    *   Snug   600-879   the server chip down to its dot, a narrower search,
    *                    3 columns
-   *   Tight  360-599   the search is a magnifier that opens over the bar, the
+   *   Tight  400-599   the search is a magnifier that opens over the bar, the
    *                    server moves into the overflow menu, 2 columns
-   * 360 is the floor main.ts sets as the window's minWidth (400 on Windows,
-   * whose caption buttons take 138px). The same numbers are in
+   * 400 is the floor main.ts sets as the window's minWidth: below it the tabs,
+   * a magnifier, Adicionar and the overflow menu do not fit one bar. The same numbers are in
    * src/hooks/useTier.ts, for what a container query cannot reach. */
   container: app / inline-size;
   display: flex;
@@ -65,7 +65,9 @@
   padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 14px);
 }
 [data-os="mac"][data-chrome="custom"] .toolbar {
-  padding-left: 82px;
+  /* Clear of the traffic lights, which are 12px wide before macOS 26 and 14px
+   * after, and end near x 80 there. */
+  padding-left: 96px;
 }
 /* macOS: the grid scrolls under a frosted bar. */
 [data-os="mac"] .toolbar {
@@ -415,7 +417,7 @@
 /* Tight: the search is a magnifier that opens over the whole bar when it is
  * focused; the server is out of the toolbar — its button stays, invisible,
  * only as the place the picker opens from, and the overflow menu offers it —
- * and Concluir is only its check. Two columns, never one: at the 360 floor
+ * and Concluir is only its check. Two columns, never one: at 360px
  * the 16px gutters leave 328px, which is two 158px cards. */
 @container app (max-width: 599px) {
   .toolbar {
@@ -440,7 +442,10 @@
     right: 9px;
   }
   [data-os="mac"][data-chrome="custom"] .toolbar {
-    padding-left: 76px;
+    padding-left: 88px;
+  }
+  [data-os="mac"] .toolbar .seg button {
+    padding: 0 7px;
   }
 
   .toolbar__center {

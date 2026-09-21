@@ -280,8 +280,7 @@ function createWindow(): void {
     height: 900,
     // The narrowest and shortest the layout is designed for: two columns of
     // cards at the smallest tier. See the tiers in src/styles/shell.css.
-    // Windows' floor is higher: its caption buttons take 138px of the bar.
-    minWidth: minWindowWidth(process.platform),
+    minWidth: minWindowWidth,
     minHeight: 480,
     // Revealed on ready-to-show, after first paint, by which time
     // index.html's guard has already stamped the right palette. No flash.

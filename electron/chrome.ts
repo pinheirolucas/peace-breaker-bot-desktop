@@ -47,12 +47,10 @@ export function chromeKind(platform: string, desktop?: Desktop): ChromeKind {
  *  holds a search box), 46px in a GNOME header bar. */
 export const titleBarHeight = { darwin: 52, win32: 48, linux: 46 } as const;
 
-/** The narrowest the layout is designed for. Windows' caption buttons take
- *  138px of it, so its floor is higher: below 400 the tabs, the search and
- *  the overflow menu no longer fit beside them. */
-export function minWindowWidth(platform: string): number {
-  return platform === "win32" ? 400 : 360;
-}
+/** The narrowest the layout is designed for. Below 400 the tabs, a magnifier,
+ *  Adicionar and the overflow menu no longer fit one bar on macOS, and on
+ *  Windows the caption buttons take another 138px of it. */
+export const minWindowWidth = 400;
 
 export interface ChromeColors {
   color: string;

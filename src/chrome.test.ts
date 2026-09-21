@@ -80,10 +80,8 @@ describe("desktopFor", () => {
 });
 
 describe("minWindowWidth", () => {
-  it("raises Windows' floor to fit the caption buttons", () => {
-    expect(minWindowWidth("win32")).toBe(400);
-    expect(minWindowWidth("darwin")).toBe(360);
-    expect(minWindowWidth("linux")).toBe(360);
+  it("is the narrowest the single toolbar still fits, on every platform", () => {
+    expect(minWindowWidth).toBe(400);
   });
 });
 
