@@ -32,7 +32,18 @@ import {
 } from "./clip";
 import type { ClipDragResult, ClipPrepareResult } from "./clip";
 import { createClipStore } from "./clipStore";
-import { presenceServerChannel, serverUrl } from "./presence";
+import {
+  isPlayingReport,
+  isPresenceSettings,
+  presencePlayingChannel,
+  presenceServerChannel,
+  presenceSettingsChannel,
+  presenceSnapshotChannel,
+  presenceStopChannel,
+  serverUrl
+} from "./presence";
+import { createPresenceHost } from "./presenceHost";
+import { actionFromArgv } from "./trayMenu";
 import { isShortcutRequest, shortcutsSetChannel } from "./shortcuts";
 import { createShortcutRegistry, shouldHideOnClose } from "./shortcutRegistry";
 import type { ShortcutResult } from "./shortcuts";
@@ -114,15 +125,13 @@ const shortcuts = createShortcutRegistry({
   wayland
 });
 
-// The address the renderer reports for the active server. Main fetches the
-// clips a drag needs from it, so a drag works without the renderer's help.
-let activeServer: string | null = null;
-
 const clipsDir = path.join(app.getPath("temp"), `${app.getName()}-clips`);
 
 const clips = createClipStore({
   dir: clipsDir,
   fetchBytes: async (url) => {
+    // The address the renderers report: main fetches what a drag needs itself.
+    const activeServer = presence.snapshot().server;
     if (!activeServer) return null;
 
     const response = await net.fetch(`${activeServer}/instants/${encodeURIComponent(url)}/content`);
@@ -138,6 +147,38 @@ function sendToWindow(channel: string, payload?: unknown): void {
     mainWindow.webContents.send(channel, payload);
   }
 }
+
+// Every renderer window: the main one, and the quick panel once it exists.
+function sendToAll(channel: string, payload?: unknown): void {
+  sendToWindow(channel, payload);
+}
+
+// The Jump List and taskbar grouping key on this; electron-builder's default
+// appId is "com.electron." + the package name, which is what NSIS registers.
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.electron.peace-breaker-bot-desktop");
+}
+
+function showMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+    return;
+  }
+
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+const presence = createPresenceHost({
+  // Dev serves public/ from Vite, so build/tray only exists after a build.
+  iconDir: isDev ? path.join(app.getAppPath(), "public/tray") : path.join(__dirname, "tray"),
+  language: () => menuState.language,
+  sendAll: sendToAll,
+  openApp: showMainWindow,
+  refreshDiscovery: () => refreshDiscovery(),
+  quit: () => app.quit()
+});
 
 /**
  * Squirrel.Mac needs a real Developer ID signature before it will apply an
@@ -389,7 +430,11 @@ function createWindow(): void {
     if (discovered.size > 0) {
       publishServers();
     }
+
+    sendToWindow(presenceSnapshotChannel, presence.snapshot());
   });
+
+  const rendererId = mainWindow.webContents.id;
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:3000");
@@ -437,13 +482,16 @@ function createWindow(): void {
 
   // The renderer plays the sound, so on macOS hide instead of close while global keys are on.
   mainWindow.on("close", (event) => {
-    if (shouldHideOnClose(process.platform, shortcuts.enabled, isQuitting)) {
+    const { tray, background } = presence.settings();
+
+    if (shouldHideOnClose(process.platform, { globalKeys: shortcuts.enabled, tray, background }, isQuitting)) {
       event.preventDefault();
       mainWindow?.hide();
     }
   });
 
   mainWindow.on("closed", () => {
+    presence.forget(rendererId);
     stopDiscovery();
     shortcuts.reset();
     mainWindow = null;
@@ -526,6 +574,8 @@ ipcMain.on(menuStateChannel, (event, state: unknown) => {
   if (languageChanged || before !== JSON.stringify(menuState)) {
     rebuildMenuBar();
   }
+
+  if (languageChanged) presence.render();
 });
 
 // A card is the one thing main cannot identify, so it sends its own state.
@@ -568,7 +618,23 @@ ipcMain.on(presenceServerChannel, (event, url: unknown) => {
   const server = serverUrl(url);
 
   if (fromMainWindow(event) && server !== undefined) {
-    activeServer = server;
+    presence.setServer(server);
+  }
+});
+
+ipcMain.on(presencePlayingChannel, (event, report: unknown) => {
+  if (fromMainWindow(event) && isPlayingReport(report)) {
+    presence.setPlaying(event.sender.id, report);
+  }
+});
+
+ipcMain.on(presenceStopChannel, (event) => {
+  if (fromMainWindow(event)) presence.stop();
+});
+
+ipcMain.on(presenceSettingsChannel, (event, settings: unknown) => {
+  if (fromMainWindow(event) && isPresenceSettings(settings)) {
+    presence.setSettings(settings);
   }
 });
 
@@ -611,11 +677,14 @@ ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult =>
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on("second-instance", () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
+  app.on("second-instance", (_event, argv) => {
+    // A Jump List task or desktop action is a second launch with --action=.
+    const action = actionFromArgv(argv);
+
+    if (action) {
+      presence.run(action);
+    } else {
+      showMainWindow();
     }
   });
 }
@@ -626,6 +695,7 @@ app.on("before-quit", () => {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  presence.destroy();
   // Synchronous on purpose: the process is on its way out.
   rmSync(clipsDir, { recursive: true, force: true });
 });
@@ -641,6 +711,11 @@ app.on("ready", () => {
     credits: "Break the peace, on command."
   });
   rebuildMenuBar();
+  presence.render();
+
+  // Launched from a Jump List task or desktop action while nothing was running.
+  const action = actionFromArgv(process.argv);
+  if (action && action !== "open-app") presence.run(action);
 
   if (!isDev) {
     startUpdateChecks();

@@ -1,4 +1,5 @@
 import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "../../electron/clip";
+import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "../../electron/presence";
 import type { CardContext, MenuCommand, MenuState } from "../../electron/menuState";
 import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
 import { isPlatformId } from "../themes";
@@ -49,6 +50,10 @@ declare global {
     };
     instantsPresence?: {
       setServer: (url: string | null) => void;
+      setPlaying: (report: PlayingReport | null) => void;
+      setSettings: (settings: PresenceSettings) => void;
+      stop: () => void;
+      onSnapshot: (listener: (snapshot: PresenceSnapshot) => void) => () => void;
     };
     instantsUpdates?: {
       onAvailable: (listener: (version: string) => void) => () => void;

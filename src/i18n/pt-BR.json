@@ -369,5 +369,16 @@
       "test": "Testar conexão",
       "remove": "Remover servidor"
     }
+  },
+  "presence": {
+    "playing": "Tocando: {{name}}",
+    "checking": "Verificando o servidor…",
+    "connected": "Bot em um canal de voz",
+    "stop": "Parar reprodução",
+    "openPanel": "Abrir painel",
+    "openApp": "Abrir Peace Breaker Bot",
+    "refresh": "Procurar servidor novamente",
+    "quit": "Sair",
+    "someSound": "Som"
   }
 }

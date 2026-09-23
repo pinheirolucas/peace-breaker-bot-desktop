@@ -42,7 +42,29 @@
       "icon": "resources/icons",
       "target": [
         "AppImage"
-      ]
+      ],
+      "desktop": {
+        "entry": {
+          "Actions": "OpenPanel;Stop;Refresh;"
+        },
+        "desktopActions": {
+          "OpenPanel": {
+            "Name": "Open Quick Panel",
+            "Name[pt_BR]": "Abrir painel rápido",
+            "Exec": "peace-breaker-bot-desktop --action=open-panel"
+          },
+          "Stop": {
+            "Name": "Stop Playback",
+            "Name[pt_BR]": "Parar reprodução",
+            "Exec": "peace-breaker-bot-desktop --action=stop"
+          },
+          "Refresh": {
+            "Name": "Search for Server Again",
+            "Name[pt_BR]": "Procurar servidor novamente",
+            "Exec": "peace-breaker-bot-desktop --action=refresh"
+          }
+        }
+      }
     }
   },
   "private": true,

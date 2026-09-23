@@ -369,5 +369,16 @@
       "test": "Test Connection",
       "remove": "Remove Server"
     }
+  },
+  "presence": {
+    "playing": "Playing: {{name}}",
+    "checking": "Checking the server…",
+    "connected": "Bot is in a voice channel",
+    "stop": "Stop Playback",
+    "openPanel": "Open Panel",
+    "openApp": "Open Peace Breaker Bot",
+    "refresh": "Search for Server Again",
+    "quit": "Quit",
+    "someSound": "Sound"
   }
 }

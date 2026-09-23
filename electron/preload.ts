@@ -3,7 +3,15 @@ import { discoveryRefreshChannel, discoveryServersChannel } from "./discovery";
 import type { Server } from "./discovery";
 import { clipDragChannel, clipPrepareChannel } from "./clip";
 import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "./clip";
-import { presenceServerChannel } from "./presence";
+import {
+  isPresenceSnapshot,
+  presencePlayingChannel,
+  presenceServerChannel,
+  presenceSettingsChannel,
+  presenceSnapshotChannel,
+  presenceStopChannel
+} from "./presence";
+import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "./presence";
 import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
@@ -230,7 +238,36 @@ contextBridge.exposeInMainWorld("instantsClip", {
     ipcRenderer.invoke(clipDragChannel, request)
 });
 
-// What main needs from the renderer to act without a window.
+// What main needs from the renderer to act without a window, and the one
+// record it answers with. Main validates every report again.
+type SnapshotListener = (snapshot: PresenceSnapshot) => void;
+
+const snapshotListeners = new Set<SnapshotListener>();
+let lastSnapshot: PresenceSnapshot | null = null;
+
+ipcRenderer.on(presenceSnapshotChannel, (_event, snapshot: unknown) => {
+  if (!isPresenceSnapshot(snapshot)) return;
+
+  lastSnapshot = snapshot;
+  snapshotListeners.forEach((listener) => listener(snapshot));
+});
+
 contextBridge.exposeInMainWorld("instantsPresence", {
-  setServer: (url: string | null) => ipcRenderer.send(presenceServerChannel, url)
+  setServer: (url: string | null) => ipcRenderer.send(presenceServerChannel, url),
+  setPlaying: (report: PlayingReport | null) => ipcRenderer.send(presencePlayingChannel, report),
+  setSettings: (settings: PresenceSettings) => ipcRenderer.send(presenceSettingsChannel, settings),
+  stop: () => ipcRenderer.send(presenceStopChannel),
+  // Replays the last snapshot to a late subscriber, like instantsDiscovery.
+  onSnapshot: (listener: SnapshotListener) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    snapshotListeners.add(listener);
+    if (lastSnapshot) listener(lastSnapshot);
+
+    return () => {
+      snapshotListeners.delete(listener);
+    };
+  }
 });

@@ -55,7 +55,8 @@ export interface MyInstantsPanelProps {
   onSummary: (summary: string) => void;
   onClearSearch: () => void;
   /** Which path is playing, for the menu bar's Parar reprodução. */
-  onPlaybackChange?: (playback: "local" | "discord" | null) => void;
+  /** `name` is the clip that plays, for the tray and the panel; null when unknown. */
+  onPlaybackChange?: (playback: "local" | "discord" | null, name: string | null) => void;
 }
 
 export default function MyInstantsPanel({
@@ -71,6 +72,8 @@ export default function MyInstantsPanel({
   onPlaybackChange
 }: MyInstantsPanelProps) {
   const { t } = useTranslation();
+  // The player hooks know a clip by its url; the tray shows its name.
+  const names = useRef(new Map<string, string>());
   const [audioUrl, isAudioPlaying, playAudio, stopAudio] = useAudioPlayer();
   const [discordUrl, isDiscordPlaying, playDiscord, stopDiscord] = useDiscordPlayer();
   const [favorites, setFavorites] = useInstantsState([]);
@@ -180,10 +183,12 @@ export default function MyInstantsPanel({
       return;
     }
 
+    names.current.set(instant.url, instant.name);
     playAudio(instant.url, info.content);
   }
 
   async function handlePlayOnDiscord(instant: Instant) {
+    names.current.set(instant.url, instant.name);
     const error = await playDiscord(instant.url);
     if (error) {
       openSnackbar({ message: apiErrorMessage(t, error) });
@@ -196,7 +201,8 @@ export default function MyInstantsPanel({
     }
 
     if (isDiscordPlaying) {
-      await stopDiscord();
+      // The tray's Stop asks the endpoint itself as well, so the second answer may be a refusal.
+      await stopDiscord().catch(() => {});
     }
   }
 
@@ -211,12 +217,15 @@ export default function MyInstantsPanel({
 
   const playbackNow = isDiscordPlaying ? "discord" : isAudioPlaying ? "local" : null;
 
+  const playingName =
+    playbackNow === null ? null : (names.current.get(playbackNow === "discord" ? discordUrl : audioUrl) ?? null);
+
   useEffect(() => {
-    onPlaybackChange?.(playbackNow);
-  }, [playbackNow, onPlaybackChange]);
+    onPlaybackChange?.(playbackNow, playingName);
+  }, [playbackNow, playingName, onPlaybackChange]);
 
   // This panel unmounts with its tab; whatever it was playing goes with it.
-  useEffect(() => () => onPlaybackChange?.(null), [onPlaybackChange]);
+  useEffect(() => () => onPlaybackChange?.(null, null), [onPlaybackChange]);
 
   // Same handlers as the buttons, re-checked against cardState at run time.
   useMenuCommands((command) => {

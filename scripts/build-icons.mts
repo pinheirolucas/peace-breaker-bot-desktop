@@ -7,6 +7,7 @@
 //   resources/icons/NxN.png      Linux packages (circle)
 //   public/icon.png              Linux running-window icon (no bundle there)
 //   public/favicon.svg, .ico     the browser tab
+//   public/tray/                 the tray glyph, four states (fita-tray-*.svg)
 
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -63,3 +64,29 @@ await write(out("public/icon.png"), await render(master("fita-linux.svg"), 512))
 await write(out("public/favicon.svg"), await fs.readFile(master("favicon.svg")));
 const tab = await Promise.all([16, 32, 48].map(async (size) => ({ size, png: await render(master("favicon.svg"), size) })));
 await write(out("public/favicon.ico"), packIco(tab));
+
+// The tray glyph: four shapes of Fita in one ink. macOS reads only alpha from a
+// "Template" image and tints it itself, so it gets black ink and the OS does
+// the light/dark; Windows and Linux draw the file as it is, so they get a
+// white cut for a dark tray and a black one for a light tray. Each size is
+// rendered from the vector at that size: 18px and 36px (@2x) on macOS, 16px
+// and 32px elsewhere.
+console.log("Tray:");
+const trayStates = ["connected", "playing", "idle", "off"];
+
+async function renderInk(svgFile: string, size: number, ink: string): Promise<Buffer> {
+  const svg = (await fs.readFile(svgFile, "utf8")).replaceAll("#000", ink);
+  return sharp(Buffer.from(svg), { density: (72 * size) / 96 }).resize(size, size).png({ compressionLevel: 9 }).toBuffer();
+}
+
+for (const state of trayStates) {
+  const file = master(`fita-tray-${state}.svg`);
+
+  await write(out(`public/tray/${state}Template.png`), await renderInk(file, 18, "#000"));
+  await write(out(`public/tray/${state}Template@2x.png`), await renderInk(file, 36, "#000"));
+
+  for (const [tone, ink] of [["light", "#fff"], ["dark", "#000"]] as const) {
+    await write(out(`public/tray/${state}-${tone}.png`), await renderInk(file, 16, ink));
+    await write(out(`public/tray/${state}-${tone}@2x.png`), await renderInk(file, 32, ink));
+  }
+}

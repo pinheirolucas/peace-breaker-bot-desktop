@@ -132,11 +132,20 @@ describe("createShortcutRegistry", () => {
 });
 
 describe("shouldHideOnClose", () => {
-  it("hides only on macOS, with global keys on, and not while quitting", () => {
-    expect(shouldHideOnClose("darwin", true, false)).toBe(true);
-    expect(shouldHideOnClose("darwin", false, false)).toBe(false);
-    expect(shouldHideOnClose("darwin", true, true)).toBe(false);
-    expect(shouldHideOnClose("win32", true, false)).toBe(false);
-    expect(shouldHideOnClose("linux", true, false)).toBe(false);
+  const off = { globalKeys: false, tray: false, background: false };
+
+  it("on macOS hides while global keys or the tray need the renderer, and never while quitting", () => {
+    expect(shouldHideOnClose("darwin", { ...off, globalKeys: true }, false)).toBe(true);
+    expect(shouldHideOnClose("darwin", { ...off, tray: true }, false)).toBe(true);
+    expect(shouldHideOnClose("darwin", off, false)).toBe(false);
+    expect(shouldHideOnClose("darwin", { ...off, globalKeys: true }, true)).toBe(false);
+  });
+
+  it("on Windows and Linux hides only when asked to stay in the background", () => {
+    for (const platform of ["win32", "linux"]) {
+      expect(shouldHideOnClose(platform, { ...off, background: true }, false)).toBe(true);
+      expect(shouldHideOnClose(platform, { ...off, globalKeys: true, tray: true }, false)).toBe(false);
+      expect(shouldHideOnClose(platform, { ...off, background: true }, true)).toBe(false);
+    }
   });
 });

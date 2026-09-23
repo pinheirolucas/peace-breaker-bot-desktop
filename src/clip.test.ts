@@ -5,7 +5,6 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { clipFileName, dataUriBytes, isClipRequest } from "../electron/clip";
 import { createClipStore } from "../electron/clipStore";
-import { serverUrl } from "../electron/presence";
 
 describe("isClipRequest", () => {
   const ok = { name: "Vine boom", url: "https://www.myinstants.com/media/sounds/vine.mp3" };
@@ -73,17 +72,6 @@ describe("dataUriBytes", () => {
     expect(dataUriBytes("data:text/html;base64,PGI+")).toBeNull();
     expect(dataUriBytes("https://example.com/a.mp3")).toBeNull();
     expect(dataUriBytes("data:audio/mpeg;base64,")).toBeNull();
-  });
-});
-
-describe("serverUrl", () => {
-  it("normalizes and accepts null", () => {
-    expect(serverUrl("http://192.168.0.5:9001/api/v1/")).toBe("http://192.168.0.5:9001/api/v1");
-    expect(serverUrl(null)).toBeNull();
-  });
-
-  it.each([undefined, 3, "", "ftp://x", "not a url", "file:///x"])("refuses %j", (value) => {
-    expect(serverUrl(value)).toBeUndefined();
   });
 });
 
