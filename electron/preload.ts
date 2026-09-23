@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { discoveryRefreshChannel, discoveryServersChannel } from "./discovery";
 import type { Server } from "./discovery";
+import { clipDragChannel, clipPrepareChannel } from "./clip";
+import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "./clip";
+import { presenceServerChannel } from "./presence";
 import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
@@ -216,4 +219,18 @@ contextBridge.exposeInMainWorld("instantsMenu", {
   serverContext: () => ipcRenderer.send(serverContextChannel),
   serverRowContext: (id: string) => ipcRenderer.send(serverRowContextChannel, { id }),
   selectionContext: () => ipcRenderer.send(selectionContextChannel)
+});
+
+// Dragging a clip out as a file. Main validates every request again and owns
+// the file; the renderer only ever names a clip, never a path.
+contextBridge.exposeInMainWorld("instantsClip", {
+  prepare: (request: ClipRequest): Promise<ClipPrepareResult> =>
+    ipcRenderer.invoke(clipPrepareChannel, request),
+  drag: (request: ClipRequest): Promise<ClipDragResult> =>
+    ipcRenderer.invoke(clipDragChannel, request)
+});
+
+// What main needs from the renderer to act without a window.
+contextBridge.exposeInMainWorld("instantsPresence", {
+  setServer: (url: string | null) => ipcRenderer.send(presenceServerChannel, url)
 });

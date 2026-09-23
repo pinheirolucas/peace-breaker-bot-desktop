@@ -312,6 +312,11 @@ export default function App() {
     setActiveUrl(getApiUrl());
   }, [servers, selectedServer]);
 
+  // Main fetches a dragged clip's file itself, so it needs the address.
+  useEffect(() => {
+    window.instantsPresence?.setServer(activeUrl);
+  }, [activeUrl]);
+
   const showToast = useCallback((options: SnackbarOptions) => {
     setToast((current) => ({ ...options, open: true, key: current.key + 1 }));
   }, []);

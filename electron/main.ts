@@ -1,5 +1,5 @@
-import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, nativeTheme, net, shell } from "electron";
-import { createWriteStream } from "node:fs";
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, nativeImage, nativeTheme, net, shell } from "electron";
+import { createWriteStream, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { Bonjour } from "bonjour-service";
@@ -24,6 +24,15 @@ import {
   titleBarHeight,
   windowChromeFor
 } from "./chrome";
+import {
+  clipDragChannel,
+  clipPrepareChannel,
+  dataUriBytes,
+  isClipRequest
+} from "./clip";
+import type { ClipDragResult, ClipPrepareResult } from "./clip";
+import { createClipStore } from "./clipStore";
+import { presenceServerChannel, serverUrl } from "./presence";
 import { isShortcutRequest, shortcutsSetChannel } from "./shortcuts";
 import { createShortcutRegistry, shouldHideOnClose } from "./shortcutRegistry";
 import type { ShortcutResult } from "./shortcuts";
@@ -103,6 +112,25 @@ const shortcuts = createShortcutRegistry({
   registry: globalShortcut,
   send: (channel, key) => sendToWindow(channel, key),
   wayland
+});
+
+// The address the renderer reports for the active server. Main fetches the
+// clips a drag needs from it, so a drag works without the renderer's help.
+let activeServer: string | null = null;
+
+const clipsDir = path.join(app.getPath("temp"), `${app.getName()}-clips`);
+
+const clips = createClipStore({
+  dir: clipsDir,
+  fetchBytes: async (url) => {
+    if (!activeServer) return null;
+
+    const response = await net.fetch(`${activeServer}/instants/${encodeURIComponent(url)}/content`);
+    const body = (await response.json()) as { data?: { exists?: boolean; content?: unknown } };
+    const content = body.data?.exists ? body.data.content : null;
+
+    return typeof content === "string" ? dataUriBytes(content) : null;
+  }
 });
 
 function sendToWindow(channel: string, payload?: unknown): void {
@@ -215,6 +243,11 @@ function menuDeps(): MenuDeps {
     send: (command: MenuCommand) => sendToWindow(menuCommandChannel, command),
     copy: (text) => clipboard.writeText(text),
     // Only https ever reaches the shell; the url may come from a stored favourite.
+    reveal: (request) => {
+      void clips.prepare(request).then((file) => {
+        if (file) shell.showItemInFolder(file);
+      });
+    },
     openExternal: (url) => {
       const safe = httpsUrl(url);
       if (safe) void shell.openExternal(safe);
@@ -475,7 +508,7 @@ ipcMain.on(chromeChannel, (event, colors: unknown) => {
   }
 });
 
-function fromMainWindow(event: Electron.IpcMainEvent): boolean {
+function fromMainWindow(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
   return Boolean(mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents);
 }
 
@@ -531,6 +564,35 @@ ipcMain.on(selectionContextChannel, (event) => {
   }
 });
 
+ipcMain.on(presenceServerChannel, (event, url: unknown) => {
+  const server = serverUrl(url);
+
+  if (fromMainWindow(event) && server !== undefined) {
+    activeServer = server;
+  }
+});
+
+// Prepared on pointer down, so the drag that may follow finds the file ready.
+ipcMain.handle(clipPrepareChannel, async (event, request: unknown): Promise<ClipPrepareResult> => {
+  if (!fromMainWindow(event) || !isClipRequest(request)) return "failed";
+
+  return (await clips.prepare(request)) ? "ready" : "failed";
+});
+
+// The drag itself. startDrag is main's alone: the renderer can only ask for a
+// clip it has just prepared, never name a path.
+ipcMain.handle(clipDragChannel, async (event, request: unknown): Promise<ClipDragResult> => {
+  if (!fromMainWindow(event) || !isClipRequest(request)) return "failed";
+
+  const file = await clips.ready(request.url);
+  if (!file) return "failed";
+
+  // The icon is what follows the pointer; a macOS drag needs a non-empty one.
+  const icon = nativeImage.createFromPath(path.join(__dirname, "icon.png")).resize({ width: 48 });
+  event.sender.startDrag({ file, icon });
+  return "started";
+});
+
 ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult => {
   const empty: ShortcutResult = { registered: [], failed: [] };
 
@@ -564,9 +626,13 @@ app.on("before-quit", () => {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  // Synchronous on purpose: the process is on its way out.
+  rmSync(clipsDir, { recursive: true, force: true });
 });
 
 app.on("ready", () => {
+  // Whatever a crash left behind last time.
+  void clips.sweep();
   createWindow();
   registerUpdateListeners();
 

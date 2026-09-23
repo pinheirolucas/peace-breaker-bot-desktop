@@ -2,6 +2,7 @@ import { useId } from "react";
 import type { ButtonHTMLAttributes, CSSProperties, MouseEvent, ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { GripIcon, KeyboardIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
+import { useClipDrag } from "../hooks/useClipDrag";
 import { menuBridge } from "../hooks/useMenuBridge";
 import { overlayOpen } from "../lib/clipKeys";
 import { slotFor } from "../lib/slot";
@@ -128,6 +129,7 @@ export default function InstantCard({
   const discordLabel = state.botGated ? t("card.discordUnavailable") : t("card.playOnDiscord");
   const dragging = organize?.drag === "overlay";
   const clipKey = instant.key;
+  const clipDrag = useClipDrag({ name: instant.name, url: instant.url }, !organize);
   // The keycap and the playing chip share a corner.
   const showKeycap = Boolean(clipKey) && (organize ? true : !state.live);
   const showEmptyKeycap = !clipKey && Boolean(organize) && !organize?.drag;
@@ -167,6 +169,8 @@ export default function InstantCard({
   return (
     <article
       onContextMenu={handleContextMenu}
+      {...clipDrag.bind}
+      data-clip={clipDrag.state === "rest" ? undefined : clipDrag.state}
       ref={organize?.rootRef}
       style={organize?.style}
       className={`pad ${slotFor(instant.url)}`}
@@ -237,6 +241,10 @@ export default function InstantCard({
           </button>
         )}
       </h3>
+
+      {clipDrag.state === "preparing" && (
+        <span className="pprep" role="progressbar" aria-label={t("card.preparing")} />
+      )}
 
       <svg
         className="pwave"

@@ -296,3 +296,54 @@
     height: 28px;
   }
 }
+
+/* Dragging a clip out as a file (useClipDrag). The card is the drag source
+ * after a 6px threshold; these are the states it passes through. Nothing here
+ * applies in Organizar, where the card has no drag source. */
+.pad[data-clip="pressed"] {
+  transform: scale(0.97);
+  filter: none;
+}
+.pad[data-clip="preparing"] .pwave {
+  opacity: 0.2;
+}
+.pprep {
+  position: absolute;
+  left: 17px;
+  right: 17px;
+  bottom: 59px;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--ink) 22%, transparent);
+  pointer-events: none;
+}
+.pprep::after {
+  content: "";
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ink);
+  animation: prep 900ms ease-in-out infinite;
+}
+@keyframes prep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+/* The source stays where it was, faded and dashed, while the file is carried off. */
+.pad[data-clip="dragging"] {
+  opacity: 0.5;
+  outline: 2px dashed var(--ink);
+  outline-offset: -4px;
+  transform: none;
+  filter: none;
+}
+.pad[data-clip="unavailable"] {
+  opacity: 0.55;
+  outline: 2px dashed var(--ink);
+  outline-offset: -4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pprep::after { animation: none; width: 100%; opacity: 0.6; }
+}

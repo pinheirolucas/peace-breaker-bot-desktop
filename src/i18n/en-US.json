@@ -8,7 +8,9 @@
     "playingDiscord": "On Discord",
     "rename": "Rename",
     "moveHandle": "Move {{name}}, position {{pos}} of {{total}}",
-    "position": "{{pos}} of {{total}}"
+    "position": "{{pos}} of {{total}}",
+    "dragFailed": "Couldn't prepare the file. Try dragging again.",
+    "preparing": "Preparing file…"
   },
   "common": {
     "switch": "Switch",
@@ -347,6 +349,7 @@
       "stopDiscord": "Stop on Discord",
       "botAway": "Bot is not in a voice channel",
       "copyLink": "Copy Audio Link",
+      "reveal": "Show in Folder",
       "open": "Open on Site",
       "openIn": "Open on {{provider}}",
       "rename": "Rename…",

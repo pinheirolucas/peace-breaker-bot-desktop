@@ -8,7 +8,9 @@
     "playingDiscord": "No Discord",
     "rename": "Renomear",
     "moveHandle": "Mover {{name}}, posição {{pos}} de {{total}}",
-    "position": "{{pos}} de {{total}}"
+    "position": "{{pos}} de {{total}}",
+    "dragFailed": "Não foi possível preparar o arquivo. Tente arrastar de novo.",
+    "preparing": "Preparando o arquivo…"
   },
   "common": {
     "switch": "Trocar",
@@ -347,6 +349,7 @@
       "stopDiscord": "Parar no Discord",
       "botAway": "Bot fora de um canal de voz",
       "copyLink": "Copiar link do áudio",
+      "reveal": "Mostrar na pasta",
       "open": "Abrir no site",
       "openIn": "Abrir em {{provider}}",
       "rename": "Renomear…",

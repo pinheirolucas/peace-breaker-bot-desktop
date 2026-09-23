@@ -18,6 +18,8 @@ export interface MenuDeps {
   send: (command: MenuCommand) => void;
   copy: (text: string) => void;
   openExternal: (url: string) => void;
+  /** Shows the clip's file in the file manager, preparing it first. */
+  reveal: (request: { name: string; url: string }) => void;
 }
 
 export const repoUrl = "https://github.com/pinheirolucas/peace-breaker-bot-desktop";
@@ -47,7 +49,7 @@ function group(...groups: Item[][]): Item[] {
 
 // ---- card ----
 
-export function cardMenu(ctx: CardContext, { t, send, copy, openExternal }: MenuDeps): Item[] {
+export function cardMenu(ctx: CardContext, { t, send, copy, openExternal, reveal }: MenuDeps): Item[] {
   const act = (action: Parameters<typeof cardCommand>[1]) => () => send(cardCommand(ctx, action));
   const clipKey = ctx.key?.toUpperCase();
   const favorites = ctx.surface === "favorites";
@@ -56,6 +58,7 @@ export function cardMenu(ctx: CardContext, { t, send, copy, openExternal }: Menu
 
   const links: Item[] = [
     { label: t("menu.card.copyLink"), click: () => copy(ctx.url) },
+    { label: t("menu.card.reveal"), click: () => reveal({ name: ctx.name, url: ctx.url }) },
     {
       label: favorites ? t("menu.card.open") : t("menu.card.openIn", { provider: ctx.providerName }),
       enabled: site !== null,

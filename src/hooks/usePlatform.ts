@@ -1,3 +1,4 @@
+import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "../../electron/clip";
 import type { CardContext, MenuCommand, MenuState } from "../../electron/menuState";
 import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
 import { isPlatformId } from "../themes";
@@ -41,6 +42,13 @@ declare global {
       serverContext: () => void;
       serverRowContext: (id: string) => void;
       selectionContext: () => void;
+    };
+    instantsClip?: {
+      prepare: (request: ClipRequest) => Promise<ClipPrepareResult>;
+      drag: (request: ClipRequest) => Promise<ClipDragResult>;
+    };
+    instantsPresence?: {
+      setServer: (url: string | null) => void;
     };
     instantsUpdates?: {
       onAvailable: (listener: (version: string) => void) => () => void;

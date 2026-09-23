@@ -19,8 +19,9 @@ function deps(platform = "darwin", language: "pt-BR" | "en-US" = "pt-BR") {
   const send = vi.fn();
   const copy = vi.fn();
   const openExternal = vi.fn();
-  const value: MenuDeps = { t: translatorFor(language), platform, send, copy, openExternal };
-  return { ...value, send, copy, openExternal };
+  const reveal = vi.fn();
+  const value: MenuDeps = { t: translatorFor(language), platform, send, copy, openExternal, reveal };
+  return { ...value, send, copy, openExternal, reveal };
 }
 
 function card(
@@ -58,6 +59,16 @@ const find = (items: Item[], label: string) => items.find((item) => item.label =
 const state = (patch: Partial<MenuState> = {}): MenuState => ({ ...initialMenuState("pt-BR"), ...patch });
 
 describe("card menu", () => {
+  it("Mostrar na pasta asks main to reveal the clip's file", () => {
+    const d = deps();
+    (find(cardMenu(card("idle"), d), "Mostrar na pasta").click as () => void)();
+
+    expect(d.reveal).toHaveBeenCalledWith({
+      name: "Vine boom",
+      url: "https://www.myinstants.com/pt/instant/vine-boom/"
+    });
+  });
+
   it("idle: play, send, links, then rename and remove last", () => {
     const menu = cardMenu(card("idle"), deps());
 
@@ -66,6 +77,7 @@ describe("card menu", () => {
       "Enviar ao Discord",
       "-",
       "Copiar link do áudio",
+      "Mostrar na pasta",
       "Abrir no site",
       "-",
       "Renomear…",
@@ -131,6 +143,7 @@ describe("card menu", () => {
       "Mover para o fim",
       "-",
       "Copiar link do áudio",
+      "Mostrar na pasta",
       "Abrir no site",
       "-",
       "Remover dos favoritos"
@@ -148,6 +161,7 @@ describe("card menu", () => {
       "Adicionar aos favoritos",
       "-",
       "Copiar link do áudio",
+      "Mostrar na pasta",
       "Abrir em MyInstants"
     ]);
 
