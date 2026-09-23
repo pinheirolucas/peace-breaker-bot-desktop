@@ -106,3 +106,45 @@ describe("useBotStatus", () => {
     expect(() => deferred.resolve?.({ connected: true })).not.toThrow();
   });
 });
+
+describe("useBotStatus under Electron", () => {
+  afterEach(() => {
+    delete window.instantsPresence;
+    vi.mocked(getBotStatus).mockReset();
+  });
+
+  function bridge() {
+    let push: (snapshot: unknown) => void = () => {};
+    window.instantsPresence = {
+      setServer: vi.fn(),
+      setPlaying: vi.fn(),
+      setSettings: vi.fn(),
+      stop: vi.fn(),
+      onSnapshot: (listener: (snapshot: never) => void) => {
+        push = listener as (snapshot: unknown) => void;
+        return () => {};
+      }
+    };
+    return (snapshot: unknown) => act(() => push(snapshot));
+  }
+
+  it("reads main's one poll instead of making its own", () => {
+    const send = bridge();
+    const { result } = renderHook(() => useBotStatus(apiUrl));
+
+    expect(result.current).toBeNull();
+    send({ server: apiUrl, bot: { connected: true }, playing: null, silent: false });
+
+    expect(result.current).toEqual({ connected: true });
+    expect(getBotStatus).not.toHaveBeenCalled();
+  });
+
+  it("ignores an answer about another server", () => {
+    const send = bridge();
+    const { result } = renderHook(() => useBotStatus(apiUrl));
+
+    send({ server: "http://10.0.0.9:9001/api/v1", bot: { connected: true }, playing: null, silent: false });
+
+    expect(result.current).toBeNull();
+  });
+});

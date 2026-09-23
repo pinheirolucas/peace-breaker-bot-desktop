@@ -93,7 +93,23 @@ export function createShortcutRegistry({
   };
 }
 
-/** On macOS the app outlives its window, so closing hides it while global keys need the renderer. */
-export function shouldHideOnClose(platform: string, globalKeysEnabled: boolean, quitting: boolean) {
-  return platform === "darwin" && globalKeysEnabled && !quitting;
+export interface CloseRules {
+  /** Global shortcut keys are on: they need the renderer that plays the sound. */
+  globalKeys: boolean;
+  /** The tray icon is on: its state and the panel live in the renderer. */
+  tray: boolean;
+  /** "Manter em segundo plano ao fechar a janela", for Windows and Linux. */
+  background: boolean;
+}
+
+/**
+ * Whether closing the window hides it instead. The renderer is what plays and
+ * what tells main what plays, so on macOS — where the app outlives its window
+ * anyway — hiding rather than destroying keeps global keys and the tray
+ * honest. Windows and Linux quit with the window unless asked to stay.
+ */
+export function shouldHideOnClose(platform: string, rules: CloseRules, quitting: boolean) {
+  if (quitting) return false;
+  if (platform === "darwin") return rules.globalKeys || rules.tray;
+  return rules.background;
 }

@@ -61,7 +61,10 @@ import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
 import { useInstantsState, useManualServers, useSelectedServer } from "./storage";
+import PresenceDialog from "./components/PresenceDialog";
+import { usePanelShortcut, usePanelShortcutSettings } from "./hooks/usePanelShortcut";
 import useBotStatus from "./useBotStatus";
+import { usePresenceSettings, useReportPlaying, useReportPresenceSettings } from "./hooks/usePresence";
 import useProviders from "./useProviders";
 import "./styles/shell.css";
 
@@ -74,6 +77,12 @@ interface ToastState extends SnackbarOptions {
   /** Bumped on every show, so a repeat remounts the toast: a fresh timer,
    *  and a screen reader announces it again. */
   key: number;
+}
+
+/** What one panel is playing, and the clip's name when it is known. */
+interface NowPlaying {
+  mode: "local" | "discord";
+  name: string | null;
 }
 
 export default function App() {
@@ -128,11 +137,46 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false);
   const [addServerOpen, setAddServerOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [presenceOpen, setPresenceOpen] = useState(false);
   const [globalStatus, setGlobalStatus] = useState<ShortcutResult>(noGlobalStatus);
   const globalSettings = useGlobalShortcutSettings();
-  const [favoritesPlayback, setFavoritesPlayback] = useState<"local" | "discord" | null>(null);
-  const [explorePlayback, setExplorePlayback] = useState<"local" | "discord" | null>(null);
+  const [favoritesNow, setFavoritesNow] = useState<NowPlaying | null>(null);
+  const [exploreNow, setExploreNow] = useState<NowPlaying | null>(null);
+  const favoritesPlayback = favoritesNow?.mode ?? null;
+  const explorePlayback = exploreNow?.mode ?? null;
   const focusedCard = useFocusedCard();
+
+  // Each panel says what plays; the tray, its menus and the panel's strip
+  // show whichever started last, so main is told with the clip's name.
+  const reportFavorites = useCallback(
+    (mode: "local" | "discord" | null, name: string | null) =>
+      setFavoritesNow((current) =>
+        mode === null
+          ? null
+          : current && current.mode === mode && current.name === name
+            ? current
+            : { mode, name }
+      ),
+    []
+  );
+  const reportExplore = useCallback(
+    (mode: "local" | "discord" | null, name: string | null) =>
+      setExploreNow((current) =>
+        mode === null
+          ? null
+          : current && current.mode === mode && current.name === name
+            ? current
+            : { mode, name }
+      ),
+    []
+  );
+  const nowPlaying = favoritesNow ?? exploreNow;
+  useReportPlaying(
+    nowPlaying ? { mode: nowPlaying.mode, name: nowPlaying.name ?? t("presence.someSound") } : null
+  );
+  const presenceSettings = usePresenceSettings();
+  useReportPresenceSettings(presenceSettings.settings);
+  const panelShortcut = usePanelShortcutSettings();
   useNativeContextMenu();
 
   const [discovered, setDiscovered] = useState<Server[]>([]);
@@ -312,9 +356,20 @@ export default function App() {
     setActiveUrl(getApiUrl());
   }, [servers, selectedServer]);
 
+  // Main fetches a dragged clip's file itself, so it needs the address.
+  useEffect(() => {
+    window.instantsPresence?.setServer(activeUrl);
+  }, [activeUrl]);
+
   const showToast = useCallback((options: SnackbarOptions) => {
     setToast((current) => ({ ...options, open: true, key: current.key + 1 }));
   }, []);
+
+  // The panel's shortcut is registered only while it is on and the panel is;
+  // a combination another app holds snaps the switch back and says so.
+  usePanelShortcut(presenceSettings.effective.panel, () =>
+    showToast({ message: t("menuBar.shortcutTaken") })
+  );
 
   // Every failure, not only the transition, so a second failed click is
   // never silent. With no active server at all there is no address to name,
@@ -496,7 +551,7 @@ export default function App() {
   // ---- the native menus ----
   // What the menu bar and the right-click menus need to know: only this
   // side does. Reported on change; labels follow the in-app language.
-  const dialogOpen = addOpen || importOpen || addServerOpen || sheetOpen || editing;
+  const dialogOpen = addOpen || importOpen || addServerOpen || sheetOpen || presenceOpen || editing;
   const regions = useMemo(
     () => regionOptions(language).map(({ value, label }) => ({ code: value, label })),
     [language]
@@ -587,6 +642,9 @@ export default function App() {
         break;
       case "send-focused":
         clickFocusedCard("discord");
+        break;
+      case "presence-settings":
+        if (!blocked && presenceSettings.available) setPresenceOpen(true);
         break;
       case "appearance":
         if (!blocked) appearance.begin();
@@ -799,6 +857,9 @@ export default function App() {
                         </>
                       )}
                       <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
+                      {presenceSettings.available && (
+                        <MenuItem primary={t("menuBar.title")} onSelect={() => setPresenceOpen(true)} />
+                      )}
                       <MenuItem
                         primary={t("shortcuts.sheet.title")}
                         hint="?"
@@ -848,7 +909,7 @@ export default function App() {
                     organizing={organizing}
                     onOrganizingChange={setOrganizing}
                     onPlayingChange={setFavoritesPlaying}
-                    onPlaybackChange={setFavoritesPlayback}
+                    onPlaybackChange={reportFavorites}
                     active={tab === "favorites"}
                     onGlobalStatus={setGlobalStatus}
                     onGlobalSetupFailed={(count) =>
@@ -871,7 +932,7 @@ export default function App() {
                     onSwitchServer={openServerMenu}
                     onSummary={setSummary}
                     onClearSearch={clearSearch}
-                    onPlaybackChange={setExplorePlayback}
+                    onPlaybackChange={reportExplore}
                   />
                 </SegmentedPanel>
               </main>
@@ -908,6 +969,23 @@ export default function App() {
             }}
           />
 
+          <PresenceDialog
+            open={presenceOpen}
+            onOpenChange={setPresenceOpen}
+            os={os}
+            noTray={os === "linux" && desktop === "gnome"}
+            settings={presenceSettings.settings}
+            shortcut={{ enabled: panelShortcut.enabled, modifier: panelShortcut.modifier }}
+            modifiers={panelShortcut.available ? panelShortcut.modifiers : []}
+            onConfirm={(next, key) => {
+              const turnedOn = next.tray && !presenceSettings.settings.tray;
+              presenceSettings.setSettings(next);
+              panelShortcut.set(key);
+              setPresenceOpen(false);
+              // Windows tucks a new tray icon into the overflow chevron.
+              if (turnedOn && os === "win") showToast({ message: t("menuBar.pinHint") });
+            }}
+          />
           <AddServerForm
             open={addServerOpen}
             onCancel={() => setAddServerOpen(false)}

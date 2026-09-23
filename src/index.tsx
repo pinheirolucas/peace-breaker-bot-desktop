@@ -11,6 +11,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./i18n";
 import App from "./App";
+import QuickPanel from "./QuickPanel";
 
 const root = document.getElementById("root");
 
@@ -18,4 +19,12 @@ if (!root) {
   throw new Error("index.html has no #root to mount the app into");
 }
 
-createRoot(root).render(<App />);
+// The quick panel is this same bundle at `/?panel=1`, loaded by its own window.
+// Stamped before React mounts so the frosted ground is right from the first frame.
+const panel = new URLSearchParams(window.location.search).get("panel") === "1";
+
+if (panel) {
+  document.documentElement.dataset.panel = "1";
+}
+
+createRoot(root).render(panel ? <QuickPanel /> : <App />);

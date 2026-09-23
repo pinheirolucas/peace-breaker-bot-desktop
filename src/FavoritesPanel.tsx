@@ -71,7 +71,8 @@ export interface FavoritesPanelProps {
   /** Whether a clip is playing — the tools row blocks Organizar while one is. */
   onPlayingChange: (playing: boolean) => void;
   /** Which path is playing, for the menu bar's Parar reprodução. */
-  onPlaybackChange?: (playback: "local" | "discord" | null) => void;
+  /** `name` is the clip that plays, for the tray and the panel; null when unknown. */
+  onPlaybackChange?: (playback: "local" | "discord" | null, name: string | null) => void;
   /** False while hidden on Explorar, so it doesn't overwrite that tab's summary. Defaults to true. */
   active?: boolean;
   onGlobalStatus?: (status: ShortcutResult) => void;
@@ -103,6 +104,8 @@ export default function FavoritesPanel({
   const { t } = useTranslation();
   const os = usePlatform();
   const globalSettings = useGlobalShortcutSettings();
+  // The player hooks know a clip by its url; the tray shows its name.
+  const names = useRef(new Map<string, string>());
   const [audioUrl, isAudioPlaying, playAudio, stopAudio] = useAudioPlayer();
   const [discordUrl, isDiscordPlaying, playDiscord, stopDiscord] = useDiscordPlayer();
   const { openSnackbar, closeSnackbar } = useContext(SnackbarContext);
@@ -201,10 +204,12 @@ export default function FavoritesPanel({
       return;
     }
 
+    names.current.set(instant.url, instant.name);
     playAudio(instant.url, info.content);
   }
 
   async function handlePlayOnDiscord(instant: Instant) {
+    names.current.set(instant.url, instant.name);
     const error = await playDiscord(instant.url);
     if (error) {
       showNotFound(instant, apiErrorMessage(t, error));
@@ -217,7 +222,8 @@ export default function FavoritesPanel({
     }
 
     if (isDiscordPlaying) {
-      await stopDiscord();
+      // The tray's Stop asks the endpoint itself as well, so the second answer may be a refusal.
+      await stopDiscord().catch(() => {});
     }
   }
 
@@ -360,9 +366,12 @@ export default function FavoritesPanel({
 
   const playbackNow = isDiscordPlaying ? "discord" : isAudioPlaying ? "local" : null;
 
+  const playingName =
+    playbackNow === null ? null : (names.current.get(playbackNow === "discord" ? discordUrl : audioUrl) ?? null);
+
   useEffect(() => {
-    onPlaybackChange?.(playbackNow);
-  }, [playbackNow, onPlaybackChange]);
+    onPlaybackChange?.(playbackNow, playingName);
+  }, [playbackNow, playingName, onPlaybackChange]);
 
   // The right-click menu and the menu bar run the same handlers the buttons
   // do, re-checked against cardState now: the menu may have been open while

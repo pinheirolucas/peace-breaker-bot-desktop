@@ -271,6 +271,7 @@ export type MenuCommand =
   | { type: "send-focused" }
   | { type: "appearance" }
   | { type: "shortcuts" }
+  | { type: "presence-settings" }
   | { type: "language"; language: MenuLanguage }
   | { type: "provider"; key: string }
   | { type: "region"; region: string }
@@ -297,6 +298,7 @@ const simpleCommands: readonly string[] = [
   "send-focused",
   "appearance",
   "shortcuts",
+  "presence-settings",
   "reset-filters",
   "clear-search",
   "server-refresh"

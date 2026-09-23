@@ -1,3 +1,4 @@
+import type { PresenceSettings } from "../electron/presence";
 import type { Server } from "../electron/discovery";
 import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
@@ -45,3 +46,12 @@ export interface GlobalShortcutsSetting {
 
 /** Global keys, which work while another app has focus. */
 export const useGlobalShortcutsState = createPersistedState<GlobalShortcutsSetting>("globalShortcuts");
+
+/** What the tray icon and the quick panel are set to, as one object so it
+ *  reaches the main process in one piece. Read it through usePresenceSettings,
+ *  which fills in whatever a stored value is missing. */
+export const usePresenceSettingsState = createPersistedState<PresenceSettings>("presence");
+
+/** The quick panel's own global shortcut: a separate switch, off by default,
+ *  apart from the favourite keys'. */
+export const usePanelShortcutState = createPersistedState<GlobalShortcutsSetting>("panelShortcut");

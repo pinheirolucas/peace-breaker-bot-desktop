@@ -2,6 +2,8 @@ import { useId } from "react";
 import type { ButtonHTMLAttributes, CSSProperties, MouseEvent, ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { GripIcon, KeyboardIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
+import { useClipDrag } from "../hooks/useClipDrag";
+import type { ClipDragState } from "../hooks/useClipDrag";
 import { menuBridge } from "../hooks/useMenuBridge";
 import { overlayOpen } from "../lib/clipKeys";
 import { slotFor } from "../lib/slot";
@@ -68,14 +70,19 @@ export interface InstantCardProps {
   onPlay: (instant: Instant) => void;
   onPlayOnDiscord: (instant: Instant) => void;
   onStop: () => void;
-  /** The panel's own action: remove in Favoritos, favourite in MyInstants. */
-  trail: CardAction;
+  /** The panel's own action: remove in Favoritos, favourite in MyInstants.
+   *  The quick panel has none: editing is window work. */
+  trail?: CardAction;
   /** Set while the panel is in Organizar. */
   organize?: OrganizeProps;
   /** Absent, the card has no right-click menu. */
   menu?: CardMenuInfo;
   /** Favoritos only: the look the card briefly takes when its key is pressed or refused. */
   shortcut?: { flash?: "press" | "refuse" };
+  /** The quick panel's first search match: Enter plays it. */
+  match?: boolean;
+  /** Forces a drag-out state, for stories and tests; the pointer normally drives it. */
+  dragState?: ClipDragState;
 }
 
 /**
@@ -120,7 +127,9 @@ export default function InstantCard({
   trail,
   organize,
   menu,
-  shortcut
+  shortcut,
+  match,
+  dragState
 }: InstantCardProps) {
   const { t } = useTranslation();
   const headingId = useId();
@@ -128,8 +137,10 @@ export default function InstantCard({
   const discordLabel = state.botGated ? t("card.discordUnavailable") : t("card.playOnDiscord");
   const dragging = organize?.drag === "overlay";
   const clipKey = instant.key;
+  const drag = useClipDrag({ name: instant.name, url: instant.url }, !organize);
+  const clipDrag = { ...drag, state: dragState ?? drag.state };
   // The keycap and the playing chip share a corner.
-  const showKeycap = Boolean(clipKey) && (organize ? true : !state.live);
+  const showKeycap = Boolean(clipKey) && !match && (organize ? true : !state.live);
   const showEmptyKeycap = !clipKey && Boolean(organize) && !organize?.drag;
 
   // The menu is built by the main process, which cannot tell which card was
@@ -167,6 +178,8 @@ export default function InstantCard({
   return (
     <article
       onContextMenu={handleContextMenu}
+      {...clipDrag.bind}
+      data-clip={clipDrag.state === "rest" ? undefined : clipDrag.state}
       ref={organize?.rootRef}
       style={organize?.style}
       className={`pad ${slotFor(instant.url)}`}
@@ -180,6 +193,7 @@ export default function InstantCard({
       data-organize={organize ? true : undefined}
       data-drag={organize?.drag}
       data-flash={shortcut?.flash}
+      data-match={match || undefined}
       aria-hidden={dragging || undefined}
     >
       {state.live && !organize && (
@@ -193,6 +207,11 @@ export default function InstantCard({
             pos: organize.position,
             total: organize.total
           })}
+        </span>
+      )}
+      {match && (
+        <span className="kc kc--enter" aria-hidden="true">
+          ↵
         </span>
       )}
       {(showKeycap || showEmptyKeycap) && !dragging && (
@@ -237,6 +256,10 @@ export default function InstantCard({
           </button>
         )}
       </h3>
+
+      {clipDrag.state === "preparing" && (
+        <span className="pprep" role="progressbar" aria-label={t("card.preparing")} />
+      )}
 
       <svg
         className="pwave"
@@ -302,17 +325,19 @@ export default function InstantCard({
             </button>
           </>
         )}
-        <button
-          type="button"
-          className="pb trail"
-          aria-label={trail.label}
-          title={trail.label}
-          aria-pressed={trail.pressed}
-          disabled={state.trailDisabled}
-          onClick={trail.onClick}
-        >
-          {trail.icon}
-        </button>
+        {trail && (
+          <button
+            type="button"
+            className="pb trail"
+            aria-label={trail.label}
+            title={trail.label}
+            aria-pressed={trail.pressed}
+            disabled={state.trailDisabled}
+            onClick={trail.onClick}
+          >
+            {trail.icon}
+          </button>
+        )}
       </div>
     </article>
   );

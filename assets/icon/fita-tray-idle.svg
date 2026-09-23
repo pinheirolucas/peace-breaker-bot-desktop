@@ -1,0 +1,6 @@
+<!-- Idle: reachable, but the bot is out of its channel. Outline body, left reel solid, right reel hollow. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16 16 96 96" width="96" height="96">
+  <rect x="24" y="38" width="80" height="52" rx="12" fill="none" stroke="#000" stroke-width="7"/>
+  <circle cx="50" cy="64" r="11" fill="#000"/>
+  <circle cx="78" cy="64" r="8.5" fill="none" stroke="#000" stroke-width="5"/>
+</svg>

@@ -1,3 +1,6 @@
+import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "../../electron/clip";
+import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "../../electron/presence";
+import type { PanelAction, PanelShortcutRequest } from "../../electron/panel";
 import type { CardContext, MenuCommand, MenuState } from "../../electron/menuState";
 import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
 import { isPlatformId } from "../themes";
@@ -41,6 +44,23 @@ declare global {
       serverContext: () => void;
       serverRowContext: (id: string) => void;
       selectionContext: () => void;
+    };
+    instantsClip?: {
+      prepare: (request: ClipRequest) => Promise<ClipPrepareResult>;
+      drag: (request: ClipRequest) => Promise<ClipDragResult>;
+      dragEnd?: () => void;
+    };
+    instantsPanel?: {
+      action: (action: PanelAction) => void;
+      setShortcut: (request: PanelShortcutRequest) => Promise<ShortcutResult>;
+      onShown: (listener: () => void) => () => void;
+    };
+    instantsPresence?: {
+      setServer: (url: string | null) => void;
+      setPlaying: (report: PlayingReport | null) => void;
+      setSettings: (settings: PresenceSettings) => void;
+      stop: () => void;
+      onSnapshot: (listener: (snapshot: PresenceSnapshot) => void) => () => void;
     };
     instantsUpdates?: {
       onAvailable: (listener: (version: string) => void) => () => void;

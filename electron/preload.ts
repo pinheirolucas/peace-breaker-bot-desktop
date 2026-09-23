@@ -1,6 +1,19 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { discoveryRefreshChannel, discoveryServersChannel } from "./discovery";
 import type { Server } from "./discovery";
+import { clipDragChannel, clipDragEndChannel, clipPrepareChannel } from "./clip";
+import { panelActionChannel, panelShortcutSetChannel, panelShownChannel } from "./panel";
+import type { PanelAction, PanelShortcutRequest } from "./panel";
+import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "./clip";
+import {
+  isPresenceSnapshot,
+  presencePlayingChannel,
+  presenceServerChannel,
+  presenceSettingsChannel,
+  presenceSnapshotChannel,
+  presenceStopChannel
+} from "./presence";
+import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "./presence";
 import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
@@ -216,4 +229,67 @@ contextBridge.exposeInMainWorld("instantsMenu", {
   serverContext: () => ipcRenderer.send(serverContextChannel),
   serverRowContext: (id: string) => ipcRenderer.send(serverRowContextChannel, { id }),
   selectionContext: () => ipcRenderer.send(selectionContextChannel)
+});
+
+// Dragging a clip out as a file. Main validates every request again and owns
+// the file; the renderer only ever names a clip, never a path.
+contextBridge.exposeInMainWorld("instantsClip", {
+  prepare: (request: ClipRequest): Promise<ClipPrepareResult> =>
+    ipcRenderer.invoke(clipPrepareChannel, request),
+  drag: (request: ClipRequest): Promise<ClipDragResult> =>
+    ipcRenderer.invoke(clipDragChannel, request),
+  // The pointer is back: the OS drag is over, and the panel may hide again.
+  dragEnd: () => ipcRenderer.send(clipDragEndChannel)
+});
+
+// The quick panel: what it asks of main, and its own global shortcut. Main
+// checks the sender for every action; the shortcut request is validated too.
+contextBridge.exposeInMainWorld("instantsPanel", {
+  action: (action: PanelAction) => ipcRenderer.send(panelActionChannel, action),
+  setShortcut: (request: PanelShortcutRequest): Promise<ShortcutResult> =>
+    ipcRenderer.invoke(panelShortcutSetChannel, request),
+  onShown: (listener: () => void) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    const handler = () => listener();
+
+    ipcRenderer.on(panelShownChannel, handler);
+    return () => ipcRenderer.removeListener(panelShownChannel, handler);
+  }
+});
+
+// What main needs from the renderer to act without a window, and the one
+// record it answers with. Main validates every report again.
+type SnapshotListener = (snapshot: PresenceSnapshot) => void;
+
+const snapshotListeners = new Set<SnapshotListener>();
+let lastSnapshot: PresenceSnapshot | null = null;
+
+ipcRenderer.on(presenceSnapshotChannel, (_event, snapshot: unknown) => {
+  if (!isPresenceSnapshot(snapshot)) return;
+
+  lastSnapshot = snapshot;
+  snapshotListeners.forEach((listener) => listener(snapshot));
+});
+
+contextBridge.exposeInMainWorld("instantsPresence", {
+  setServer: (url: string | null) => ipcRenderer.send(presenceServerChannel, url),
+  setPlaying: (report: PlayingReport | null) => ipcRenderer.send(presencePlayingChannel, report),
+  setSettings: (settings: PresenceSettings) => ipcRenderer.send(presenceSettingsChannel, settings),
+  stop: () => ipcRenderer.send(presenceStopChannel),
+  // Replays the last snapshot to a late subscriber, like instantsDiscovery.
+  onSnapshot: (listener: SnapshotListener) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    snapshotListeners.add(listener);
+    if (lastSnapshot) listener(lastSnapshot);
+
+    return () => {
+      snapshotListeners.delete(listener);
+    };
+  }
 });
