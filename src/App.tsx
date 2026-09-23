@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Server } from "../electron/discovery";
+import type { ShortcutResult } from "../electron/shortcuts";
 import { sortServers } from "../electron/discovery";
 import AddMenu from "./AddMenu";
 import AddServerForm from "./AddServerForm";
@@ -9,11 +10,13 @@ import { AppearanceStage } from "./components/AppearanceStage";
 import { Button, IconButton } from "./components/Button";
 import { Menu, MenuItem, MenuSeparator } from "./components/Menu";
 import { SearchField } from "./components/SearchField";
+import ShortcutSheet from "./components/ShortcutSheet";
 import { Segmented, SegmentedPanel, SegmentedRoot } from "./components/Segmented";
 import { Toast, ToastProvider } from "./components/Toast";
 import { TooltipProvider } from "./components/Tooltip";
 import FavoritesPanel from "./FavoritesPanel";
 import FilterMenu, { FilterMenuItems, hasFilters } from "./FilterMenu";
+import { noGlobalStatus } from "./hooks/useGlobalShortcuts";
 import { useAppearance } from "./hooks/useAppearance";
 import { useLanguage } from "./hooks/useLanguage";
 import { useNativeChrome } from "./hooks/useNativeChrome";
@@ -32,6 +35,7 @@ import { useStamp } from "./hooks/useStamp";
 import { useTier } from "./hooks/useTier";
 import { AppMarkIcon, CheckIcon, MenuIcon, MoreIcon } from "./icons";
 import ImportForm from "./ImportForm";
+import { isEditableTarget, overlayOpen } from "./lib/clipKeys";
 import MyInstantsPanel from "./MyInstantsPanel";
 import ServerMenu, { botLine, formatApiUrl } from "./ServerMenu";
 import {
@@ -112,6 +116,8 @@ export default function App() {
   const [favorites] = useInstantsState([]);
   const [importOpen, setImportOpen] = useState(false);
   const [addServerOpen, setAddServerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [globalStatus, setGlobalStatus] = useState<ShortcutResult>(noGlobalStatus);
 
   const [discovered, setDiscovered] = useState<Server[]>([]);
   const [manualServers, setManualServers] = useManualServers([]);
@@ -189,6 +195,25 @@ export default function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [os, editing, organizing, tab, addOpen, importOpen, addServerOpen]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "?" || event.ctrlKey || event.metaKey || event.altKey || editing) {
+        return;
+      }
+
+      if (sheetOpen) {
+        event.preventDefault();
+        setSheetOpen(false);
+      } else if (!isEditableTarget(event.target) && !overlayOpen()) {
+        event.preventDefault();
+        setSheetOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editing, sheetOpen]);
 
   // With no favourites there is nothing on Favoritos to search, so the field
   // is left out. The query is shared with Explorar, so one left behind would
@@ -597,6 +622,11 @@ export default function App() {
                         </>
                       )}
                       <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
+                      <MenuItem
+                        primary={t("shortcuts.sheet.title")}
+                        hint="?"
+                        onSelect={() => setSheetOpen(true)}
+                      />
                       <MenuSeparator />
                       <MenuItem
                         tick={language === "pt-BR" ? <CheckIcon /> : null}
@@ -626,7 +656,8 @@ export default function App() {
                   setScrolled((current) => (current === next ? current : next));
                 }}
               >
-                <SegmentedPanel value="favorites">
+                {/* Stays mounted, hidden, on Explorar so its keys keep working. */}
+                <SegmentedPanel value="favorites" forceMount hidden={tab !== "favorites"}>
                   <FavoritesPanel
                     search={search}
                     healthy={healthy}
@@ -640,6 +671,15 @@ export default function App() {
                     organizing={organizing}
                     onOrganizingChange={setOrganizing}
                     onPlayingChange={setFavoritesPlaying}
+                    active={tab === "favorites"}
+                    onGlobalStatus={setGlobalStatus}
+                    onGlobalSetupFailed={(count) =>
+                      showToast({
+                        message: t("shortcuts.global.failedToast", { count }),
+                        actionLabel: t("shortcuts.global.see"),
+                        onAction: () => setSheetOpen(true)
+                      })
+                    }
                   />
                 </SegmentedPanel>
                 <SegmentedPanel value="explore">
@@ -672,6 +712,22 @@ export default function App() {
           </SegmentedRoot>
 
           <ImportForm open={importOpen} onClose={() => setImportOpen(false)} />
+
+          <ShortcutSheet
+            open={sheetOpen}
+            onOpenChange={setSheetOpen}
+            instants={favorites}
+            os={os}
+            status={globalStatus}
+            onOrganize={() => {
+              if (organizeBlockedReason) {
+                showToast({ message: organizeBlockedReason });
+                return;
+              }
+              setTab("favorites");
+              setOrganizing(true);
+            }}
+          />
 
           <AddServerForm
             open={addServerOpen}

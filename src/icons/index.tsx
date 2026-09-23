@@ -207,3 +207,12 @@ export function ReorderIcon({ size = 16, ...rest }: IconProps) {
     </svg>
   );
 }
+
+export function KeyboardIcon({ size = 16, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <rect x="3" y="6.5" width="18" height="11" rx="2.2" />
+      <path d="M7 10.5h.01M10.5 10.5h.01M14 10.5h.01M17.5 10.5h.01M8 14h8" />
+    </svg>
+  );
+}

@@ -1,4 +1,5 @@
 import type { Server } from "../electron/discovery";
+import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
 import { createPersistedState } from "./lib/persisted";
 import type { Region } from "./regions";
@@ -7,6 +8,8 @@ import type { ColorMode, ThemeId } from "./themes";
 export interface Instant {
   name: string;
   url: string;
+  /** A letter or digit that plays this sound. */
+  key?: string;
 }
 
 export const useInstantsState = createPersistedState<Instant[]>("instants");
@@ -33,3 +36,12 @@ export const useRegionState = createPersistedState<Region>("region");
 export const useProviderState = createPersistedState<string>("provider");
 
 export const useLanguageState = createPersistedState<LanguageId>("language");
+
+export interface GlobalShortcutsSetting {
+  enabled: boolean;
+  /** Null means the OS default. */
+  modifier: GlobalModifier | null;
+}
+
+/** Global keys, which work while another app has focus. */
+export const useGlobalShortcutsState = createPersistedState<GlobalShortcutsSetting>("globalShortcuts");

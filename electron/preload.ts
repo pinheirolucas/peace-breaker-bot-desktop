@@ -4,6 +4,12 @@ import type { Server } from "./discovery";
 import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
+  modifiersFor,
+  shortcutsFiredChannel,
+  shortcutsSetChannel
+} from "./shortcuts";
+import type { ShortcutRequest, ShortcutResult } from "./shortcuts";
+import {
   checkForUpdatesChannel,
   openReleasePageChannel,
   openUpdateChannel,
@@ -154,4 +160,24 @@ contextBridge.exposeInMainWorld("instantsPlatform", {
   chrome: chromeKind(process.platform, desktop),
   // Validated again in the main process; the renderer is not trusted.
   setChrome: (colors: ChromeColors) => ipcRenderer.send(chromeChannel, colors)
+});
+
+contextBridge.exposeInMainWorld("instantsShortcuts", {
+  modifiers: modifiersFor(process.platform),
+  setGlobal: (request: ShortcutRequest): Promise<ShortcutResult> =>
+    ipcRenderer.invoke(shortcutsSetChannel, request),
+  onFired: (listener: (key: string) => void) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    const handler = (_event: unknown, key: unknown) => {
+      if (typeof key === "string") {
+        listener(key);
+      }
+    };
+
+    ipcRenderer.on(shortcutsFiredChannel, handler);
+    return () => ipcRenderer.removeListener(shortcutsFiredChannel, handler);
+  }
 });

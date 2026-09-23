@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeTheme, net, shell } from "electron";
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeTheme, net, shell } from "electron";
 import type { MenuItemConstructorOptions } from "electron";
 import { createWriteStream } from "node:fs";
 import os from "node:os";
@@ -25,6 +25,13 @@ import {
   titleBarHeight,
   windowChromeFor
 } from "./chrome";
+import {
+  acceleratorFor,
+  isShortcutRequest,
+  shortcutsFiredChannel,
+  shortcutsSetChannel
+} from "./shortcuts";
+import type { ShortcutResult } from "./shortcuts";
 import {
   checkForUpdatesChannel,
   checkForUpdatesLabel,
@@ -62,6 +69,61 @@ let macUpdateVersion: string | null = null;
 // stays exactly as silent on "no update"/"check failed" as it always was —
 // only a check a person actually asked for gets an answer either way.
 let manualCheckPending = false;
+
+let registeredAccelerators: string[] = [];
+let globalKeysEnabled = false;
+let isQuitting = false;
+const lastFired = new Map<string, number>();
+
+const shortcutDebounceMs = 250;
+
+// Wayland apps can't grab keys themselves; Chromium goes through the portal. Set before "ready".
+if (process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland") {
+  app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
+}
+
+function releaseGlobalShortcuts(): void {
+  registeredAccelerators.forEach((accelerator) => globalShortcut.unregister(accelerator));
+  registeredAccelerators = [];
+  lastFired.clear();
+}
+
+function registerGlobalShortcuts(modifier: Parameters<typeof acceleratorFor>[0], keys: string[]): ShortcutResult {
+  const result: ShortcutResult = { registered: [], failed: [] };
+  const wayland = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland";
+
+  for (const key of keys) {
+    const accelerator = acceleratorFor(modifier, key);
+    let ok = false;
+
+    try {
+      ok = globalShortcut.register(accelerator, () => {
+        const now = Date.now();
+        if (now - (lastFired.get(key) ?? 0) < shortcutDebounceMs) {
+          return;
+        }
+        lastFired.set(key, now);
+        sendToWindow(shortcutsFiredChannel, key);
+      });
+    } catch {
+      ok = false;
+    }
+
+    if (ok) {
+      registeredAccelerators.push(accelerator);
+      result.registered.push(key);
+    } else {
+      result.failed.push({ key, reason: "in-use" });
+    }
+  }
+
+  // Nothing registered on Wayland means no portal, not that every combo is taken.
+  if (wayland && keys.length > 0 && result.registered.length === 0) {
+    result.failed = result.failed.map(({ key }) => ({ key, reason: "unsupported" as const }));
+  }
+
+  return result;
+}
 
 function sendToWindow(channel: string, payload?: unknown): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -321,8 +383,18 @@ function createWindow(): void {
 
   startDiscovery();
 
+  // The renderer plays the sound, so on macOS hide instead of close while global keys are on.
+  mainWindow.on("close", (event) => {
+    if (process.platform === "darwin" && globalKeysEnabled && !isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   mainWindow.on("closed", () => {
     stopDiscovery();
+    releaseGlobalShortcuts();
+    globalKeysEnabled = false;
     mainWindow = null;
   });
 }
@@ -385,6 +457,44 @@ ipcMain.on(chromeChannel, (event, colors: unknown) => {
   }
 });
 
+ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult => {
+  const empty: ShortcutResult = { registered: [], failed: [] };
+
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) {
+    return empty;
+  }
+
+  if (!isShortcutRequest(request, process.platform)) {
+    return empty;
+  }
+
+  releaseGlobalShortcuts();
+  globalKeysEnabled = request.enabled;
+
+  return request.enabled ? registerGlobalShortcuts(request.modifier, request.keys) : empty;
+});
+
+// Without the lock, a second launch would see every combo as in use.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
+app.on("before-quit", () => {
+  isQuitting = true;
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
+});
+
 app.on("ready", () => {
   createWindow();
   registerUpdateListeners();
@@ -407,5 +517,7 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (mainWindow === null) {
     createWindow();
+  } else if (!mainWindow.isVisible()) {
+    mainWindow.show();
   }
 });

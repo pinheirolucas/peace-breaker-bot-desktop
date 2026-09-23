@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   closestCenter,
@@ -23,10 +23,17 @@ import {
 } from "@dnd-kit/sortable";
 import { Button } from "./components/Button";
 import { EmptyState } from "./components/EmptyState";
-import InstantCard from "./components/InstantCard";
+import InstantCard, { cardState } from "./components/InstantCard";
 import type { Playback } from "./components/InstantCard";
 import { OfflineBanner } from "./components/OfflineBanner";
+import ShortcutDialog from "./components/ShortcutDialog";
 import SortableInstantCard from "./components/SortableInstantCard";
+import { useClipShortcuts } from "./hooks/useClipShortcuts";
+import type { ClipMode } from "./hooks/useClipShortcuts";
+import { useGlobalShortcuts, useGlobalShortcutSettings } from "./hooks/useGlobalShortcuts";
+import { comboLabel, usePlatform } from "./hooks/usePlatform";
+import { assignKey } from "./lib/clipKeys";
+import type { ShortcutResult } from "../electron/shortcuts";
 import { TrashIcon } from "./icons";
 import { apiErrorMessage } from "./i18n/apiError";
 import RenameForm from "./RenameForm";
@@ -62,7 +69,15 @@ export interface FavoritesPanelProps {
   onOrganizingChange: (organizing: boolean) => void;
   /** Whether a clip is playing — the tools row blocks Organizar while one is. */
   onPlayingChange: (playing: boolean) => void;
+  /** False while hidden on Explorar, so it doesn't overwrite that tab's summary. Defaults to true. */
+  active?: boolean;
+  onGlobalStatus?: (status: ShortcutResult) => void;
+  onGlobalSetupFailed?: (count: number) => void;
 }
+
+const FLASH_MS = { press: 120, refuse: 320 } as const;
+
+const NOTIFY_EVERY_MS = 30_000;
 
 export default function FavoritesPanel({
   search,
@@ -76,9 +91,14 @@ export default function FavoritesPanel({
   onSearchCatalog,
   organizing,
   onOrganizingChange,
-  onPlayingChange
+  onPlayingChange,
+  active = true,
+  onGlobalStatus,
+  onGlobalSetupFailed
 }: FavoritesPanelProps) {
   const { t } = useTranslation();
+  const os = usePlatform();
+  const globalSettings = useGlobalShortcutSettings();
   const [audioUrl, isAudioPlaying, playAudio, stopAudio] = useAudioPlayer();
   const [discordUrl, isDiscordPlaying, playDiscord, stopDiscord] = useDiscordPlayer();
   const { openSnackbar, closeSnackbar } = useContext(SnackbarContext);
@@ -87,6 +107,14 @@ export default function FavoritesPanel({
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [overUrl, setOverUrl] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ instant: Instant; cardWidth: number } | null>(null);
+  const [keying, setKeying] = useState<Instant | null>(null);
+  const [flash, setFlash] = useState<{ url: string; kind: "press" | "refuse"; n: number } | null>(
+    null
+  );
+  const [announcement, setAnnouncement] = useState("");
+  const [globalStatus, setGlobalStatus] = useState<ShortcutResult>({ registered: [], failed: [] });
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastNotified = useRef(0);
 
   // A drag needs 5px of travel, so a click on a footer button or a stray
   // press never starts one. Space/Enter lift by keyboard, arrows move.
@@ -101,6 +129,8 @@ export default function FavoritesPanel({
     : instants;
 
   useEffect(() => {
+    if (!active) return;
+
     if (organizing) {
       onSummary(t("favorites.organizeHint"));
       return;
@@ -111,7 +141,7 @@ export default function FavoritesPanel({
         ? t("favorites.filteredOfTotal", { filtered: filtered.length, total: instants.length })
         : t("favorites.savedCount", { count: instants.length })
     );
-  }, [organizing, search, filtered.length, instants.length, onSummary, t]);
+  }, [active, organizing, search, filtered.length, instants.length, onSummary, t]);
 
   // Removing the last favourite leaves nothing to organize.
   useEffect(() => {
@@ -184,6 +214,120 @@ export default function FavoritesPanel({
 
     if (isDiscordPlaying) {
       await stopDiscord();
+    }
+  }
+
+  function flashCard(url: string, kind: "press" | "refuse") {
+    clearTimeout(flashTimer.current);
+    setFlash((current) => ({ url, kind, n: (current?.n ?? 0) + 1 }));
+    flashTimer.current = setTimeout(() => setFlash(null), FLASH_MS[kind]);
+  }
+
+  useEffect(() => () => clearTimeout(flashTimer.current), []);
+
+  function triggerClip(key: string, mode: ClipMode): "played" | "none" | "busy" | "bot-away" {
+    const instant = instants.find((item) => item.key === key);
+    if (!instant) return "none";
+
+    const playback = playbackOf(instant);
+    const state = cardState(playback, anyPlaying && playback === "idle", botStatus);
+    const refused = mode === "discord" ? state.discordDisabled : state.playDisabled;
+
+    if (refused) {
+      flashCard(instant.url, "refuse");
+      // Unknown status is never "out of the channel".
+      if (mode === "discord" && state.botGated) {
+        setAnnouncement(t("shortcuts.botAway"));
+        return "bot-away";
+      }
+      setAnnouncement(t("shortcuts.busy"));
+      return "busy";
+    }
+
+    flashCard(instant.url, "press");
+    setAnnouncement(
+      t(mode === "discord" ? "shortcuts.playingDiscord" : "shortcuts.playingLocal", {
+        name: instant.name
+      })
+    );
+
+    if (mode === "discord") {
+      void handlePlayOnDiscord(instant);
+    } else {
+      void handlePlay(instant);
+    }
+    return "played";
+  }
+
+  function stopFromKeyboard(): boolean {
+    if (!anyPlaying) return false;
+
+    void handleStop();
+    setAnnouncement(t("shortcuts.stopped"));
+    return true;
+  }
+
+  useClipShortcuts(!organizing, {
+    trigger: (key, mode) => {
+      if (triggerClip(key, mode) === "bot-away") {
+        openSnackbar({ message: t("shortcuts.botAway") });
+      }
+    },
+    stop: stopFromKeyboard
+  });
+
+  useGlobalShortcuts({
+    keys: instants.flatMap(({ key }) => (key ? [key] : [])),
+    onFire: (key) => {
+      if (triggerClip(key, "discord") !== "bot-away") return;
+
+      // Only "bot not in a channel" is worth a notification while unfocused.
+      const now = Date.now();
+      if (
+        now - lastNotified.current >= NOTIFY_EVERY_MS &&
+        typeof Notification !== "undefined" &&
+        Notification.permission !== "denied"
+      ) {
+        lastNotified.current = now;
+        new Notification(t("shortcuts.botAway"));
+      }
+    },
+    onStatus: (status) => {
+      setGlobalStatus(status);
+      onGlobalStatus?.(status);
+    },
+    onSetupFailed: (count) => onGlobalSetupFailed?.(count)
+  });
+
+  function handleSetKey(key: string | null) {
+    if (!keying) return;
+
+    const { instants: next, displaced } = assignKey(instants, keying.url, key);
+    setInstants(next);
+    const target = keying;
+    setKeying(null);
+
+    if (key !== null && displaced) {
+      openSnackbar({
+        message: t("shortcuts.moved", {
+          key: key.toUpperCase(),
+          name: target.name,
+          other: displaced.name
+        }),
+        actionLabel: t("shortcuts.undo"),
+        onAction: () => {
+          setInstants((current) =>
+            current.map((item) =>
+              item.url === target.url
+                ? { ...item, key: target.key }
+                : item.url === displaced.url
+                  ? { ...item, key: displaced.key }
+                  : item
+            )
+          );
+          closeSnackbar();
+        }
+      });
     }
   }
 
@@ -307,7 +451,8 @@ export default function FavoritesPanel({
                 organize={{
                   position: index + 1,
                   total,
-                  onRename: (cardWidth) => setRenaming({ instant, cardWidth })
+                  onRename: (cardWidth) => setRenaming({ instant, cardWidth }),
+                  onSetKey: () => setKeying(instant)
                 }}
                 trail={{
                   label: t("favorites.remove"),
@@ -368,6 +513,7 @@ export default function FavoritesPanel({
               onPlay={handlePlay}
               onPlayOnDiscord={handlePlayOnDiscord}
               onStop={handleStop}
+              shortcut={{ flash: flash?.url === instant.url ? flash.kind : undefined }}
               trail={{
                 label: t("favorites.remove"),
                 icon: <TrashIcon />,
@@ -385,6 +531,23 @@ export default function FavoritesPanel({
       {!healthy && <OfflineBanner address={serverAddress} onSwitch={onSwitchServer} />}
       {content}
       <SaveForm open={addOpen} onCancel={() => onAddOpenChange(false)} onSave={handleSave} />
+      <span className="sr-only" aria-live="polite">
+        {announcement}
+      </span>
+      <ShortcutDialog
+        instant={keying}
+        instants={instants}
+        global={
+          globalSettings.available && globalSettings.enabled && globalSettings.modifier
+            ? {
+                combo: (key) => comboLabel(os, globalSettings.modifier!, key),
+                inUse: (key) => globalStatus.failed.some((item) => item.key === key)
+              }
+            : undefined
+        }
+        onCancel={() => setKeying(null)}
+        onSave={handleSetKey}
+      />
       <RenameForm
         instant={renaming?.instant ?? null}
         cardWidth={renaming?.cardWidth}

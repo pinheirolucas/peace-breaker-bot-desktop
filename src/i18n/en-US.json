@@ -113,7 +113,7 @@
     "searchCatalogButton": "Search “{{search}}” on MyInstants",
     "organize": "Organize",
     "organizeDone": "Done",
-    "organizeHint": "Drag to reorder",
+    "organizeHint": "Drag to reorder · ⌨ sets a key",
     "organizeBlockedPlaying": "Stop the sound to organize",
     "organizeBlockedSearch": "Clear the search to organize"
   },
@@ -206,5 +206,54 @@
   "filters": {
     "label": "Filter by site and region",
     "reset": "Restore defaults"
+  },
+  "shortcuts": {
+    "title": "Shortcut for “{{name}}”",
+    "prompt": "Press the key that plays this sound on Discord. With Shift, it plays only here.",
+    "captureLabel": "Press a letter or number",
+    "waiting": "Press a letter or number",
+    "plays": "{{key}} plays “{{name}}”",
+    "taken": "{{key}} already plays “{{other}}”. Saving leaves “{{other}}” without a key.",
+    "badKey": "That key can't be used",
+    "badKeyHint": "Use a letter from A to Z or a number from 0 to 9.",
+    "remove": "Remove shortcut",
+    "set": "Set shortcut",
+    "setFor": "Set shortcut for {{name}}",
+    "moved": "{{key}} now plays “{{name}}”. “{{other}}” has no key.",
+    "undo": "Undo",
+    "botAway": "The bot isn't in a voice channel",
+    "busy": "A sound is already playing. Esc to stop.",
+    "playingDiscord": "Playing “{{name}}” on Discord",
+    "playingLocal": "Playing “{{name}}” here",
+    "stopped": "Stopped",
+    "sheet": {
+      "title": "Keyboard shortcuts",
+      "lede": "They work on any tab, as long as you aren't typing.",
+      "yourSounds": "Your sounds · on Discord",
+      "shiftHint": "Shift + key plays only here.",
+      "unkeyed_one": "{{count}} sound without a key",
+      "unkeyed_other": "{{count}} sounds without a key",
+      "setInOrganize": "Set in Organize",
+      "inApp": "In the app",
+      "stop": "Stop the sound",
+      "find": "Search",
+      "add": "Add a sound",
+      "list": "This list",
+      "close": "Close"
+    },
+    "global": {
+      "lede": "With the app focused, the key alone plays the sound. Outside it, use the key with the modifier.",
+      "switch": "Work outside the app",
+      "switchHint": "While Discord or a game has focus, as long as the app is open.",
+      "modifier": "Modifier",
+      "inUse": "In use by another app",
+      "inUseNote": "“In use” means another app already registered that combination. The key alone keeps working with the app focused.",
+      "unsupported": "Your desktop doesn't allow shortcuts outside the app",
+      "outside": "Outside the app: {{combo}}",
+      "dialogTaken": "{{combo}} is in use by another app. Outside the app, this sound won't play.",
+      "failedToast_one": "{{count}} shortcut won't work outside the app",
+      "failedToast_other": "{{count}} shortcuts won't work outside the app",
+      "see": "See"
+    }
   }
 }

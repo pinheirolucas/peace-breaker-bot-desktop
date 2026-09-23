@@ -1,7 +1,7 @@
 import { useId } from "react";
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { GripIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
+import { GripIcon, KeyboardIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
 import { slotFor } from "../lib/slot";
 import { wavePath } from "../lib/wave";
 import type { BotStatus } from "../service";
@@ -31,6 +31,8 @@ export interface OrganizeProps {
   /** Gets the card's rendered width, so the rename dialog can preview the
    *  card at the size it really is in the grid. */
   onRename: (cardWidth: number) => void;
+  /** Opens the key dialog; absent leaves the button out. */
+  onSetKey?: () => void;
   /** "ghost" is the slot a dragged card left; "overlay" is the copy that
    *  follows the pointer. Neither is interactive. */
   drag?: "ghost" | "overlay";
@@ -57,6 +59,8 @@ export interface InstantCardProps {
   trail: CardAction;
   /** Set while the panel is in Organizar. */
   organize?: OrganizeProps;
+  /** Favoritos only: the look the card briefly takes when its key is pressed or refused. */
+  shortcut?: { flash?: "press" | "refuse" };
 }
 
 /**
@@ -99,13 +103,18 @@ export default function InstantCard({
   onPlayOnDiscord,
   onStop,
   trail,
-  organize
+  organize,
+  shortcut
 }: InstantCardProps) {
   const { t } = useTranslation();
   const headingId = useId();
   const state = cardState(playback, otherPlaying, botStatus);
   const discordLabel = state.botGated ? t("card.discordUnavailable") : t("card.playOnDiscord");
   const dragging = organize?.drag === "overlay";
+  const clipKey = instant.key;
+  // The keycap and the playing chip share a corner.
+  const showKeycap = Boolean(clipKey) && (organize ? true : !state.live);
+  const showEmptyKeycap = !clipKey && Boolean(organize) && !organize?.drag;
 
   return (
     <article
@@ -121,6 +130,7 @@ export default function InstantCard({
       data-inert={state.playDisabled}
       data-organize={organize ? true : undefined}
       data-drag={organize?.drag}
+      data-flash={shortcut?.flash}
       aria-hidden={dragging || undefined}
     >
       {state.live && !organize && (
@@ -130,7 +140,15 @@ export default function InstantCard({
       )}
       {dragging && organize && (
         <span className="chip">
-          {t("card.position", { pos: organize.position, total: organize.total })}
+          {t("card.position", {
+            pos: organize.position,
+            total: organize.total
+          })}
+        </span>
+      )}
+      {(showKeycap || showEmptyKeycap) && !dragging && (
+        <span className="kc" data-empty={!clipKey || undefined} aria-hidden="true">
+          {clipKey ? clipKey.toUpperCase() : ""}
         </span>
       )}
       {organize && !organize.drag && (
@@ -159,6 +177,9 @@ export default function InstantCard({
             type="button"
             className="phit"
             title={t("card.play")}
+            aria-keyshortcuts={
+              clipKey ? `${clipKey.toUpperCase()} Shift+${clipKey.toUpperCase()}` : undefined
+            }
             disabled={state.playDisabled}
             onClick={() => onPlay(instant)}
           >
@@ -182,17 +203,30 @@ export default function InstantCard({
 
       <div className="pfoot">
         {organize ? (
-          <button
-            type="button"
-            className="pb"
-            aria-label={t("card.rename")}
-            title={t("card.rename")}
-            onClick={(event) =>
-              organize.onRename(event.currentTarget.closest("article")?.offsetWidth ?? 0)
-            }
-          >
-            <PencilIcon />
-          </button>
+          <>
+            <button
+              type="button"
+              className="pb"
+              aria-label={t("card.rename")}
+              title={t("card.rename")}
+              onClick={(event) =>
+                organize.onRename(event.currentTarget.closest("article")?.offsetWidth ?? 0)
+              }
+            >
+              <PencilIcon />
+            </button>
+            {organize.onSetKey && (
+              <button
+                type="button"
+                className="pb"
+                aria-label={t("shortcuts.setFor", { name: instant.name })}
+                title={t("shortcuts.set")}
+                onClick={organize.onSetKey}
+              >
+                <KeyboardIcon />
+              </button>
+            )}
+          </>
         ) : (
           <>
             <button
