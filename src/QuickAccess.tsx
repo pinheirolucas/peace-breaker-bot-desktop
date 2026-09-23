@@ -304,7 +304,7 @@ export default function QuickAccess() {
       {styleItem("favorites", t("quickAccess.styleFavorites"))}
       {styleItem("connection", t("quickAccess.styleConnection"))}
       <MenuSeparator />
-      <MenuItem primary={t("menuBar.title")} onSelect={() => action("settings")} />
+      <MenuItem primary={t("presence.openSettings")} onSelect={() => action("settings")} />
       <MenuItem primary={t("presence.quit")} onSelect={() => action("quit")} />
     </>
   );

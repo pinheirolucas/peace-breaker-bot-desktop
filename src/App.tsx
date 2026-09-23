@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Server } from "../electron/discovery";
 import type { MenuCommand, MenuState } from "../electron/menuState";
+import { hashFor, isSettingsPane } from "../electron/settings";
+import type { SettingsSection } from "../electron/settings";
 import type { ShortcutResult } from "../electron/shortcuts";
 import { sortServers } from "../electron/discovery";
 import AddMenu from "./AddMenu";
@@ -47,6 +49,7 @@ import { AppMarkIcon, CheckIcon, MenuIcon, MoreIcon } from "./icons";
 import ImportForm from "./ImportForm";
 import { isEditableTarget, overlayOpen } from "./lib/clipKeys";
 import MyInstantsPanel from "./MyInstantsPanel";
+import { withManualServer } from "./lib/manualServer";
 import ServerMenu, { botLine, formatApiUrl } from "./ServerMenu";
 import {
   getApiUrl,
@@ -61,8 +64,7 @@ import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
 import { useInstantsState, useManualServers, useSelectedServer } from "./storage";
-import PresenceDialog from "./components/PresenceDialog";
-import { useQuickAccessShortcut, useQuickAccessShortcutSettings } from "./hooks/useQuickAccessShortcut";
+import { useQuickAccessShortcut } from "./hooks/useQuickAccessShortcut";
 import useBotStatus from "./useBotStatus";
 import { usePresenceSettings, useReportPlaying, useReportPresenceSettings } from "./hooks/usePresence";
 import useProviders from "./useProviders";
@@ -94,7 +96,7 @@ export default function App() {
   const appearance = useAppearance();
   const { theme, resolved, editing } = appearance;
 
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
 
   const os = usePlatform();
   const chrome = useChromeKind();
@@ -137,7 +139,6 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false);
   const [addServerOpen, setAddServerOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [presenceOpen, setPresenceOpen] = useState(false);
   const [globalStatus, setGlobalStatus] = useState<ShortcutResult>(noGlobalStatus);
   const globalSettings = useGlobalShortcutSettings();
   const [favoritesNow, setFavoritesNow] = useState<NowPlaying | null>(null);
@@ -176,7 +177,6 @@ export default function App() {
   );
   const presenceSettings = usePresenceSettings();
   useReportPresenceSettings(presenceSettings.settings);
-  const quickAccessShortcut = useQuickAccessShortcutSettings();
   useNativeContextMenu();
 
   const [discovered, setDiscovered] = useState<Server[]>([]);
@@ -368,7 +368,7 @@ export default function App() {
   // Quick access's shortcut is registered only while it is on and quick access is;
   // a combination another app holds snaps the switch back and says so.
   useQuickAccessShortcut(presenceSettings.effective.quickAccess, () =>
-    showToast({ message: t("menuBar.shortcutTaken") })
+    showToast({ message: t("settings.keys.taken") })
   );
 
   // Every failure, not only the transition, so a second failed click is
@@ -479,22 +479,7 @@ export default function App() {
 
   function addManualServer(apiUrl: string) {
     if (!discovered.some((server) => server.apiUrl === apiUrl)) {
-      setManualServers((current) =>
-        current.some((server) => server.apiUrl === apiUrl)
-          ? current
-          : [
-              ...current,
-              {
-                id: apiUrl,
-                apiUrl,
-                address: null,
-                port: Number(new URL(apiUrl).port) || (apiUrl.startsWith("https:") ? 443 : 80),
-                hostname: null,
-                isLocal: false,
-                manual: true
-              }
-            ]
-      );
+      setManualServers((current) => withManualServer(current, apiUrl));
     }
 
     setSelectedServer(apiUrl);
@@ -509,13 +494,13 @@ export default function App() {
     }
   }
 
-  // macOS gets a native item in its app menu instead — see
-  // electron/main.ts's buildAppMenu — so this only needs to be offered here
-  // on the platforms that have no menu bar of their own.
-  function checkForUpdates() {
-    const updates = window.instantsUpdates;
-    if (updates && typeof updates.checkNow === "function") {
-      updates.checkNow();
+  // Configurações is its own window; a plain browser tab has no main process
+  // to ask, so it opens the same page in a tab instead.
+  function openSettings(section?: SettingsSection) {
+    if (typeof window.instantsSettings?.open === "function") {
+      window.instantsSettings.open(section);
+    } else {
+      window.open(`${window.location.pathname}${window.location.search}${hashFor(section && isSettingsPane(section) ? section : undefined)}`, "_blank");
     }
   }
 
@@ -539,7 +524,8 @@ export default function App() {
     onProvider: setProvider,
     regionSupported,
     region,
-    onRegion: setRegion
+    onRegion: setRegion,
+    onOpenSettings: () => openSettings("explore")
   };
 
   const organizeBlockedReason = favoritesPlaying
@@ -551,7 +537,7 @@ export default function App() {
   // ---- the native menus ----
   // What the menu bar and the right-click menus need to know: only this
   // side does. Reported on change; labels follow the in-app language.
-  const dialogOpen = addOpen || importOpen || addServerOpen || sheetOpen || presenceOpen || editing;
+  const dialogOpen = addOpen || importOpen || addServerOpen || sheetOpen || editing;
   const regions = useMemo(
     () => regionOptions(language).map(({ value, label }) => ({ code: value, label })),
     [language]
@@ -643,17 +629,11 @@ export default function App() {
       case "send-focused":
         clickFocusedCard("discord");
         break;
-      case "presence-settings":
-        if (!blocked && presenceSettings.available) setPresenceOpen(true);
-        break;
       case "appearance":
         if (!blocked) appearance.begin();
         break;
       case "shortcuts":
         if (!editing && (sheetOpen || !blocked)) setSheetOpen(true);
-        break;
-      case "language":
-        setLanguage(command.language);
         break;
       case "provider":
         if (providers?.some(({ key }) => key === command.key)) setProvider(command.key);
@@ -693,11 +673,6 @@ export default function App() {
         break;
       case "global-enabled":
         globalSettings.setEnabled(command.enabled);
-        break;
-      case "global-modifier":
-        if (globalSettings.modifiers.includes(command.modifier)) {
-          globalSettings.setModifier(command.modifier);
-        }
         break;
     }
   });
@@ -788,6 +763,7 @@ export default function App() {
                       onOpenChange={setServerMenuOpen}
                       onSelect={(server) => setSelectedServer(server.apiUrl)}
                       onRefresh={refreshDiscovery}
+                      onOpenSettings={() => openSettings("server")}
                       onAddServer={() => setAddServerOpen(true)}
                       onRemoveServer={removeManualServer}
                     />
@@ -857,31 +833,16 @@ export default function App() {
                         </>
                       )}
                       <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
-                      {presenceSettings.available && (
-                        <MenuItem primary={t("menuBar.title")} onSelect={() => setPresenceOpen(true)} />
-                      )}
+                      <MenuItem
+                        primary={t("app.settings")}
+                        hint={shortcutLabel(os, ",")}
+                        onSelect={() => openSettings()}
+                      />
                       <MenuItem
                         primary={t("shortcuts.sheet.title")}
                         hint="?"
                         onSelect={() => setSheetOpen(true)}
                       />
-                      <MenuSeparator />
-                      <MenuItem
-                        tick={language === "pt-BR" ? <CheckIcon /> : null}
-                        primary={t("app.languagePtBR")}
-                        onSelect={() => setLanguage("pt-BR")}
-                      />
-                      <MenuItem
-                        tick={language === "en-US" ? <CheckIcon /> : null}
-                        primary={t("app.languageEnUS")}
-                        onSelect={() => setLanguage("en-US")}
-                      />
-                      {os !== "mac" && (
-                        <>
-                          <MenuSeparator />
-                          <MenuItem primary={t("app.checkForUpdates")} onSelect={checkForUpdates} />
-                        </>
-                      )}
                     </Menu>
                   </div>
                 </div>
@@ -959,6 +920,7 @@ export default function App() {
             instants={favorites}
             os={os}
             status={globalStatus}
+            onOpenSettings={() => openSettings("keys")}
             onOrganize={() => {
               if (organizeBlockedReason) {
                 showToast({ message: organizeBlockedReason });
@@ -969,23 +931,6 @@ export default function App() {
             }}
           />
 
-          <PresenceDialog
-            open={presenceOpen}
-            onOpenChange={setPresenceOpen}
-            os={os}
-            noTray={os === "linux" && desktop === "gnome"}
-            settings={presenceSettings.settings}
-            shortcut={{ enabled: quickAccessShortcut.enabled, modifier: quickAccessShortcut.modifier }}
-            modifiers={quickAccessShortcut.available ? quickAccessShortcut.modifiers : []}
-            onConfirm={(next, key) => {
-              const turnedOn = next.tray && !presenceSettings.settings.tray;
-              presenceSettings.setSettings(next);
-              quickAccessShortcut.set(key);
-              setPresenceOpen(false);
-              // Windows tucks a new tray icon into the overflow chevron.
-              if (turnedOn && os === "win") showToast({ message: t("menuBar.pinHint") });
-            }}
-          />
           <AddServerForm
             open={addServerOpen}
             onCancel={() => setAddServerOpen(false)}

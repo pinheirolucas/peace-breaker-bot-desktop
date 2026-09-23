@@ -109,7 +109,7 @@ describe("ShortcutSheet", () => {
     );
     expect(screen.queryByText("Visualizar")).toBeNull();
     expect(screen.queryByText("Recarregar a listagem")).toBeNull();
-    expect(screen.queryByText("Aparência")).toBeNull();
+    expect(screen.queryByText("Abrir Configurações")).toBeNull();
     unmount();
 
     installMenuBridge();
@@ -117,14 +117,14 @@ describe("ShortcutSheet", () => {
 
     const reload = screen.getByText("Recarregar a listagem").closest("li")!;
     expect(within(reload).getByText("Visualizar")).toBeInTheDocument();
-    expect(within(screen.getByText("Aparência").closest("li")!).getByText("Arquivo")).toBeInTheDocument();
+    expect(within(screen.getByText("Abrir Configurações").closest("li")!).getByText("Arquivo")).toBeInTheDocument();
   });
 
-  it("names the app menu for Aparência on macOS", () => {
+  it("names the app menu for Configurações on macOS", () => {
     installMenuBridge();
     renderSheet({ os: "mac" });
 
-    expect(within(screen.getByText("Aparência").closest("li")!).getByText("Peace Breaker Bot")).toBeInTheDocument();
+    expect(within(screen.getByText("Abrir Configurações").closest("li")!).getByText("Peace Breaker Bot")).toBeInTheDocument();
   });
 
   it("filters sounds and commands together, and says when nothing matches", async () => {
@@ -168,19 +168,15 @@ describe("ShortcutSheet", () => {
     expect(screen.queryByRole("switch")).toBeNull();
   });
 
-  it("turns global keys on and shows each sound's combo", async () => {
+  it("shows each sound's combo when global keys are on, and has no switch of its own to turn them on", async () => {
     installBridge();
-    const user = userEvent.setup();
+    localStorage.setItem("globalShortcuts", JSON.stringify({ enabled: true, modifier: null }));
     renderSheet();
 
-    const toggle = screen.getByRole("switch", { name: "Funcionar fora do app" });
-    expect(toggle).not.toBeChecked();
-    expect(screen.queryByText("Ctrl+Alt+Shift+V")).toBeNull();
+    // The switch and the combination moved to Configurações › Atalhos.
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByRole("radio")).toBeNull();
 
-    await user.click(toggle);
-
-    expect(toggle).toBeChecked();
-    expect(JSON.parse(localStorage.getItem("globalShortcuts")!).enabled).toBe(true);
     const combo = await screen.findByLabelText("Ctrl+Alt+Shift+V");
     expect([...combo.querySelectorAll("kbd")].map((k) => k.textContent)).toEqual([
       "Ctrl",
@@ -188,6 +184,24 @@ describe("ShortcutSheet", () => {
       "Shift",
       "V"
     ]);
+  });
+
+  it("points to where the global keys are set, and closes itself on the way", async () => {
+    installBridge();
+    const user = userEvent.setup();
+    const onOpenSettings = vi.fn();
+    const { onOpenChange } = renderSheet({ onOpenSettings });
+
+    await user.click(screen.getByRole("button", { name: "Atalhos globais em Configurações…" }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves that pointer out where global keys cannot exist", () => {
+    renderSheet({ onOpenSettings: vi.fn() });
+
+    expect(screen.queryByRole("button", { name: "Atalhos globais em Configurações…" })).toBeNull();
   });
 
   it("marks a combo another app holds as in use", () => {

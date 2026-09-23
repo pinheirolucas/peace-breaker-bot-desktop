@@ -45,6 +45,10 @@ export function useServers() {
     activeUrl,
     healthy,
     select: (server: Server) => setSelected(server.apiUrl),
+    /** Picks a server by address — one just added has no Server yet. */
+    selectUrl: (apiUrl: string) => setSelected(apiUrl),
+    /** Forgets the pick: the first discovered server, or nothing, is in use again. */
+    clearSelection: () => setSelected(null),
     refresh: () => window.instantsDiscovery?.refresh?.()
   };
 }

@@ -32,7 +32,8 @@ export interface TrayMenuOptions {
   dot?: (tone: StatusTone) => MenuItemConstructorOptions["icon"];
 }
 
-export type TrayHandlers = Record<TrayAction | "quit", () => void>;
+/** "open-settings" is a menu row only: no Jump List task or desktop action launches it. */
+export type TrayHandlers = Record<TrayAction | "open-settings" | "quit", () => void>;
 
 export function trayMenu(
   snapshot: PresenceSnapshot,
@@ -50,7 +51,8 @@ export function trayMenu(
       ...(options.dot ? { icon: options.dot(statusTone(snapshot)) } : {})
     },
     { type: "separator" },
-    { label: t("presence.openApp"), click: on["open-app"] }
+    { label: t("presence.openApp"), click: on["open-app"] },
+    { label: t("presence.openSettings"), click: on["open-settings"] }
   ];
 
   if (options.quickAccess) {

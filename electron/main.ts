@@ -45,6 +45,14 @@ import {
 } from "./presence";
 import { createPresenceHost } from "./presenceHost";
 import { createQuickAccessWindow } from "./quickAccessWindow";
+import { createSettingsWindow } from "./settingsWindow";
+import {
+  isSettingsOpenRequest,
+  settingsConflictChannel,
+  settingsOpenAppearanceChannel,
+  settingsOpenChannel
+} from "./settings";
+import type { SettingsSection } from "./settings";
 import { isQuickAccessAction, isQuickAccessShortcutRequest, quickAccessActionChannel, quickAccessShortcutKey, quickAccessShortcutSetChannel } from "./quickAccess";
 import { actionFromArgv } from "./trayMenu";
 import { isShortcutRequest, shortcutsSetChannel } from "./shortcuts";
@@ -113,6 +121,10 @@ let macUpdateVersion: string | null = null;
 // only a check a person actually asked for gets an answer either way.
 let manualCheckPending = false;
 
+// Who asked for that check gets the answer: the settings window's own row
+// says so inline, the menus' checks answer with the main window's toast.
+let manualCheckOrigin: Electron.WebContents | null = null;
+
 let isQuitting = false;
 
 const wayland = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland";
@@ -151,10 +163,24 @@ function sendToWindow(channel: string, payload?: unknown): void {
   }
 }
 
-// Every renderer window: the main one, and the quick access once it exists.
+// Every renderer window: the main one, and quick access and settings once they exist.
 function sendToAll(channel: string, payload?: unknown): void {
   sendToWindow(channel, payload);
   quickAccessWindow.webContents()?.send(channel, payload);
+  settingsWindow.webContents()?.send(channel, payload);
+}
+
+// The answer to a manual update check goes to whoever asked, falling back to
+// the main window when that one has closed.
+function replyToManualCheck(channel: string, payload?: unknown): void {
+  const origin = manualCheckOrigin;
+  manualCheckOrigin = null;
+
+  if (origin && !origin.isDestroyed()) {
+    origin.send(channel, payload);
+  } else {
+    sendToWindow(channel, payload);
+  }
 }
 
 // The Jump List and taskbar grouping key on this; electron-builder's default
@@ -185,6 +211,7 @@ const presence = createPresenceHost({
     quickAccessWindow.hide();
     showMainWindow();
   },
+  openSettings: () => openSettings(),
   toggleQuickAccess: (bounds) => quickAccessWindow.toggle(bounds),
   openQuickAccess: () => quickAccessWindow.show(presence.trayBounds()),
   refreshDiscovery: () => refreshDiscovery(),
@@ -206,6 +233,49 @@ const quickAccessWindow = createQuickAccessWindow({
     if (discovered.size > 0) contents.send(discoveryServersChannel, sortedServers());
   }
 });
+
+const settingsWindow = createSettingsWindow({
+  isDev,
+  desktop,
+  onLoaded: (contents) => {
+    if (discovered.size > 0) contents.send(discoveryServersChannel, sortedServers());
+  }
+});
+
+/**
+ * Configurações, on a section. Aparência has no pane: it hands off to the main
+ * window's own stage, so asking for it here is asking for that.
+ */
+function openSettings(section?: SettingsSection): void {
+  if (section === "appearance") {
+    openAppearance();
+    return;
+  }
+
+  quickAccessWindow.hide();
+  settingsWindow.open(section);
+}
+
+/**
+ * Raises the main window and runs its existing Aparência stage. The renderer
+ * ignores the command while the stage or a dialog is already open, which is
+ * the "only focuses" case. A window that had to be created first is not
+ * listening yet, so the command waits for its page.
+ */
+function openAppearance(): void {
+  const command = { type: "appearance" } as const;
+
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+    mainWindow?.webContents.once("did-finish-load", () => {
+      setTimeout(() => sendToWindow(menuCommandChannel, command), 300);
+    });
+    return;
+  }
+
+  showMainWindow();
+  sendToWindow(menuCommandChannel, command);
+}
 
 // Quick access's own global shortcut, apart from the favourite keys': a second
 // registry, so switching one off never releases the other's.
@@ -271,19 +341,26 @@ function registerUpdateListeners(): void {
   autoUpdater.on("error", () => {
     if (manualCheckPending) {
       manualCheckPending = false;
-      sendToWindow(updateCheckFailedChannel);
+      replyToManualCheck(updateCheckFailedChannel);
     }
   });
 
   autoUpdater.on("update-not-available", () => {
     if (manualCheckPending) {
       manualCheckPending = false;
-      sendToWindow(updateNotAvailableChannel);
+      replyToManualCheck(updateNotAvailableChannel);
     }
   });
 
   autoUpdater.on("update-available", (info) => {
+    // The settings window's row shows the version; the other platforms' own
+    // notices below still go to the main window.
+    if (manualCheckPending && manualCheckOrigin && manualCheckOrigin === settingsWindow.webContents()) {
+      replyToManualCheck(updateAvailableChannel, info.version);
+    }
+
     manualCheckPending = false;
+    manualCheckOrigin = null;
 
     if (process.platform === "darwin") {
       downloadMacUpdate(info);
@@ -297,8 +374,9 @@ function registerUpdateListeners(): void {
   autoUpdater.on("update-downloaded", () => sendToWindow(updateRestartReadyChannel));
 }
 
-function checkForUpdatesManually(): void {
+function checkForUpdatesManually(origin: Electron.WebContents | null = null): void {
   manualCheckPending = true;
+  manualCheckOrigin = origin;
   void autoUpdater.checkForUpdates().catch(() => {});
 }
 
@@ -320,6 +398,7 @@ function menuDeps(): MenuDeps {
     platform: process.platform,
     send: (command: MenuCommand) => sendToWindow(menuCommandChannel, command),
     copy: (text) => clipboard.writeText(text),
+    openSettings,
     // Only https ever reaches the shell; the url may come from a stored favourite.
     reveal: (request) => {
       void clips.prepare(request).then((file) => {
@@ -344,7 +423,7 @@ function rebuildMenuBar(): void {
   const template = menuBar(menuState, menuDeps(), {
     isDev,
     appName: app.name,
-    checkForUpdates: checkForUpdatesManually
+    checkForUpdates: () => checkForUpdatesManually()
   });
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
@@ -530,6 +609,7 @@ function createWindow(): void {
     presence.forget(rendererId);
     stopDiscovery();
     shortcuts.reset();
+    settingsWindow.destroy();
     mainWindow = null;
   });
 }
@@ -562,11 +642,11 @@ ipcMain.on(restartToUpdateChannel, (event) => {
 // check the native macOS app menu triggers, since neither of those
 // platforms has a window menu bar in this app's custom chrome.
 ipcMain.on(checkForUpdatesChannel, (event) => {
-  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) {
+  if (!fromMainWindow(event) && !fromSettings(event)) {
     return;
   }
 
-  checkForUpdatesManually();
+  checkForUpdatesManually(event.sender);
 });
 
 // The renderer reports its resolved --bg/--fg whenever the palette or mode
@@ -575,25 +655,34 @@ ipcMain.on(checkForUpdatesChannel, (event) => {
 // to a light theme leaves dark glyphs on a light bar. The GNOME header bar's
 // overlay takes the same update.
 ipcMain.on(chromeChannel, (event, colors: unknown) => {
-  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) {
+  // Each app window paints its own chrome: the settings window has a title
+  // bar of its own, on the same palette.
+  if (!fromMainWindow(event) && !fromSettings(event)) {
     return;
   }
 
-  if (!isChromeColors(colors)) {
+  const target = BrowserWindow.fromWebContents(event.sender);
+
+  if (!target || target.isDestroyed() || !isChromeColors(colors)) {
     return;
   }
 
-  mainWindow.setBackgroundColor(colors.color);
+  target.setBackgroundColor(colors.color);
 
   if (process.platform === "win32") {
-    mainWindow.setTitleBarOverlay({ ...colors, height: titleBarHeight.win32 });
+    target.setTitleBarOverlay({ ...colors, height: titleBarHeight.win32 });
   } else if (process.platform === "linux" && desktop === "gnome") {
-    mainWindow.setTitleBarOverlay({ ...colors, height: titleBarHeight.linux });
+    target.setTitleBarOverlay({ ...colors, height: titleBarHeight.linux });
   }
 });
 
 function fromMainWindow(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
   return Boolean(mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents);
+}
+
+function fromSettings(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
+  const contents = settingsWindow.webContents();
+  return contents !== null && event.sender === contents;
 }
 
 function fromQuickAccess(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
@@ -685,6 +774,21 @@ ipcMain.on(presenceSettingsChannel, (event, settings: unknown) => {
   }
 });
 
+// Configurações is asked for by the main window's own controls (the overflow
+// menu, the server and filter menus) and can jump within itself. The section
+// is one of a fixed list, never a path or a url.
+ipcMain.on(settingsOpenChannel, (event, request: unknown) => {
+  if ((fromMainWindow(event) || fromSettings(event)) && isSettingsOpenRequest(request)) {
+    openSettings(request.section);
+  }
+});
+
+// Aparência's launcher in the sidebar: settings only ever asks main to raise
+// the stage, and only the settings window may ask.
+ipcMain.on(settingsOpenAppearanceChannel, (event) => {
+  if (fromSettings(event)) openAppearance();
+});
+
 // Prepared on pointer down, so the drag that may follow finds the file ready.
 ipcMain.handle(clipPrepareChannel, async (event, request: unknown): Promise<ClipPrepareResult> => {
   if (!fromAppWindow(event) || !isClipRequest(request)) return "failed";
@@ -733,9 +837,7 @@ ipcMain.on(quickAccessActionChannel, (event, action: unknown) => {
       refreshDiscovery();
       break;
     case "settings":
-      quickAccessWindow.hide();
-      showMainWindow();
-      sendToWindow(menuCommandChannel, { type: "presence-settings" });
+      openSettings("presence");
       break;
     case "quit":
       app.quit();
@@ -758,11 +860,19 @@ ipcMain.handle(quickAccessShortcutSetChannel, (event, request: unknown): Shortcu
     return empty;
   }
 
-  return quickAccessShortcut.apply({
+  const result = quickAccessShortcut.apply({
     enabled: request.enabled,
     modifier: request.modifier,
     keys: [quickAccessShortcutKey]
   });
+
+  // The main window undoes the switch and says so; the settings window, which
+  // asked for it, shows why beside the combination.
+  if (request.enabled && result.failed.length > 0) {
+    settingsWindow.webContents()?.send(settingsConflictChannel, "quickAccess");
+  }
+
+  return result;
 });
 
 ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult => {

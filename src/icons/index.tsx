@@ -234,3 +234,65 @@ export function ArrowUpRightIcon({ size = 13, ...rest }: IconProps) {
     </svg>
   );
 }
+
+// Configurações' sections. Drawn on the design canvas's 20px grid, so they set
+// their own viewBox and a slightly finer stroke than the 24px icons above.
+const grid20 = { viewBox: "0 0 20 20", strokeWidth: 1.7 } as const;
+
+export function SlidersIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <path d="M3 6h9M15 6h2M3 14h2M8 14h9" />
+      <circle cx="13.5" cy="6" r="1.8" />
+      <circle cx="6.5" cy="14" r="1.8" />
+    </svg>
+  );
+}
+
+export function PaletteIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <path d="M10 2.5a7.5 7.5 0 1 0 0 15c1.2 0 1.6-.9 1.2-1.8-.5-1 .1-2.2 1.3-2.2H15a2.5 2.5 0 0 0 2.5-2.5C17.5 7.5 14.2 2.5 10 2.5z" />
+      <circle cx="6.5" cy="9" r=".9" />
+      <circle cx="10" cy="6" r=".9" />
+      <circle cx="13.5" cy="8.5" r=".9" />
+    </svg>
+  );
+}
+
+export function ServerIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <rect x="3" y="4" width="14" height="5" rx="1.6" />
+      <rect x="3" y="11" width="14" height="5" rx="1.6" />
+      <path d="M6 6.5h.01M6 13.5h.01" />
+    </svg>
+  );
+}
+
+export function CompassIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="m12.8 7.2-1.6 4-4 1.6 1.6-4z" />
+    </svg>
+  );
+}
+
+export function WindowBarIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <rect x="2.5" y="3.5" width="15" height="13" rx="2" />
+      <path d="M2.5 7h15M13 5.25h2.5" />
+    </svg>
+  );
+}
+
+export function DatabaseIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <ellipse cx="10" cy="5" rx="6.5" ry="2.5" />
+      <path d="M3.5 5v10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5V5M3.5 10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5" />
+    </svg>
+  );
+}

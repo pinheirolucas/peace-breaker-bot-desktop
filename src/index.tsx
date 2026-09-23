@@ -12,6 +12,8 @@ import "./styles/base.css";
 import "./i18n";
 import App from "./App";
 import QuickAccess from "./QuickAccess";
+import Settings from "./Settings";
+import { isSettingsHash } from "../electron/settings";
 import { isQuickAccessWindow } from "./lib/quickAccessCompat";
 
 const root = document.getElementById("root");
@@ -28,4 +30,7 @@ if (quickAccess) {
   document.documentElement.dataset.quickAccess = "1";
 }
 
-createRoot(root).render(quickAccess ? <QuickAccess /> : <App />);
+// Configurações is this bundle too, at `#/settings[/section]`, loaded by its own window.
+const settings = isSettingsHash(window.location.hash);
+
+createRoot(root).render(quickAccess ? <QuickAccess /> : settings ? <Settings /> : <App />);

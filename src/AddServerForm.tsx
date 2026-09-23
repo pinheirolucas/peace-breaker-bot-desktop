@@ -18,7 +18,8 @@ export interface AddServerFormProps {
 
 const defaultApiPath = `/api${apiVersionPath}`;
 
-function candidateFrom(input: string): string | null {
+/** What a typed address becomes: a scheme and the API path added when it has none, or null when it is not an address at all. */
+export function candidateFrom(input: string): string | null {
   const trimmed = input.trim();
   const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
   const normalized = normalizeApiUrl(withScheme);

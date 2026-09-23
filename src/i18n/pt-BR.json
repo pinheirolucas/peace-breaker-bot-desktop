@@ -31,15 +31,12 @@
     "import": "Importar",
     "export": "Exportar",
     "appearance": "Aparência",
-    "checkForUpdates": "Verificar atualizações",
-    "language": "Idioma",
-    "languagePtBR": "Português",
-    "languageEnUS": "English",
     "connectionError": "Não foi possível conectar a {{address}}",
     "addMore": "Mais ações de adição",
     "searchInFavorites_one": "Buscar em {{count}} favorito",
     "searchInFavorites_other": "Buscar em {{count}} favoritos",
-    "searchInProvider": "Buscar em {{provider}}"
+    "searchInProvider": "Buscar em {{provider}}",
+    "settings": "Configurações…"
   },
   "server": {
     "connectedTo": "Conectado a",
@@ -68,7 +65,8 @@
     "testSuccess": "Conectado",
     "testUnreachable": "Não foi possível conectar",
     "remove": "Remover {{address}}",
-    "notResponding": "não está respondendo"
+    "notResponding": "não está respondendo",
+    "settings": "Configurações do servidor…"
   },
   "save": {
     "title": "Adicionar instant",
@@ -207,7 +205,8 @@
   },
   "filters": {
     "label": "Filtrar por site e região",
-    "reset": "Restaurar padrão"
+    "reset": "Restaurar padrão",
+    "more": "Mais em Configurações…"
   },
   "shortcuts": {
     "title": "Atalho para “{{name}}”",
@@ -251,16 +250,14 @@
       "groupAdd": "Adicionar",
       "groupApp": "O app",
       "reload": "Recarregar a listagem",
-      "appearance": "Aparência",
       "noMatches": "Nenhum atalho com “{{filter}}”",
       "menuApp": "Peace Breaker Bot",
-      "legend": "Legenda"
+      "legend": "Legenda",
+      "settings": "Abrir Configurações",
+      "globalSettings": "Atalhos globais em Configurações…"
     },
     "global": {
       "lede": "Com o app em foco, a tecla sozinha toca o som. Fora dele, use a tecla com o modificador.",
-      "switch": "Funcionar fora do app",
-      "switchHint": "Com o Discord ou um jogo em foco, enquanto o app estiver aberto.",
-      "modifier": "Modificador",
       "inUse": "Em uso",
       "inUseNote": "“Em uso” significa que outro app já registrou essa combinação. A tecla sozinha continua funcionando com o app em foco.",
       "unsupported": "Seu ambiente não permite atalhos fora do app",
@@ -276,12 +273,12 @@
       "about": "Sobre o {{name}}",
       "checkForUpdates": "Verificar atualizações…",
       "appearance": "Aparência…",
-      "language": "Idioma",
       "services": "Serviços",
       "hide": "Ocultar {{name}}",
       "hideOthers": "Ocultar outros",
       "showAll": "Mostrar tudo",
-      "quit": "Encerrar {{name}}"
+      "quit": "Encerrar {{name}}",
+      "settings": "Configurações…"
     },
     "file": {
       "title": "Arquivo",
@@ -318,7 +315,7 @@
       "playFocused": "Tocar no cartão em foco",
       "sendFocused": "Enviar cartão em foco ao Discord",
       "globalKeys": "Teclas globais",
-      "globalModifier": "Modificador"
+      "globalShortcuts": "Atalhos globais…"
     },
     "server": {
       "title": "Servidor",
@@ -380,7 +377,8 @@
     "refresh": "Procurar servidor novamente",
     "quit": "Sair",
     "someSound": "Som",
-    "silent": "Servidor não está respondendo"
+    "silent": "Servidor não está respondendo",
+    "openSettings": "Configurações…"
   },
   "quickAccess": {
     "pin": "Manter o acesso rápido aberto",
@@ -410,31 +408,239 @@
     "connectionNote": "A troca vale na hora. Os servidores são encontrados na rede local.",
     "enter": "Enter"
   },
-  "menuBar": {
-    "title": "Barra de menus",
-    "done": "Pronto",
-    "tray": "Mostrar na barra de menus",
-    "trayHint": "Ícone com o estado do bot. Clique ou botão direito para ver o menu.",
-    "quickAccess": "Acesso rápido",
-    "quickAccessHint": "O clique no ícone abre os favoritos no acesso rápido. O menu continua no botão direito.",
-    "quickAccessNeedsTray": "Ligue o ícone na barra de menus primeiro.",
-    "noTray": "Sem ícone na bandeja neste ambiente. Abra o acesso rápido pelo menu do ícone do app no dock, ou ligue o atalho global.",
-    "style": "Estilo do acesso rápido",
-    "styleHint": "Favoritos mostra os sons. Conexão mostra só o servidor, para conectar e procurar.",
-    "click": "Clique em um som no acesso rápido",
-    "clickHint": "Só no estilo Favoritos. Padrão: ouvir aqui.",
-    "clickLocal": "Ouvir aqui",
-    "clickDiscord": "Enviar ao bot",
-    "shortcut": "Atalho global",
-    "shortcutHint": "Abre o acesso rápido mesmo com outro app em foco. Desligado por padrão.",
-    "shortcutNeedsQuickAccess": "Ligue o acesso rápido primeiro.",
-    "combo": "Combinação",
-    "comboHint": "Só vale com o atalho ligado.",
-    "shortcutTaken": "Em uso por outro app",
-    "nameBeside": "Mostrar o nome do som ao lado do ícone",
-    "titleHint": "Aparece em compartilhamento de tela. Desligado por padrão.",
-    "background": "Manter em segundo plano ao fechar a janela",
-    "backgroundHint": "No macOS o app já continua aberto.",
-    "pinHint": "Fixe o ícone na barra de tarefas para mantê-lo visível."
+  "settings": {
+    "title": "Configurações",
+    "searchLabel": "Buscar nas configurações",
+    "searchPlaceholder": "Buscar",
+    "clearSearch": "Limpar busca",
+    "sidebarLabel": "Seções das configurações",
+    "appearanceLauncher": "Aparência, abre na janela principal",
+    "appearanceTitle": "Aparência · abre na janela principal",
+    "footerName": "Peace Breaker Bot",
+    "footerVersion": "Versão {{version}}",
+    "footerApplied": "As mudanças valem na hora.",
+    "results": "Resultados",
+    "resultCount_one": "{{count}} resultado para “{{query}}”",
+    "resultCount_other": "{{count}} resultados para “{{query}}”",
+    "noResults": "Nenhuma configuração encontrada",
+    "noResultsHint": "Tente “servidor”, “atalho” ou “tema”.",
+    "sections": {
+      "general": "Geral",
+      "appearance": "Aparência",
+      "server": "Servidor",
+      "explore": "Explorar",
+      "keys": "Atalhos",
+      "menuBar": "Barra de menus",
+      "tray": "Bandeja",
+      "data": "Dados e backup"
+    },
+    "general": {
+      "lede": "Idioma e atualizações do aplicativo.",
+      "language": "Idioma",
+      "languageTitle": "Idioma da interface",
+      "languageHint": "Automático segue o idioma do sistema.",
+      "langAuto": "Automático",
+      "langPt": "Português (Brasil)",
+      "langEn": "English",
+      "updates": "Atualizações",
+      "version": "Versão {{version}}",
+      "hourly": "Verificamos a cada hora, em segundo plano.",
+      "noUpdater": "As atualizações só funcionam no aplicativo instalado.",
+      "upToDate": "Você já está na versão mais recente.",
+      "available": "A versão {{version}} está disponível.",
+      "failed": "Não foi possível verificar atualizações.",
+      "checkNow": "Verificar agora",
+      "checking": "Verificando…"
+    },
+    "server": {
+      "lede": "O bot que recebe os sons. O app o encontra sozinho na rede; você pode escolher outro ou informar um endereço.",
+      "connection": "Conexão",
+      "noneBody": "O app não está falando com nada. Escolha um da lista ou procure de novo.",
+      "downBody": "Os botões de tocar continuam ativos: um clique descobre quando ele voltar.",
+      "okBody": "O servidor está respondendo.",
+      "found": "Servidores encontrados",
+      "active": "Servidor ativo",
+      "manual": "Adicionado à mão",
+      "noneList": "Confira se o bot está rodando e se este computador está na mesma rede. Você também pode informar um endereço abaixo.",
+      "background": "Procurar de novo a cada 30 s, em segundo plano.",
+      "scanning": "Procurando…",
+      "addByAddress": "Adicionar por endereço",
+      "addressTitle": "Endereço do servidor",
+      "addressHint": "Para um bot fora da rede local ou onde a descoberta é bloqueada.",
+      "test": "Testar"
+    },
+    "explore": {
+      "lede": "De onde vêm os sons da aba Explorar. Na aba, o botão de filtro continua trocando isso na hora.",
+      "site": "Site",
+      "siteLabel": "Site do catálogo",
+      "chipSearch": "busca",
+      "chipRegion": "país",
+      "noProviders": "Conecte-se a um servidor para ver os sites disponíveis.",
+      "country": "País",
+      "countryTitle": "País do catálogo",
+      "countryHint": "Muda quais sons aparecem quando não há busca.",
+      "countryOff": "Este site não tem catálogo por país."
+    },
+    "keys": {
+      "lede": "A tecla de cada favorito é definida em Organizar. Aqui você escolhe onde ela vale e como abrir o acesso rápido.",
+      "unavailable": "Só funciona no aplicativo instalado.",
+      "favorites": "Teclas dos favoritos",
+      "globalTitle": "Teclas globais",
+      "globalHint": "A tecla de um favorito, com a combinação abaixo, toca o som mesmo com outro app em foco. Desligado por padrão.",
+      "combo": "Combinação",
+      "comboGlobalHint": "Só vale com as teclas globais ligadas.",
+      "comboGlobalLabel": "Combinação das teclas globais",
+      "quickAccess": "Acesso rápido",
+      "quickAccessTitle": "Atalho global do acesso rápido",
+      "quickAccessHint": "Abre o acesso rápido mesmo com outro app em foco. Desligado por padrão.",
+      "needsQuickAccess": "Ligue o acesso rápido primeiro.",
+      "comboQuickHint": "Só vale com o atalho ligado.",
+      "comboQuickLabel": "Combinação do acesso rápido",
+      "conflict": "Em uso por outro app. Escolha outra combinação.",
+      "taken": "Em uso por outro app",
+      "inApp": "Dentro do app",
+      "keyWord": "tecla",
+      "playDiscord": "Toca o favorito no Discord",
+      "playLocal": "Toca aqui, no seu computador",
+      "stop": "Para o som",
+      "find": "Buscar",
+      "tabs": "Favoritos e Explorar",
+      "add": "Adicionar",
+      "openSettings": "Abrir estas configurações",
+      "sheet": "Folha de atalhos"
+    },
+    "presence": {
+      "lede": "O ícone com o estado do bot e o acesso rápido, para tocar sem abrir a janela.",
+      "icon": "Ícone",
+      "menuBarTitle": "Mostrar na barra de menus",
+      "trayTitle": "Mostrar na bandeja",
+      "trayHint": "Um ícone com o estado do bot. Clique ou clique com o botão direito para o menu.",
+      "pinHint": "Fixe o ícone na barra de tarefas para mantê-lo visível.",
+      "unavailable": "Só funciona no aplicativo instalado.",
+      "noTray": "Sem ícone na bandeja neste ambiente. Abra o acesso rápido pelo menu do ícone do app no dock, ou ligue o atalho global.",
+      "nameBeside": "Mostrar o nome do som ao lado do ícone",
+      "nameBesideHint": "Aparece ao compartilhar a tela. Desligado por padrão.",
+      "needsTray": "Ligue o ícone na barra de menus primeiro.",
+      "background": "Continuar rodando ao fechar a janela",
+      "backgroundHint": "Fechar a janela deixa o app na bandeja. Sem isso, fechar encerra o app.",
+      "quickAccess": "Acesso rápido",
+      "quickAccessTitle": "Acesso rápido",
+      "quickAccessHint": "Um clique no ícone abre os favoritos. O menu continua no clique direito.",
+      "needsIcon": {
+        "menuBar": "Ligue o ícone na barra de menus primeiro.",
+        "tray": "Ligue o ícone na bandeja primeiro."
+      },
+      "style": "Estilo",
+      "styleLabel": "Estilo do acesso rápido",
+      "styleHint": "Favoritos mostra os sons. Conexão mostra só o servidor, para conectar e procurar.",
+      "click": "Ao clicar em um som",
+      "clickHint": "Só no estilo Favoritos. Padrão: ouvir aqui.",
+      "clickLocal": "Ouvir aqui",
+      "clickDiscord": "Enviar ao bot",
+      "shortcutElsewhere": "O atalho global que abre o acesso rápido fica em"
+    },
+    "data": {
+      "lede": "Tudo fica neste computador. Exportar e importar é a única forma de levar seus favoritos para outro.",
+      "favorites": "Favoritos",
+      "exportHint": "Salva um arquivo JSON com favoritos, teclas e configurações.",
+      "exportAction": "Exportar…",
+      "importHint": "Você escolhe entre mesclar com os atuais ou substituí-los.",
+      "importAction": "Importar…",
+      "restore": "Restaurar",
+      "resetTitle": "Restaurar configurações",
+      "resetHint": "Volta tudo destas páginas ao padrão. Favoritos e suas teclas não são apagados.",
+      "resetAction": "Restaurar…",
+      "confirmLabel": "Confirmar restauração",
+      "confirmTitle": "Voltar tudo ao padrão?",
+      "confirmBody": "Idioma, paleta, servidor, catálogo, atalhos e ícone. Favoritos ficam como estão.",
+      "confirmAction": "Restaurar",
+      "restored": "Configurações restauradas"
+    },
+    "search": {
+      "language": {
+        "title": "Idioma da interface",
+        "hint": "Automático, português ou inglês"
+      },
+      "updates": {
+        "title": "Atualizações",
+        "hint": "Verificar se há uma versão nova"
+      },
+      "palette": {
+        "title": "Paleta",
+        "hint": "Esmalte, Frevo, Cerrado, Brasa, Fliperama, Discord, Alto contraste, OLED"
+      },
+      "mode": {
+        "title": "Modo claro ou escuro",
+        "hint": "Automático acompanha o sistema"
+      },
+      "server": {
+        "title": "Servidor ativo",
+        "hint": "Escolher o bot que recebe os sons"
+      },
+      "rescan": {
+        "title": "Procurar servidor de novo",
+        "hint": "Descoberta na rede local"
+      },
+      "addServer": {
+        "title": "Adicionar servidor por endereço",
+        "hint": "Testar e adicionar à mão"
+      },
+      "site": {
+        "title": "Site do catálogo",
+        "hint": "MyInstants, Instants.meme e outros"
+      },
+      "country": {
+        "title": "País do catálogo",
+        "hint": "Só nos sites que têm catálogo por país"
+      },
+      "globalKeys": {
+        "title": "Teclas globais",
+        "hint": "Tocar um favorito com outro app em foco"
+      },
+      "globalCombo": {
+        "title": "Combinação das teclas globais",
+        "hint": "Modificadores do atalho"
+      },
+      "quickShortcut": {
+        "title": "Atalho global do acesso rápido",
+        "hint": "Abrir o acesso rápido de qualquer app"
+      },
+      "inAppKeys": {
+        "title": "Atalhos dentro do app",
+        "hint": "Buscar, trocar de aba, parar o som"
+      },
+      "trayMac": {
+        "title": "Ícone na barra de menus",
+        "hint": "O estado do bot sempre à vista"
+      },
+      "trayOther": {
+        "title": "Ícone na bandeja",
+        "hint": "O estado do bot sempre à vista"
+      },
+      "quickAccess": {
+        "title": "Acesso rápido",
+        "hint": "Estilo e clique em um som"
+      },
+      "nameBeside": {
+        "title": "Nome do som ao lado do ícone",
+        "hint": "Aparece ao compartilhar a tela"
+      },
+      "background": {
+        "title": "Continuar rodando ao fechar a janela",
+        "hint": "Fica na bandeja"
+      },
+      "export": {
+        "title": "Exportar favoritos",
+        "hint": "Arquivo JSON de backup"
+      },
+      "import": {
+        "title": "Importar favoritos",
+        "hint": "Mesclar ou substituir"
+      },
+      "reset": {
+        "title": "Restaurar configurações",
+        "hint": "Voltar tudo ao padrão"
+      }
+    }
   }
 }

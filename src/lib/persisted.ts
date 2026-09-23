@@ -16,6 +16,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Updater<T> = T | ((previous: T) => T);
 export type SetPersisted<T> = (next: Updater<T>) => void;
 
+/** What a listener is told when its key is removed rather than written: back to its default. */
+const CLEARED = Symbol("cleared");
+
 type Listener = (value: unknown) => void;
 const channels = new Map<string, Set<Listener>>();
 
@@ -56,6 +59,24 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 
+/**
+ * Removes keys, so every hook on them falls back to its own default — in this
+ * window through the registry, and in the others through the storage event,
+ * whose `newValue` is null for a removal. Not the same as writing the default:
+ * an absent key is what "never chosen" means to the language and the server.
+ */
+export function clearPersisted(keys: readonly string[]): void {
+  for (const key of keys) {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Storage disabled: there is nothing stored to remove.
+    }
+
+    channels.get(key)?.forEach((listener) => listener(CLEARED));
+  }
+}
+
 export function createPersistedState<T>(key: string) {
   return function usePersistedState(defaultValue: T): [T, SetPersisted<T>] {
     const [value, setValue] = useState<T>(() => read(key, defaultValue));
@@ -72,7 +93,11 @@ export function createPersistedState<T>(key: string) {
     fallback.current = defaultValue;
 
     // This instance's own listener, so a broadcast can skip its sender.
-    const self = useRef<Listener>((next) => setValue(next as T));
+    const self = useRef<Listener>((next) => {
+      const resolved = next === CLEARED ? fallback.current : (next as T);
+      current.current = resolved;
+      setValue(resolved);
+    });
 
     const set = useCallback<SetPersisted<T>>((next) => {
       const resolved =

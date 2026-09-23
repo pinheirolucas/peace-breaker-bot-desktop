@@ -14,7 +14,8 @@ export function formatApiUrl(url: string): string {
   }
 }
 
-function describe(server: Server, t: (key: string) => string): string {
+/** The line under an address: this computer, or the hostname it advertises. */
+export function describeServer(server: Server, t: (key: string) => string): string {
   if (!server.hostname) {
     return server.isLocal ? t("server.onlyThisComputer") : "";
   }
@@ -35,6 +36,8 @@ export interface ServerMenuProps {
   onRefresh: () => void;
   onAddServer: () => void;
   onRemoveServer: (server: Server) => void;
+  /** The way into Configurações › Servidor, for what a pick cannot do. */
+  onOpenSettings?: () => void;
 }
 
 /** The header's second line: which of the bot's channel, "not in a
@@ -79,7 +82,8 @@ export default function ServerMenu({
   onSelect,
   onRefresh,
   onAddServer,
-  onRemoveServer
+  onRemoveServer,
+  onOpenSettings
 }: ServerMenuProps) {
   const { t } = useTranslation();
   const current = currentApiUrl ? formatApiUrl(currentApiUrl) : null;
@@ -94,7 +98,7 @@ export default function ServerMenu({
         key={server.id}
         tick={server.apiUrl === currentApiUrl ? <CheckIcon /> : null}
         primary={formatApiUrl(server.apiUrl)}
-        secondary={describe(server, t) || undefined}
+        secondary={describeServer(server, t) || undefined}
         onSelect={() => onSelect(server)}
         closeOnSelect={false}
         trail={server.manual ? <CloseIcon size={12} /> : undefined}
@@ -164,6 +168,13 @@ export default function ServerMenu({
         onSelect={onRefresh}
         closeOnSelect={false}
       />
+
+      {onOpenSettings && (
+        <>
+          <MenuSeparator />
+          <MenuItem primary={t("server.settings")} onSelect={onOpenSettings} />
+        </>
+      )}
     </Menu>
   );
 }

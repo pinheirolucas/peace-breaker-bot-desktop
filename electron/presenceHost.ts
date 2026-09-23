@@ -37,6 +37,7 @@ export interface PresenceHostDeps {
   /** Sends to every renderer window, quick access included. */
   sendAll: (channel: string, payload?: unknown) => void;
   openApp: () => void;
+  openSettings: () => void;
   /** Toggles the quick access, anchored to the tray icon. Absent until quick access exists. */
   toggleQuickAccess?: (trayBounds: Rectangle) => void;
   openQuickAccess?: () => void;
@@ -149,10 +150,11 @@ export function createPresenceHost(deps: PresenceHostDeps) {
 
   // ---- views ----
 
-  const handlers = (): Record<TrayAction | "quit", () => void> => ({
+  const handlers = (): Record<TrayAction | "open-settings" | "quit", () => void> => ({
     stop,
     "open-quick-access": () => deps.openQuickAccess?.(),
     "open-app": deps.openApp,
+    "open-settings": deps.openSettings,
     refresh: deps.refreshDiscovery,
     quit: deps.quit
   });

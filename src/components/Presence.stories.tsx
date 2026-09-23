@@ -18,7 +18,7 @@ const menu = (
     <MenuItem primary="Abrir Peace Breaker Bot" />
     <MenuItem primary="Procurar servidor novamente" />
     <MenuSeparator />
-    <MenuItem primary="Barra de menus" />
+    <MenuItem primary="Configurações…" />
   </>
 );
 

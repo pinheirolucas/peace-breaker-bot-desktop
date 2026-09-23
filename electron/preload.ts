@@ -14,6 +14,15 @@ import {
   presenceStopChannel
 } from "./presence";
 import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "./presence";
+import {
+  isSettingsConflict,
+  isSettingsSection,
+  settingsConflictChannel,
+  settingsOpenAppearanceChannel,
+  settingsOpenChannel,
+  settingsSectionChannel
+} from "./settings";
+import type { SettingsConflict, SettingsSection } from "./settings";
 import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
@@ -291,5 +300,42 @@ contextBridge.exposeInMainWorld("instantsPresence", {
     return () => {
       snapshotListeners.delete(listener);
     };
+  }
+});
+
+// Configurações: how the main window asks for it, and what the window itself
+// hears from main. Main validates every request again; a section is one of a
+// fixed list and nothing here can name a path.
+contextBridge.exposeInMainWorld("instantsSettings", {
+  open: (section?: SettingsSection) => ipcRenderer.send(settingsOpenChannel, { section }),
+  // Aparência is not a pane: main raises the main window and runs its stage.
+  openAppearance: () => ipcRenderer.send(settingsOpenAppearanceChannel),
+  onSection: (listener: (section: SettingsSection) => void) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    const handler = (_event: unknown, section: unknown) => {
+      if (isSettingsSection(section)) {
+        listener(section);
+      }
+    };
+
+    ipcRenderer.on(settingsSectionChannel, handler);
+    return () => ipcRenderer.removeListener(settingsSectionChannel, handler);
+  },
+  onConflict: (listener: (conflict: SettingsConflict) => void) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    const handler = (_event: unknown, conflict: unknown) => {
+      if (isSettingsConflict(conflict)) {
+        listener(conflict);
+      }
+    };
+
+    ipcRenderer.on(settingsConflictChannel, handler);
+    return () => ipcRenderer.removeListener(settingsConflictChannel, handler);
   }
 });
