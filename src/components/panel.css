@@ -124,6 +124,16 @@ html[data-panel="1"][data-os="linux"] .app.panel {
 
 /* ==== Favoritos ============================================================ */
 
+/* Favoritos' body: a flex column that fills what the strip leaves, so the
+ * search, banner, hint and footer stay put and only .scroll moves. Without
+ * min-height: 0 it would grow to its content and push the footer off. */
+.pbody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .psearch { flex: none; padding: 10px 16px 0; }
 .psearch .search { width: 100%; }
 

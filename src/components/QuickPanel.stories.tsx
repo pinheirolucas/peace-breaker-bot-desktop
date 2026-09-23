@@ -64,18 +64,30 @@ function Favorites({ state, ...props }: { state: PresenceSnapshot } & Partial<Pa
         matchUrl={props.matchUrl ?? null}
         hint={props.hint ?? false}
         onPlay={noop}
-        onPlayOnDiscord={noop}
-        onStop={noop}
         onOpenApp={noop}
       />
     </Panel>
   );
 }
 
+const many: Instant[] = Array.from({ length: 43 }, (_, i) => ({ name: `${clips[i % clips.length].name} ${i + 1}`, url: `https://x/many-${i}.mp3` }));
+
 const row = { display: "flex", flexWrap: "wrap", gap: 24, alignItems: "flex-start" } as const;
 
 /** Favoritos, the default style. Cards are the window's own components at the Tight tier's size. */
 export const FavoritosDefault: StoryObj = { name: "Favoritos · idle, with the drag hint", render: () => <Favorites state={snapshot()} hint /> };
+
+/** 43 favourites: only the grid scrolls. The strip, search, banner, hint and footer stay put. */
+export const FavoritosLongList: StoryObj = {
+  name: "Favoritos · 43 favorites, only the grid scrolls",
+  render: () => <Favorites state={snapshot({ silent: true })} instants={many} total={many.length} hint />
+};
+
+/** Two favourites: the footer still sits at the bottom of the 520px window. */
+export const FavoritosShortList: StoryObj = {
+  name: "Favoritos · 2 favorites, footer at the bottom",
+  render: () => <Favorites state={snapshot()} instants={clips.slice(0, 2)} total={2} />
+};
 
 export const FavoritosPlaying: StoryObj = {
   name: "Favoritos · playing",

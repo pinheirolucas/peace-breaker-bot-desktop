@@ -327,8 +327,21 @@ export default function QuickPanel() {
               bodyRef={bodyRef}
             />
           ) : (
-            <div
-              className="pbody"
+            <PanelFavorites
+              instants={filtered}
+              total={favorites.length}
+              query={query}
+              onQuery={setQuery}
+              searchRef={searchRef}
+              playbackOf={playbackOf}
+              otherPlaying={anyPlaying}
+              botStatus={botStatus}
+              offline={snapshot.silent}
+              onRetry={searchAgain}
+              matchUrl={matchUrl}
+              hint={hint}
+              onPlay={onBody}
+              onOpenApp={() => action("open-app")}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && event.target === searchRef.current && filtered[0]) {
                   event.preventDefault();
@@ -338,26 +351,7 @@ export default function QuickPanel() {
                   if (!blocked) void onBody(first);
                 }
               }}
-            >
-              <PanelFavorites
-                instants={filtered}
-                total={favorites.length}
-                query={query}
-                onQuery={setQuery}
-                searchRef={searchRef}
-                playbackOf={playbackOf}
-                otherPlaying={anyPlaying}
-                botStatus={botStatus}
-                offline={snapshot.silent}
-                onRetry={searchAgain}
-                matchUrl={matchUrl}
-                hint={hint}
-                onPlay={onBody}
-                onPlayOnDiscord={handlePlayOnDiscord}
-                onStop={() => void handleStop()}
-                onOpenApp={() => action("open-app")}
-              />
-            </div>
+            />
           )}
         </div>
 

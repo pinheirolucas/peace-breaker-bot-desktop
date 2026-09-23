@@ -83,6 +83,10 @@ export interface InstantCardProps {
   match?: boolean;
   /** Forces a drag-out state, for stories and tests; the pointer normally drives it. */
   dragState?: ClipDragState;
+  /** The quick panel's card: the body is the only control, so there is no
+   *  footer (send, stop) and the card is shorter. cardState still gates the
+   *  body exactly as it does in the window. */
+  bare?: boolean;
 }
 
 /**
@@ -129,7 +133,8 @@ export default function InstantCard({
   menu,
   shortcut,
   match,
-  dragState
+  dragState,
+  bare
 }: InstantCardProps) {
   const { t } = useTranslation();
   const headingId = useId();
@@ -191,6 +196,7 @@ export default function InstantCard({
       data-dim={state.dim}
       data-inert={state.playDisabled}
       data-organize={organize ? true : undefined}
+      data-bare={bare && !organize ? true : undefined}
       data-drag={organize?.drag}
       data-flash={shortcut?.flash}
       data-match={match || undefined}
@@ -274,71 +280,73 @@ export default function InstantCard({
         <path d={wavePath(instant.name)} />
       </svg>
 
-      <div className="pfoot">
-        {organize ? (
-          <>
-            <button
-              type="button"
-              className="pb"
-              aria-label={t("card.rename")}
-              title={t("card.rename")}
-              onClick={(event) =>
-                organize.onRename(event.currentTarget.closest("article")?.offsetWidth ?? 0)
-              }
-            >
-              <PencilIcon />
-            </button>
-            {organize.onSetKey && (
+      {(!bare || organize || trail) && (
+        <div className="pfoot">
+          {organize ? (
+            <>
               <button
                 type="button"
                 className="pb"
-                aria-label={t("shortcuts.setFor", { name: instant.name })}
-                title={t("shortcuts.set")}
-                onClick={organize.onSetKey}
+                aria-label={t("card.rename")}
+                title={t("card.rename")}
+                onClick={(event) =>
+                  organize.onRename(event.currentTarget.closest("article")?.offsetWidth ?? 0)
+                }
               >
-                <KeyboardIcon />
+                <PencilIcon />
               </button>
-            )}
-          </>
-        ) : (
-          <>
+              {organize.onSetKey && (
+                <button
+                  type="button"
+                  className="pb"
+                  aria-label={t("shortcuts.setFor", { name: instant.name })}
+                  title={t("shortcuts.set")}
+                  onClick={organize.onSetKey}
+                >
+                  <KeyboardIcon />
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="pb"
+                aria-label={discordLabel}
+                title={discordLabel}
+                data-act="discord"
+                disabled={state.discordDisabled}
+                onClick={() => onPlayOnDiscord(instant)}
+              >
+                <SendIcon />
+              </button>
+              <button
+                type="button"
+                className="pb"
+                aria-label={t("card.stop")}
+                title={t("card.stop")}
+                disabled={state.stopDisabled}
+                onClick={onStop}
+              >
+                <StopIcon />
+              </button>
+            </>
+          )}
+          {trail && (
             <button
               type="button"
-              className="pb"
-              aria-label={discordLabel}
-              title={discordLabel}
-              data-act="discord"
-              disabled={state.discordDisabled}
-              onClick={() => onPlayOnDiscord(instant)}
+              className="pb trail"
+              aria-label={trail.label}
+              title={trail.label}
+              aria-pressed={trail.pressed}
+              disabled={state.trailDisabled}
+              onClick={trail.onClick}
             >
-              <SendIcon />
+              {trail.icon}
             </button>
-            <button
-              type="button"
-              className="pb"
-              aria-label={t("card.stop")}
-              title={t("card.stop")}
-              disabled={state.stopDisabled}
-              onClick={onStop}
-            >
-              <StopIcon />
-            </button>
-          </>
-        )}
-        {trail && (
-          <button
-            type="button"
-            className="pb trail"
-            aria-label={trail.label}
-            title={trail.label}
-            aria-pressed={trail.pressed}
-            disabled={state.trailDisabled}
-            onClick={trail.onClick}
-          >
-            {trail.icon}
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </article>
   );
 }

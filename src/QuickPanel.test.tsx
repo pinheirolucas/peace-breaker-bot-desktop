@@ -81,8 +81,6 @@ describe("PanelFavorites", () => {
   function view(props: Partial<PanelFavoritesProps> = {}) {
     const handlers = {
       onPlay: vi.fn(),
-      onPlayOnDiscord: vi.fn(),
-      onStop: vi.fn(),
       onOpenApp: vi.fn(),
       onRetry: vi.fn(),
       onQuery: vi.fn()
@@ -119,6 +117,33 @@ describe("PanelFavorites", () => {
 
     await userEvent.click(within(screen.getByRole("article", { name: "Airhorn" })).getByRole("button", { name: "Airhorn" }));
     expect(onPlay).toHaveBeenCalledWith(instants[1]);
+  });
+
+  it("has the body as its only control: no send or stop on a card", () => {
+    view({ playbackOf: (instant) => (instant === instants[0] ? "local" : "idle"), otherPlaying: true });
+
+    const card = screen.getByRole("article", { name: "Vine boom" });
+    expect(within(card).getAllByRole("button")).toHaveLength(1);
+    expect(within(card).getByRole("button", { name: "Vine boom" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /Send|Stop/ })).not.toBeInTheDocument();
+    expect(card).toHaveAttribute("data-live", "true");
+    expect(screen.getByRole("article", { name: "Airhorn" })).toHaveAttribute("data-dim", "true");
+  });
+
+  it("keeps the body live when the bot is out of its channel, as cardState says", () => {
+    view({ botStatus: { connected: false } });
+    expect(within(screen.getByRole("article", { name: "Airhorn" })).getByRole("button", { name: "Airhorn" })).toBeEnabled();
+  });
+
+  it("puts the footer beside the scroller, not inside it, so only the grid scrolls", () => {
+    view({ offline: true, hint: true });
+
+    const body = document.querySelector(".pbody") as HTMLElement;
+    const scroll = body.querySelector(".scroll") as HTMLElement;
+    expect(scroll.querySelector(".pfooter, .psearch, .banner, .phint")).toBeNull();
+    for (const selector of [".psearch", ".banner", ".phint", ".pfooter"]) {
+      expect(body.querySelector(selector)?.parentElement).toBe(body);
+    }
   });
 
   it("marks the first match", () => {

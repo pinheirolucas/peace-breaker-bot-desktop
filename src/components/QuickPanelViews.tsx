@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import type { KeyboardEventHandler, ReactNode, RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { Server } from "../../electron/discovery";
 import { ArrowUpRightIcon, RefreshIcon } from "../icons";
@@ -41,11 +41,14 @@ export interface PanelFavoritesProps {
   matchUrl: string | null;
   /** Shown until the first drag. */
   hint: boolean;
+  /** The card body is the panel's only control: what it does (listen here or
+   *  send to the bot) is the panelClick setting, resolved by the caller. */
   onPlay: (instant: Instant) => void;
-  onPlayOnDiscord: (instant: Instant) => void;
-  onStop: () => void;
   onOpenApp: () => void;
+  onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 }
+
+const noop = () => undefined;
 
 /** The Favoritos style: the window's own cards at the Tight tier, plus search and a footer. */
 export function PanelFavorites({
@@ -62,14 +65,15 @@ export function PanelFavorites({
   matchUrl,
   hint,
   onPlay,
-  onPlayOnDiscord,
-  onStop,
-  onOpenApp
+  onOpenApp,
+  onKeyDown
 }: PanelFavoritesProps) {
   const { t } = useTranslation();
 
+  // .pbody is what bounds the grid: the panel is a flex column and only this
+  // box, itself flex, lets .scroll shrink and scroll while the rest stays put.
   return (
-    <>
+    <div className="pbody" onKeyDown={onKeyDown}>
       {total > 0 && (
         <div className="psearch">
           <SearchField
@@ -126,8 +130,9 @@ export function PanelFavorites({
                 botStatus={botStatus}
                 match={instant.url === matchUrl}
                 onPlay={onPlay}
-                onPlayOnDiscord={onPlayOnDiscord}
-                onStop={onStop}
+                onPlayOnDiscord={noop}
+                onStop={noop}
+                bare
               />
             ))}
           </div>
@@ -140,7 +145,7 @@ export function PanelFavorites({
         <span>{t("panel.count", { count: total })}</span>
         <OpenApp onOpenApp={onOpenApp} />
       </footer>
-    </>
+    </div>
   );
 }
 
