@@ -25,12 +25,8 @@ import {
   titleBarHeight,
   windowChromeFor
 } from "./chrome";
-import {
-  acceleratorFor,
-  isShortcutRequest,
-  shortcutsFiredChannel,
-  shortcutsSetChannel
-} from "./shortcuts";
+import { isShortcutRequest, shortcutsSetChannel } from "./shortcuts";
+import { createShortcutRegistry, shouldHideOnClose } from "./shortcutRegistry";
 import type { ShortcutResult } from "./shortcuts";
 import {
   checkForUpdatesChannel,
@@ -70,60 +66,20 @@ let macUpdateVersion: string | null = null;
 // only a check a person actually asked for gets an answer either way.
 let manualCheckPending = false;
 
-let registeredAccelerators: string[] = [];
-let globalKeysEnabled = false;
 let isQuitting = false;
-const lastFired = new Map<string, number>();
 
-const shortcutDebounceMs = 250;
+const wayland = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland";
 
 // Wayland apps can't grab keys themselves; Chromium goes through the portal. Set before "ready".
-if (process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland") {
+if (wayland) {
   app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
 }
 
-function releaseGlobalShortcuts(): void {
-  registeredAccelerators.forEach((accelerator) => globalShortcut.unregister(accelerator));
-  registeredAccelerators = [];
-  lastFired.clear();
-}
-
-function registerGlobalShortcuts(modifier: Parameters<typeof acceleratorFor>[0], keys: string[]): ShortcutResult {
-  const result: ShortcutResult = { registered: [], failed: [] };
-  const wayland = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland";
-
-  for (const key of keys) {
-    const accelerator = acceleratorFor(modifier, key);
-    let ok = false;
-
-    try {
-      ok = globalShortcut.register(accelerator, () => {
-        const now = Date.now();
-        if (now - (lastFired.get(key) ?? 0) < shortcutDebounceMs) {
-          return;
-        }
-        lastFired.set(key, now);
-        sendToWindow(shortcutsFiredChannel, key);
-      });
-    } catch {
-      ok = false;
-    }
-
-    if (ok) {
-      registeredAccelerators.push(accelerator);
-      result.registered.push(key);
-    } else {
-      result.failed.push({ key, reason: "in-use" });
-    }
-  }
-
-  // Nothing registered on Wayland means no portal, not that every combo is taken.
-  if (wayland && keys.length > 0 && result.registered.length === 0) {
-    result.failed = result.failed.map(({ key }) => ({ key, reason: "unsupported" as const }));
-  }
-
-  return result;
-}
+const shortcuts = createShortcutRegistry({
+  registry: globalShortcut,
+  send: (channel, key) => sendToWindow(channel, key),
+  wayland
+});
 
 function sendToWindow(channel: string, payload?: unknown): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -385,7 +341,7 @@ function createWindow(): void {
 
   // The renderer plays the sound, so on macOS hide instead of close while global keys are on.
   mainWindow.on("close", (event) => {
-    if (process.platform === "darwin" && globalKeysEnabled && !isQuitting) {
+    if (shouldHideOnClose(process.platform, shortcuts.enabled, isQuitting)) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -393,8 +349,7 @@ function createWindow(): void {
 
   mainWindow.on("closed", () => {
     stopDiscovery();
-    releaseGlobalShortcuts();
-    globalKeysEnabled = false;
+    shortcuts.reset();
     mainWindow = null;
   });
 }
@@ -468,10 +423,7 @@ ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult =>
     return empty;
   }
 
-  releaseGlobalShortcuts();
-  globalKeysEnabled = request.enabled;
-
-  return request.enabled ? registerGlobalShortcuts(request.modifier, request.keys) : empty;
+  return shortcuts.apply(request);
 });
 
 // Without the lock, a second launch would see every combo as in use.
