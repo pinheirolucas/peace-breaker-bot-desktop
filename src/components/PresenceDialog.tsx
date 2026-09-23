@@ -11,7 +11,7 @@ import { SegmentedChoice } from "./Segmented";
 import { Switch } from "./Switch";
 import "./presenceDialog.css";
 
-export interface PanelShortcutDraft {
+export interface QuickAccessShortcutDraft {
   enabled: boolean;
   modifier: GlobalModifier | null;
 }
@@ -20,14 +20,14 @@ export interface PresenceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   os: PlatformId;
-  /** GNOME has no tray: the panel opens from the dock action or the global shortcut. */
+  /** GNOME has no tray: quick access opens from the dock action or the global shortcut. */
   noTray: boolean;
   settings: PresenceSettings;
-  shortcut: PanelShortcutDraft;
+  shortcut: QuickAccessShortcutDraft;
   /** The combinations this OS offers; empty when the shortcut cannot be registered at all. */
   modifiers: GlobalModifier[];
   /** Nothing is persisted until Pronto, like Aparência. */
-  onConfirm: (settings: PresenceSettings, shortcut: PanelShortcutDraft) => void;
+  onConfirm: (settings: PresenceSettings, shortcut: QuickAccessShortcutDraft) => void;
 }
 
 function Row({
@@ -81,7 +81,7 @@ export default function PresenceDialog({
 
   const patch = (next: Partial<PresenceSettings>) => setDraft((current) => ({ ...current, ...next }));
   const trayOn = draft.tray;
-  const panelOn = trayOn && draft.panel;
+  const quickAccessOn = trayOn && draft.quickAccess;
   const canShortcut = modifiers.length > 0;
   const modifier = key.modifier ?? modifiers[0] ?? null;
 
@@ -95,7 +95,7 @@ export default function PresenceDialog({
           <DialogClose asChild>
             <Button variant="secondary">{t("common.cancel")}</Button>
           </DialogClose>
-          <Button onClick={() => onConfirm({ ...draft, panel: panelOn, title: trayOn && draft.title }, { ...key, modifier })}>
+          <Button onClick={() => onConfirm({ ...draft, quickAccess: quickAccessOn, title: trayOn && draft.title }, { ...key, modifier })}>
             {t("menuBar.done")}
           </Button>
         </>
@@ -112,15 +112,15 @@ export default function PresenceDialog({
           hint={trayOn ? t("menuBar.quickAccessHint") : t("menuBar.quickAccessNeedsTray")}
           dim={!trayOn}
         >
-          <Switch label="" ariaLabel={t("menuBar.quickAccess")} checked={panelOn} disabled={!trayOn} onCheckedChange={(panel) => patch({ panel })} />
+          <Switch label="" ariaLabel={t("menuBar.quickAccess")} checked={quickAccessOn} disabled={!trayOn} onCheckedChange={(quickAccess) => patch({ quickAccess })} />
         </Row>
         {noTray && <p className="prefnote">{t("menuBar.noTray")}</p>}
 
-        <Row sub title={t("menuBar.style")} hint={t("menuBar.styleHint")} dim={!panelOn}>
+        <Row sub title={t("menuBar.style")} hint={t("menuBar.styleHint")} dim={!quickAccessOn}>
           <SegmentedChoice
             aria-label={t("menuBar.style")}
-            value={draft.panelStyle}
-            onChange={(panelStyle) => patch({ panelStyle })}
+            value={draft.quickAccessStyle}
+            onChange={(quickAccessStyle) => patch({ quickAccessStyle })}
             options={[
               { value: "favorites", label: t("quickAccess.styleFavorites") },
               { value: "connection", label: t("quickAccess.styleConnection") }
@@ -128,11 +128,11 @@ export default function PresenceDialog({
           />
         </Row>
 
-        <Row sub title={t("menuBar.click")} hint={t("menuBar.clickHint")} dim={!panelOn || draft.panelStyle !== "favorites"}>
+        <Row sub title={t("menuBar.click")} hint={t("menuBar.clickHint")} dim={!quickAccessOn || draft.quickAccessStyle !== "favorites"}>
           <SegmentedChoice
             aria-label={t("menuBar.click")}
-            value={draft.panelClick}
-            onChange={(panelClick) => patch({ panelClick })}
+            value={draft.quickAccessClick}
+            onChange={(quickAccessClick) => patch({ quickAccessClick })}
             options={[
               { value: "local", label: t("menuBar.clickLocal") },
               { value: "discord", label: t("menuBar.clickDiscord") }
@@ -145,18 +145,18 @@ export default function PresenceDialog({
             <Row
               sub
               title={t("menuBar.shortcut")}
-              hint={panelOn ? t("menuBar.shortcutHint") : t("menuBar.shortcutNeedsQuickAccess")}
-              dim={!panelOn}
+              hint={quickAccessOn ? t("menuBar.shortcutHint") : t("menuBar.shortcutNeedsQuickAccess")}
+              dim={!quickAccessOn}
             >
               <Switch
                 label=""
                 ariaLabel={t("menuBar.shortcut")}
-                checked={key.enabled && panelOn}
-                disabled={!panelOn}
+                checked={key.enabled && quickAccessOn}
+                disabled={!quickAccessOn}
                 onCheckedChange={(enabled) => setKey((current) => ({ ...current, enabled }))}
               />
             </Row>
-            <Row sub title={t("menuBar.combo")} hint={t("menuBar.comboHint")} dim={!(key.enabled && panelOn)}>
+            <Row sub title={t("menuBar.combo")} hint={t("menuBar.comboHint")} dim={!(key.enabled && quickAccessOn)}>
               <SegmentedChoice
                 aria-label={t("menuBar.combo")}
                 value={modifier ?? modifiers[0]}

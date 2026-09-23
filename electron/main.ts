@@ -44,8 +44,8 @@ import {
   serverUrl
 } from "./presence";
 import { createPresenceHost } from "./presenceHost";
-import { createPanelWindow } from "./panelWindow";
-import { isPanelAction, isPanelShortcutRequest, panelActionChannel, panelShortcutKey, panelShortcutSetChannel } from "./panel";
+import { createQuickAccessWindow } from "./quickAccessWindow";
+import { isQuickAccessAction, isQuickAccessShortcutRequest, quickAccessActionChannel, quickAccessShortcutKey, quickAccessShortcutSetChannel } from "./quickAccess";
 import { actionFromArgv } from "./trayMenu";
 import { isShortcutRequest, shortcutsSetChannel } from "./shortcuts";
 import { createShortcutRegistry, shouldHideOnClose } from "./shortcutRegistry";
@@ -154,7 +154,7 @@ function sendToWindow(channel: string, payload?: unknown): void {
 // Every renderer window: the main one, and the quick access once it exists.
 function sendToAll(channel: string, payload?: unknown): void {
   sendToWindow(channel, payload);
-  panel.webContents()?.send(channel, payload);
+  quickAccessWindow.webContents()?.send(channel, payload);
 }
 
 // The Jump List and taskbar grouping key on this; electron-builder's default
@@ -179,26 +179,26 @@ const presence = createPresenceHost({
   iconDir: isDev ? path.join(app.getAppPath(), "public/tray") : path.join(__dirname, "tray"),
   language: () => menuState.language,
   sendAll: sendToAll,
-  // A double-click ends with the panel hidden and the window raised, whatever
-  // the two clicks before it did to the panel.
+  // A double-click ends with quick access hidden and the window raised, whatever
+  // the two clicks before it did to quick access.
   openApp: () => {
-    panel.hide();
+    quickAccessWindow.hide();
     showMainWindow();
   },
-  togglePanel: (bounds) => panel.toggle(bounds),
-  openPanel: () => panel.show(presence.trayBounds()),
+  toggleQuickAccess: (bounds) => quickAccessWindow.toggle(bounds),
+  openQuickAccess: () => quickAccessWindow.show(presence.trayBounds()),
   refreshDiscovery: () => refreshDiscovery(),
   quit: () => app.quit(),
   onSettings: (settings) => {
-    if (settings.panel) {
-      panel.warm();
+    if (settings.quickAccess) {
+      quickAccessWindow.warm();
     } else {
-      panel.destroy();
+      quickAccessWindow.destroy();
     }
   }
 });
 
-const panel = createPanelWindow({
+const quickAccessWindow = createQuickAccessWindow({
   isDev,
   onGone: (id) => presence.forget(id),
   onLoaded: (contents) => {
@@ -207,12 +207,12 @@ const panel = createPanelWindow({
   }
 });
 
-// The panel's own global shortcut, apart from the favourite keys': a second
+// Quick access's own global shortcut, apart from the favourite keys': a second
 // registry, so switching one off never releases the other's.
-const panelShortcut = createShortcutRegistry({
+const quickAccessShortcut = createShortcutRegistry({
   registry: globalShortcut,
   send: () => {
-    if (presence.settings().panel) panel.toggle(presence.trayBounds());
+    if (presence.settings().quickAccess) quickAccessWindow.toggle(presence.trayBounds());
   },
   wayland
 });
@@ -596,15 +596,15 @@ function fromMainWindow(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEve
   return Boolean(mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents);
 }
 
-function fromPanel(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
-  const contents = panel.webContents();
+function fromQuickAccess(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
+  const contents = quickAccessWindow.webContents();
   return contents !== null && event.sender === contents;
 }
 
 // The two windows are both this app's own renderers. What each may ask of
 // main is still validated, and what only the window may ask stays with it.
 function fromAppWindow(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
-  return fromMainWindow(event) || fromPanel(event);
+  return fromMainWindow(event) || fromQuickAccess(event);
 }
 
 // What the menus need to know that only the renderer does. Untrusted: it is
@@ -697,14 +697,14 @@ ipcMain.handle(clipPrepareChannel, async (event, request: unknown): Promise<Clip
 ipcMain.handle(clipDragChannel, async (event, request: unknown): Promise<ClipDragResult> => {
   if (!fromAppWindow(event) || !isClipRequest(request)) return "failed";
 
-  // Starting a native drag can blur the panel; hiding then would take the
+  // Starting a native drag can blur quick access; hiding then would take the
   // source out from under the pointer.
-  const fromThePanel = fromPanel(event);
-  if (fromThePanel) panel.beginDrag();
+  const fromTheQuickAccess = fromQuickAccess(event);
+  if (fromTheQuickAccess) quickAccessWindow.beginDrag();
 
   const file = await clips.ready(request.url);
   if (!file) {
-    if (fromThePanel) panel.endDrag();
+    if (fromTheQuickAccess) quickAccessWindow.endDrag();
     return "failed";
   }
 
@@ -715,25 +715,25 @@ ipcMain.handle(clipDragChannel, async (event, request: unknown): Promise<ClipDra
 });
 
 ipcMain.on(clipDragEndChannel, (event) => {
-  if (fromPanel(event)) panel.endDrag();
+  if (fromQuickAccess(event)) quickAccessWindow.endDrag();
 });
 
-ipcMain.on(panelActionChannel, (event, action: unknown) => {
-  if (!fromPanel(event) || !isPanelAction(action)) return;
+ipcMain.on(quickAccessActionChannel, (event, action: unknown) => {
+  if (!fromQuickAccess(event) || !isQuickAccessAction(action)) return;
 
   switch (action.type) {
     case "hide":
-      panel.hide();
+      quickAccessWindow.hide();
       break;
     case "open-app":
-      panel.hide();
+      quickAccessWindow.hide();
       showMainWindow();
       break;
     case "refresh":
       refreshDiscovery();
       break;
     case "settings":
-      panel.hide();
+      quickAccessWindow.hide();
       showMainWindow();
       sendToWindow(menuCommandChannel, { type: "presence-settings" });
       break;
@@ -741,27 +741,27 @@ ipcMain.on(panelActionChannel, (event, action: unknown) => {
       app.quit();
       break;
     case "pin":
-      panel.setPinned(action.pinned);
+      quickAccessWindow.setPinned(action.pinned);
       break;
     case "resize":
-      panel.resize(action.height);
+      quickAccessWindow.resize(action.height);
       break;
   }
 });
 
 // Its own switch, off by default. The renderer asks for it only while the
-// panel is on, and turning it off releases the combination at once.
-ipcMain.handle(panelShortcutSetChannel, (event, request: unknown): ShortcutResult => {
+// quick access is on, and turning it off releases the combination at once.
+ipcMain.handle(quickAccessShortcutSetChannel, (event, request: unknown): ShortcutResult => {
   const empty: ShortcutResult = { registered: [], failed: [] };
 
-  if (!fromAppWindow(event) || !isPanelShortcutRequest(request, process.platform)) {
+  if (!fromAppWindow(event) || !isQuickAccessShortcutRequest(request, process.platform)) {
     return empty;
   }
 
-  return panelShortcut.apply({
+  return quickAccessShortcut.apply({
     enabled: request.enabled,
     modifier: request.modifier,
-    keys: [panelShortcutKey]
+    keys: [quickAccessShortcutKey]
   });
 });
 
@@ -802,7 +802,7 @@ app.on("before-quit", () => {
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   presence.destroy();
-  panel.destroy();
+  quickAccessWindow.destroy();
   // Synchronous on purpose: the process is on its way out.
   rmSync(clipsDir, { recursive: true, force: true });
 });

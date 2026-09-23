@@ -162,7 +162,7 @@ describe("validators", () => {
 
   it("isPresenceSettings needs every field", () => {
     expect(isPresenceSettings(defaultPresenceSettings)).toBe(true);
-    expect(isPresenceSettings({ ...defaultPresenceSettings, panelStyle: "x" })).toBe(false);
+    expect(isPresenceSettings({ ...defaultPresenceSettings, quickAccessStyle: "x" })).toBe(false);
     expect(isPresenceSettings({ ...defaultPresenceSettings, tray: 1 })).toBe(false);
     expect(isPresenceSettings({ tray: true })).toBe(false);
   });
@@ -170,10 +170,10 @@ describe("validators", () => {
 
 describe("settings", () => {
   it("switches quick access and the title off with the icon", () => {
-    const all = { ...defaultPresenceSettings, tray: true, panel: true, title: true };
+    const all = { ...defaultPresenceSettings, tray: true, quickAccess: true, title: true };
 
     expect(effectiveSettings(all)).toBe(all);
-    expect(effectiveSettings({ ...all, tray: false })).toMatchObject({ panel: false, title: false });
+    expect(effectiveSettings({ ...all, tray: false })).toMatchObject({ quickAccess: false, title: false });
   });
 
   it("shows a shortened clip name only when asked", () => {
@@ -200,7 +200,7 @@ describe("tray menu", () => {
     items.map((item) => (item.type === "separator" ? "-" : item.label));
 
   it("lists status, open, stop, search again and quit, in that order", () => {
-    const menu = trayMenu(snap({ server, bot: inChannel }), { panel: true, quit: true }, t, handlers());
+    const menu = trayMenu(snap({ server, bot: inChannel }), { quickAccess: true, quit: true }, t, handlers());
 
     expect(labels(menu)).toEqual([
       "Casa · #geral",
@@ -216,7 +216,7 @@ describe("tray menu", () => {
   });
 
   it("leaves out Abrir acesso rápido when it is off, with no doubled or orphan separator", () => {
-    const menu = trayMenu(snap({ server }), { panel: false, quit: true }, t, handlers());
+    const menu = trayMenu(snap({ server }), { quickAccess: false, quit: true }, t, handlers());
 
     expect(labels(menu)).toEqual([
       "Verificando o servidor…",
@@ -231,20 +231,20 @@ describe("tray menu", () => {
   });
 
   it("has no trailing separator on the Dock, which has no Quit, and no Sair", () => {
-    for (const panel of [true, false]) {
-      const menu = trayMenu(snap({ server }), { panel, quit: false }, t, handlers());
+    for (const quickAccess of [true, false]) {
+      const menu = trayMenu(snap({ server }), { quickAccess, quit: false }, t, handlers());
       const shown = labels(menu);
 
       expect(shown).not.toContain("Sair");
       expect(shown.at(-1)).toBe("Procurar servidor novamente");
       expect(shown.some((label, i) => label === "-" && shown[i - 1] === "-")).toBe(false);
-      expect(labels(menu).includes("Abrir acesso rápido")).toBe(panel);
+      expect(labels(menu).includes("Abrir acesso rápido")).toBe(quickAccess);
     }
   });
 
   it("disables Parar reprodução until something plays", () => {
-    const idle = trayMenu(snap({ server }), { panel: false, quit: true }, t, handlers());
-    const busy = trayMenu(snap({ server, playing }), { panel: false, quit: true }, t, handlers());
+    const idle = trayMenu(snap({ server }), { quickAccess: false, quit: true }, t, handlers());
+    const busy = trayMenu(snap({ server, playing }), { quickAccess: false, quit: true }, t, handlers());
 
     const stop = (items: { label?: string; enabled?: boolean }[]) => items.find((item) => item.label === "Parar reprodução");
 
@@ -255,7 +255,7 @@ describe("tray menu", () => {
 
   it("wires each row to its handler", () => {
     const on = handlers();
-    const menu = trayMenu(snap({ server, playing }), { panel: true, quit: true }, t, on);
+    const menu = trayMenu(snap({ server, playing }), { quickAccess: true, quit: true }, t, on);
     const click = (label: string) =>
       (menu.find((item) => item.label === label)?.click as unknown as () => void)();
 
@@ -290,8 +290,8 @@ describe("jump list and launch actions", () => {
   const t = translatorFor("pt-BR");
 
   it("carries stop only while something plays, and quick access only when on", () => {
-    const titles = (state: PresenceSnapshot, panel: boolean) =>
-      jumpListTasks(state, panel, t).map((task) => task.title);
+    const titles = (state: PresenceSnapshot, quickAccess: boolean) =>
+      jumpListTasks(state, quickAccess, t).map((task) => task.title);
 
     expect(titles(snap({ server }), false)).toEqual(["Procurar servidor novamente"]);
     expect(titles(snap({ server, playing }), true)).toEqual([

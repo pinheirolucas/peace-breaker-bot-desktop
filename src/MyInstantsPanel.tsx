@@ -55,7 +55,7 @@ export interface MyInstantsPanelProps {
   onSummary: (summary: string) => void;
   onClearSearch: () => void;
   /** Which path is playing, for the menu bar's Parar reprodução. */
-  /** `name` is the clip that plays, for the tray and the panel; null when unknown. */
+  /** `name` is the clip that plays, for the tray and quick access; null when unknown. */
   onPlaybackChange?: (playback: "local" | "discord" | null, name: string | null) => void;
 }
 

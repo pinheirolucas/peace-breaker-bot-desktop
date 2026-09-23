@@ -40,12 +40,12 @@ function Dialog({
 export const Fresh: StoryObj = { render: () => <Dialog /> };
 
 /** Icon and quick access on, the global shortcut still off: it is its own opt-in switch. */
-export const QuickAccessOn: StoryObj = { render: () => <Dialog settings={{ tray: true, panel: true }} /> };
+export const QuickAccessOn: StoryObj = { render: () => <Dialog settings={{ tray: true, quickAccess: true }} /> };
 
-export const ShortcutOn: StoryObj = { render: () => <Dialog settings={{ tray: true, panel: true }} shortcut /> };
+export const ShortcutOn: StoryObj = { render: () => <Dialog settings={{ tray: true, quickAccess: true }} shortcut /> };
 
 export const ConnectionStyle: StoryObj = {
-  render: () => <Dialog settings={{ tray: true, panel: true, panelStyle: "connection" }} />
+  render: () => <Dialog settings={{ tray: true, quickAccess: true, quickAccessStyle: "connection" }} />
 };
 
 /** Off macOS the sound-name switch gives way to keeping the app running. Switch Sistema to Windows. */
@@ -56,6 +56,6 @@ export const Windows: StoryObj = {
 /** GNOME has no tray: one line points to the dock action and the global shortcut. */
 export const Gnome: StoryObj = {
   render: () => (
-    <Dialog os="linux" noTray settings={{ tray: true, panel: true }} modifiers={["ctrl-alt-shift", "ctrl-shift", "super-alt"]} />
+    <Dialog os="linux" noTray settings={{ tray: true, quickAccess: true }} modifiers={["ctrl-alt-shift", "ctrl-shift", "super-alt"]} />
   )
 };

@@ -120,6 +120,27 @@ export function cardState(playback: Playback, otherPlaying: boolean, botStatus: 
   };
 }
 
+/**
+ * What a click on a quick access card's body does, in one place so the card
+ * and Enter-on-search cannot disagree. `mode` is the quickAccessClick
+ * setting: "local" listens here and is never gated by the bot; "discord"
+ * sends, and is refused while the bot is confirmed to be out of its channel
+ * (`"bot"`, which the caller explains) or while something else plays
+ * (`"busy"`, silent). An unknown status (null) never blocks.
+ */
+export function bodyClick(
+  mode: "local" | "discord",
+  playback: Playback,
+  otherPlaying: boolean,
+  botStatus: BotStatus | null
+): "play" | "discord" | "bot" | "busy" {
+  const state = cardState(playback, otherPlaying, botStatus);
+
+  if (mode === "local") return state.playDisabled ? "busy" : "play";
+  if (state.botGated) return "bot";
+  return state.discordDisabled ? "busy" : "discord";
+}
+
 export default function InstantCard({
   instant,
   playback,

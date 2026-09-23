@@ -71,7 +71,7 @@ export interface FavoritesPanelProps {
   /** Whether a clip is playing — the tools row blocks Organizar while one is. */
   onPlayingChange: (playing: boolean) => void;
   /** Which path is playing, for the menu bar's Parar reprodução. */
-  /** `name` is the clip that plays, for the tray and the panel; null when unknown. */
+  /** `name` is the clip that plays, for the tray and quick access; null when unknown. */
   onPlaybackChange?: (playback: "local" | "discord" | null, name: string | null) => void;
   /** False while hidden on Explorar, so it doesn't overwrite that tab's summary. Defaults to true. */
   active?: boolean;

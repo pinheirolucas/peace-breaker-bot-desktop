@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
-import { panelShortcutKey } from "../../electron/panel";
+import { quickAccessShortcutKey } from "../../electron/quickAccess";
 import type { GlobalModifier } from "../../electron/shortcuts";
-import { usePanelShortcutState } from "../storage";
+import { useQuickAccessShortcutState } from "../storage";
 
-export interface PanelShortcutSettings {
+export interface QuickAccessShortcutSettings {
   /** False without the Electron bridge. */
   available: boolean;
   enabled: boolean;
@@ -14,10 +14,10 @@ export interface PanelShortcutSettings {
   set: (next: { enabled: boolean; modifier: GlobalModifier | null }) => void;
 }
 
-export function usePanelShortcutSettings(): PanelShortcutSettings {
-  const [stored, setStored] = usePanelShortcutState({ enabled: false, modifier: null });
+export function useQuickAccessShortcutSettings(): QuickAccessShortcutSettings {
+  const [stored, setStored] = useQuickAccessShortcutState({ enabled: false, modifier: null });
   const modifiers = window.instantsShortcuts?.modifiers ?? [];
-  const available = modifiers.length > 0 && typeof window.instantsPanel?.setShortcut === "function";
+  const available = modifiers.length > 0 && typeof window.instantsQuickAccess?.setShortcut === "function";
   const modifier =
     stored.modifier && modifiers.includes(stored.modifier) ? stored.modifier : (modifiers[0] ?? null);
 
@@ -26,24 +26,24 @@ export function usePanelShortcutSettings(): PanelShortcutSettings {
     enabled: available && Boolean(stored.enabled),
     modifier,
     modifiers,
-    key: panelShortcutKey,
+    key: quickAccessShortcutKey,
     set: setStored
   };
 }
 
 /**
- * Registers the panel's shortcut with the main process, only while its switch
- * is on and the panel is; releases it the moment either goes off. When another
+ * Registers quick access's shortcut with the main process, only while its switch
+ * is on and quick access is; releases it the moment either goes off. When another
  * app holds the combination the switch snaps back off and `onTaken` says so.
  */
-export function usePanelShortcut(panelOn: boolean, onTaken: () => void): void {
-  const { available, enabled, modifier, set } = usePanelShortcutSettings();
+export function useQuickAccessShortcut(quickAccessOn: boolean, onTaken: () => void): void {
+  const { available, enabled, modifier, set } = useQuickAccessShortcutSettings();
   const latest = useRef({ onTaken, set });
   latest.current = { onTaken, set };
-  const wanted = enabled && panelOn;
+  const wanted = enabled && quickAccessOn;
 
   useEffect(() => {
-    const bridge = window.instantsPanel;
+    const bridge = window.instantsQuickAccess;
     if (!available || !bridge || !modifier) return undefined;
 
     let cancelled = false;

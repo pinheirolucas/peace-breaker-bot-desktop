@@ -10,7 +10,7 @@ import { EmptyState } from "./EmptyState";
 import InstantCard from "./InstantCard";
 import type { Playback } from "./InstantCard";
 import { SearchField } from "./SearchField";
-import "./panel.css";
+import "./quickAccess.css";
 
 function OpenApp({ onOpenApp }: { onOpenApp: () => void }) {
   const { t } = useTranslation();
@@ -23,7 +23,7 @@ function OpenApp({ onOpenApp }: { onOpenApp: () => void }) {
   );
 }
 
-export interface PanelFavoritesProps {
+export interface QuickAccessFavoritesProps {
   /** Already filtered by the query. */
   instants: Instant[];
   /** All favourites, for the count and the placeholder. */
@@ -41,8 +41,8 @@ export interface PanelFavoritesProps {
   matchUrl: string | null;
   /** Shown until the first drag. */
   hint: boolean;
-  /** The card body is the panel's only control: what it does (listen here or
-   *  send to the bot) is the panelClick setting, resolved by the caller. */
+  /** The card body is quick access's only control: what it does (listen here or
+   *  send to the bot) is the quickAccessClick setting, resolved by the caller. */
   onPlay: (instant: Instant) => void;
   onOpenApp: () => void;
   onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
@@ -51,7 +51,7 @@ export interface PanelFavoritesProps {
 const noop = () => undefined;
 
 /** The Favoritos style: the window's own cards at the Tight tier, plus search and a footer. */
-export function PanelFavorites({
+export function QuickAccessFavorites({
   instants,
   total,
   query,
@@ -67,10 +67,10 @@ export function PanelFavorites({
   onPlay,
   onOpenApp,
   onKeyDown
-}: PanelFavoritesProps) {
+}: QuickAccessFavoritesProps) {
   const { t } = useTranslation();
 
-  // .pbody is what bounds the grid: the panel is a flex column and only this
+  // .pbody is what bounds the grid: quick access is a flex column and only this
   // box, itself flex, lets .scroll shrink and scroll while the rest stays put.
   return (
     <div className="pbody" onKeyDown={onKeyDown}>
@@ -194,7 +194,7 @@ export function ServerRow({ server, active, healthy, onSelect }: ServerRowProps)
   );
 }
 
-export interface PanelConnectionProps {
+export interface QuickAccessConnectionProps {
   servers: Server[];
   activeUrl: string | null;
   healthy: boolean;
@@ -207,7 +207,7 @@ export interface PanelConnectionProps {
 }
 
 /** The Conexão style: no sounds, only the server — am I connected, to what, and is there another one? */
-export function PanelConnection({
+export function QuickAccessConnection({
   servers,
   activeUrl,
   healthy,
@@ -216,7 +216,7 @@ export function PanelConnection({
   onSearch,
   onOpenApp,
   bodyRef
-}: PanelConnectionProps) {
+}: QuickAccessConnectionProps) {
   const { t } = useTranslation();
   // A server that died leaves the list while still being the one in use, so it stays as the first row.
   const activeListed = servers.some((server) => server.apiUrl === activeUrl);

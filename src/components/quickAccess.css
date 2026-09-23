@@ -4,33 +4,33 @@
  * same literals the window's server chip uses, so a warning reads as one in
  * any palette. */
 
-/* The panel window is frosted where the OS can do it (macOS vibrancy,
+/* Quick access window is frosted where the OS can do it (macOS vibrancy,
  * Windows acrylic), so its ground is the palette's, partly see-through. Linux
  * has no such material and keeps a solid one. */
-html[data-panel="1"],
-html[data-panel="1"] body {
+html[data-quick-access="1"],
+html[data-quick-access="1"] body {
   background: transparent;
 }
-html[data-panel="1"] .app.panel {
+html[data-quick-access="1"] .app.quick-access {
   background: color-mix(in oklch, var(--bg) 78%, transparent);
 }
-html[data-panel="1"][data-os="linux"] .app.panel {
+html[data-quick-access="1"][data-os="linux"] .app.quick-access {
   background: var(--bg);
 }
 
-.app.panel {
+.app.quick-access {
   height: 100vh;
 }
-/* Re-run on every open: the panel window is hidden and shown, never remounted. */
-.app.panel.is-shown {
-  animation: panel-in 120ms ease-out;
+/* Re-run on every open: quick access window is hidden and shown, never remounted. */
+.app.quick-access.is-shown {
+  animation: quick-access-in 120ms ease-out;
 }
-@keyframes panel-in {
+@keyframes quick-access-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .app.panel.is-shown { animation: none; }
+  .app.quick-access.is-shown { animation: none; }
 }
 
 /* ==== the presence strip ================================================== */
@@ -137,14 +137,14 @@ html[data-panel="1"][data-os="linux"] .app.panel {
 .psearch { flex: none; padding: 10px 16px 0; }
 .psearch .search { width: 100%; }
 
-.app.panel .banner { margin: 10px 16px 0; }
+.app.quick-access .banner { margin: 10px 16px 0; }
 
-/* The panel has no toolbar to clear, so the grid starts right under the search. */
-.app.panel .scroll {
+/* Quick access has no toolbar to clear, so the grid starts right under the search. */
+.app.quick-access .scroll {
   padding-top: 12px;
   padding-bottom: 12px;
 }
-[data-os="mac"] .app.panel .scroll { padding-top: 12px; }
+[data-os="mac"] .app.quick-access .scroll { padding-top: 12px; }
 
 .phint {
   flex: none;

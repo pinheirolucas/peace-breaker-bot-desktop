@@ -11,7 +11,8 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./i18n";
 import App from "./App";
-import QuickPanel from "./QuickPanel";
+import QuickAccess from "./QuickAccess";
+import { isQuickAccessWindow } from "./lib/quickAccessCompat";
 
 const root = document.getElementById("root");
 
@@ -19,12 +20,12 @@ if (!root) {
   throw new Error("index.html has no #root to mount the app into");
 }
 
-// The quick access is this same bundle at `/?panel=1`, loaded by its own window.
+// Quick access is this same bundle at `/?quickAccess=1`, loaded by its own window.
 // Stamped before React mounts so the frosted ground is right from the first frame.
-const panel = new URLSearchParams(window.location.search).get("panel") === "1";
+const quickAccess = isQuickAccessWindow(window.location.search);
 
-if (panel) {
-  document.documentElement.dataset.panel = "1";
+if (quickAccess) {
+  document.documentElement.dataset.quickAccess = "1";
 }
 
-createRoot(root).render(panel ? <QuickPanel /> : <App />);
+createRoot(root).render(quickAccess ? <QuickAccess /> : <App />);

@@ -24,7 +24,7 @@ export function actionFromArgv(argv: readonly string[]): TrayAction | null {
 
 export interface TrayMenuOptions {
   /** "Abrir acesso rápido" appears only when quick access is on. */
-  panel: boolean;
+  quickAccess: boolean;
   /** The Dock menu already has Quit of its own. */
   quit: boolean;
 }
@@ -44,7 +44,7 @@ export function trayMenu(
     { label: t("presence.openApp"), click: on["open-app"] }
   ];
 
-  if (options.panel) {
+  if (options.quickAccess) {
     items.push({ label: t("presence.openQuickAccess"), click: on["open-quick-access"] });
   }
 
@@ -68,7 +68,7 @@ export interface JumpListTask {
 }
 
 /** Windows Jump List tasks: a click launches the exe again with `--action=`, which the running instance receives. */
-export function jumpListTasks(snapshot: PresenceSnapshot, panel: boolean, t: Translate): JumpListTask[] {
+export function jumpListTasks(snapshot: PresenceSnapshot, quickAccess: boolean, t: Translate): JumpListTask[] {
   const task = (action: TrayAction, label: string): JumpListTask => ({
     title: label,
     description: label,
@@ -76,7 +76,7 @@ export function jumpListTasks(snapshot: PresenceSnapshot, panel: boolean, t: Tra
   });
 
   return [
-    ...(panel ? [task("open-quick-access", t("presence.openQuickAccess"))] : []),
+    ...(quickAccess ? [task("open-quick-access", t("presence.openQuickAccess"))] : []),
     ...(snapshot.playing ? [task("stop", t("presence.stop"))] : []),
     task("refresh", t("presence.refresh"))
   ];

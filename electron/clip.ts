@@ -7,7 +7,7 @@
 export const clipPrepareChannel = "clip:prepare";
 /** renderer -> main: the pointer travelled far enough; start the OS drag. */
 export const clipDragChannel = "clip:drag";
-/** renderer -> main: the pointer is back, so the OS drag is over. The panel may hide again. */
+/** renderer -> main: the pointer is back, so the OS drag is over. Quick access may hide again. */
 export const clipDragEndChannel = "clip:drag-end";
 
 export interface ClipRequest {

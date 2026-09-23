@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyPresence } from "../electron/presence";
 import type { PresenceSnapshot } from "../electron/presence";
 import { PresenceStrip, stripTone } from "./components/PresenceStrip";
-import { PanelConnection, PanelFavorites } from "./components/QuickPanelViews";
-import type { PanelFavoritesProps } from "./components/QuickPanelViews";
+import { QuickAccessConnection, QuickAccessFavorites } from "./components/QuickAccessViews";
+import type { QuickAccessFavoritesProps } from "./components/QuickAccessViews";
 import { usePresenceSettings } from "./hooks/usePresence";
 import i18n from "./i18n";
-import QuickPanel from "./QuickPanel";
+import { bodyClick } from "./components/InstantCard";
+import QuickAccess from "./QuickAccess";
 
 const server = "http://192.168.0.5:9001/api/v1";
 const snap = (patch: Partial<PresenceSnapshot> = {}): PresenceSnapshot => ({
@@ -72,13 +73,13 @@ describe("PresenceStrip", () => {
   });
 });
 
-describe("PanelFavorites", () => {
+describe("QuickAccessFavorites", () => {
   const instants = [
     { name: "Vine boom", url: "https://x/a.mp3" },
     { name: "Airhorn", url: "https://x/b.mp3" }
   ];
 
-  function view(props: Partial<PanelFavoritesProps> = {}) {
+  function view(props: Partial<QuickAccessFavoritesProps> = {}) {
     const handlers = {
       onPlay: vi.fn(),
       onOpenApp: vi.fn(),
@@ -86,7 +87,7 @@ describe("PanelFavorites", () => {
       onQuery: vi.fn()
     };
     render(
-      <PanelFavorites
+      <QuickAccessFavorites
         instants={instants}
         total={2}
         query=""
@@ -175,17 +176,17 @@ describe("PanelFavorites", () => {
   });
 });
 
-describe("PanelConnection", () => {
+describe("QuickAccessConnection", () => {
   const servers = [
     { id: "a", apiUrl: "http://192.168.0.5:9001/api/v1", address: "192.168.0.5", port: 9001, hostname: "mac.local", isLocal: true },
     { id: "b", apiUrl: "http://192.168.0.9:9001/api/v1", address: "192.168.0.9", port: 9001, hostname: "nas", isLocal: false }
   ];
 
-  function view(props: Partial<React.ComponentProps<typeof PanelConnection>> = {}) {
+  function view(props: Partial<React.ComponentProps<typeof QuickAccessConnection>> = {}) {
     const onSelect = vi.fn();
     const onSearch = vi.fn();
     render(
-      <PanelConnection
+      <QuickAccessConnection
         servers={servers}
         activeUrl={servers[0].apiUrl}
         healthy
@@ -250,52 +251,52 @@ describe("usePresenceSettings", () => {
 
     expect(result.current.settings).toEqual({
       tray: false,
-      panel: false,
-      panelStyle: "favorites",
-      panelClick: "local",
+      quickAccess: false,
+      quickAccessStyle: "favorites",
+      quickAccessClick: "local",
       title: false,
       background: false
     });
   });
 
   it("fills in what a stored value lacks", () => {
-    window.localStorage.setItem("presence", JSON.stringify({ tray: true, panelStyle: "connection" }));
+    window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccessStyle: "connection" }));
     const { result } = renderHook(() => usePresenceSettings());
 
-    expect(result.current.settings).toMatchObject({ tray: true, panelStyle: "connection", panelClick: "local" });
+    expect(result.current.settings).toMatchObject({ tray: true, quickAccessStyle: "connection", quickAccessClick: "local" });
   });
 
   it("falls back to the default style for one it does not know", () => {
-    window.localStorage.setItem("presence", JSON.stringify({ tray: true, panelStyle: "wide" }));
+    window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccessStyle: "wide" }));
     const { result } = renderHook(() => usePresenceSettings());
 
-    expect(result.current.settings.panelStyle).toBe("favorites");
+    expect(result.current.settings.quickAccessStyle).toBe("favorites");
   });
 
-  it("the panel needs the icon: without it the effective settings turn it off", () => {
-    window.localStorage.setItem("presence", JSON.stringify({ tray: false, panel: true, title: true }));
+  it("quick access needs the icon: without it the effective settings turn it off", () => {
+    window.localStorage.setItem("presence", JSON.stringify({ tray: false, quickAccess: true, title: true }));
     const { result } = renderHook(() => usePresenceSettings());
 
-    expect(result.current.settings.panel).toBe(true);
-    expect(result.current.effective).toMatchObject({ panel: false, title: false });
+    expect(result.current.settings.quickAccess).toBe(true);
+    expect(result.current.effective).toMatchObject({ quickAccess: false, title: false });
   });
 });
 
-describe("QuickPanel", () => {
+describe("QuickAccess", () => {
   beforeEach(() => {
-    // The panel follows the stored language, like the window.
+    // Quick access follows the stored language, like the window.
     window.localStorage.setItem("language", JSON.stringify("en-US"));
   });
 
   afterEach(() => {
-    delete window.instantsPanel;
+    delete window.instantsQuickAccess;
     delete window.instantsPresence;
   });
 
   function bridges() {
     const action = vi.fn();
     const stop = vi.fn();
-    window.instantsPanel = { action, setShortcut: vi.fn(), onShown: () => () => {} };
+    window.instantsQuickAccess = { action, setShortcut: vi.fn(), onShown: () => () => {} };
     window.instantsPresence = {
       setServer: vi.fn(),
       setPlaying: vi.fn(),
@@ -311,7 +312,7 @@ describe("QuickPanel", () => {
 
   it("Esc stops what plays before it does anything else", () => {
     const { action, stop } = bridges();
-    render(<QuickPanel />);
+    render(<QuickAccess />);
 
     fireEvent.keyDown(window, { key: "Escape" });
 
@@ -325,7 +326,7 @@ describe("QuickPanel", () => {
       listener(snap({ bot: { connected: true } }));
       return () => {};
     };
-    render(<QuickPanel />);
+    render(<QuickAccess />);
 
     fireEvent.keyDown(window, { key: "Escape" });
 
@@ -333,15 +334,15 @@ describe("QuickPanel", () => {
   });
 
   it("opens in the style the setting says, and switches live", () => {
-    window.localStorage.setItem("presence", JSON.stringify({ tray: true, panel: true, panelStyle: "connection" }));
+    window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccess: true, quickAccessStyle: "connection" }));
     bridges();
-    render(<QuickPanel />);
+    render(<QuickAccess />);
 
     expect(screen.getByText("No servers found")).toBeInTheDocument();
     expect(screen.queryByText("No favorites yet")).toBeNull();
 
     act(() => {
-      window.localStorage.setItem("presence", JSON.stringify({ tray: true, panel: true, panelStyle: "favorites" }));
+      window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccess: true, quickAccessStyle: "favorites" }));
       window.dispatchEvent(new StorageEvent("storage", {
           key: "presence",
           newValue: window.localStorage.getItem("presence"),
@@ -351,5 +352,104 @@ describe("QuickPanel", () => {
 
     expect(screen.queryByText("No servers found")).toBeNull();
     expect(screen.getByText("No favorites yet")).toBeInTheDocument();
+  });
+});
+
+describe("a click on the body, with the bot out of its channel", () => {
+  const clip = { name: "Vine boom", url: "https://x/a.mp3" };
+  const playOnDiscord = vi.fn();
+
+  function open(botConnected: boolean | "unknown", click: "local" | "discord") {
+    window.localStorage.setItem("selectedServer", JSON.stringify(server));
+    window.localStorage.setItem("instants", JSON.stringify([clip]));
+    window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccess: true, quickAccessClick: click }));
+    playOnDiscord.mockReset();
+    // An earlier test's bridge would answer for main; this one polls for itself, as a browser tab does.
+    window.instantsPresence = undefined;
+    window.instantsQuickAccess = undefined;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string, init?: RequestInit) => {
+        if (String(input).endsWith("/bot/status")) {
+          if (botConnected === "unknown") return new Response("{}", { status: 404 });
+          return Response.json({ data: { connected: botConnected } });
+        }
+        if (String(input).endsWith("/bot/play") && init?.method === "POST") {
+          playOnDiscord();
+          return Response.json({ data: { exitReason: "end" } });
+        }
+        return Response.json({ data: { exists: false } });
+      })
+    );
+    render(<QuickAccess />);
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  // The window resolves its own language, whatever the test set for the others.
+  const why = () => i18n.t("card.discordUnavailable");
+  const body = () => screen.findByRole("button", { name: "Vine boom" });
+
+  it("is blocked at connected: false, says why, and sends nothing", async () => {
+    open(false, "discord");
+    const button = await body();
+    await act(async () => void (await new Promise((resolve) => setTimeout(resolve, 20))));
+
+    await userEvent.click(button);
+
+    expect(await screen.findByText(why())).toBeInTheDocument();
+    expect(playOnDiscord).not.toHaveBeenCalled();
+  });
+
+  it("agrees with Enter on the search", async () => {
+    open(false, "discord");
+    await body();
+    await act(async () => void (await new Promise((resolve) => setTimeout(resolve, 20))));
+
+    await userEvent.type(await screen.findByRole("searchbox"), "vine{Enter}");
+
+    expect(await screen.findByText(why())).toBeInTheDocument();
+    expect(playOnDiscord).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["at connected: true", true],
+    ["while the status is unknown", "unknown"]
+  ] as const)("still sends %s", async (_name, status) => {
+    open(status, "discord");
+    await userEvent.click(await body());
+
+    await vi.waitFor(() => expect(playOnDiscord).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText(why())).toBeNull();
+  });
+
+  it("never gates listening here", async () => {
+    open(false, "local");
+    await act(async () => void (await new Promise((resolve) => setTimeout(resolve, 20))));
+    await userEvent.click(await body());
+
+    expect(screen.queryByText(why())).toBeNull();
+    expect(playOnDiscord).not.toHaveBeenCalled();
+  });
+});
+
+describe("bodyClick", () => {
+  const connected = { connected: true };
+  const away = { connected: false };
+
+  it("blocks discord only on a confirmed connected: false", () => {
+    expect(bodyClick("discord", "idle", false, away)).toBe("bot");
+    expect(bodyClick("discord", "idle", false, null)).toBe("discord");
+    expect(bodyClick("discord", "idle", false, connected)).toBe("discord");
+  });
+
+  it("never gates listening on the bot", () => {
+    for (const status of [away, null, connected]) expect(bodyClick("local", "idle", false, status)).toBe("play");
+  });
+
+  it("stays silent while something else plays", () => {
+    expect(bodyClick("local", "idle", true, connected)).toBe("busy");
+    expect(bodyClick("discord", "idle", true, connected)).toBe("busy");
   });
 });

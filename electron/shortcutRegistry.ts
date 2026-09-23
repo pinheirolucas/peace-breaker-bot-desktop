@@ -96,7 +96,7 @@ export function createShortcutRegistry({
 export interface CloseRules {
   /** Global shortcut keys are on: they need the renderer that plays the sound. */
   globalKeys: boolean;
-  /** The tray icon is on: its state and the panel live in the renderer. */
+  /** The tray icon is on: its state and quick access live in the renderer. */
   tray: boolean;
   /** "Manter em segundo plano ao fechar a janela", for Windows and Linux. */
   background: boolean;

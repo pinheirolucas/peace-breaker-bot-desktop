@@ -27,7 +27,7 @@ function Frame({ snapshot, pinned = false }: { snapshot: PresenceSnapshot; pinne
   const [on, setOn] = useState(pinned);
 
   return (
-    <div className="app panel" style={{ width: 360, height: 56, border: "1px solid var(--line)" }}>
+    <div className="app quick-access" style={{ width: 360, height: 56, border: "1px solid var(--line)" }}>
       <PresenceStrip snapshot={snapshot} pinned={on} onStop={noop} onPin={() => setOn(!on)} menu={menu} />
     </div>
   );

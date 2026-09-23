@@ -3,8 +3,12 @@ import type { Server } from "../electron/discovery";
 import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
 import { createPersistedState } from "./lib/persisted";
+import { migrateQuickAccessStorage } from "./lib/quickAccessCompat";
 import type { Region } from "./regions";
 import type { ColorMode, ThemeId } from "./themes";
+
+// Before any hook below reads its key: settings saved under quick access's old name move over once.
+migrateQuickAccessStorage(window.localStorage);
 
 export interface Instant {
   name: string;
@@ -54,4 +58,4 @@ export const usePresenceSettingsState = createPersistedState<PresenceSettings>("
 
 /** Quick access's own global shortcut: a separate switch, off by default,
  *  apart from the favourite keys'. */
-export const usePanelShortcutState = createPersistedState<GlobalShortcutsSetting>("panelShortcut");
+export const useQuickAccessShortcutState = createPersistedState<GlobalShortcutsSetting>("quickAccessShortcut");

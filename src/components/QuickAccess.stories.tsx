@@ -7,11 +7,11 @@ import type { Instant } from "../storage";
 import type { Playback } from "./InstantCard";
 import { MenuItem } from "./Menu";
 import { PresenceStrip } from "./PresenceStrip";
-import { PanelConnection, PanelFavorites } from "./QuickPanelViews";
-import type { PanelFavoritesProps } from "./QuickPanelViews";
+import { QuickAccessConnection, QuickAccessFavorites } from "./QuickAccessViews";
+import type { QuickAccessFavoritesProps } from "./QuickAccessViews";
 import { ToastProvider } from "./Toast";
 
-const meta: Meta = { title: "Quick access/Quick access" };
+const meta: Meta = { title: "Quick access/Window" };
 export default meta;
 
 const noop = () => undefined;
@@ -33,11 +33,11 @@ const clips: Instant[] = [
   { name: "Risada do Ronaldinho", url: "https://x/6.mp3" }
 ];
 
-/** The panel's window at true size, 360 x 520. */
+/** Quick access's window at true size, 360 x 520. */
 function Panel({ state, height = 520, children }: { state: PresenceSnapshot; height?: number; children: React.ReactNode }) {
   return (
     <ToastProvider>
-      <div className="app panel" style={{ width: 360, height, border: "1px solid var(--line)", overflow: "hidden" }}>
+      <div className="app quick-access" style={{ width: 360, height, border: "1px solid var(--line)", overflow: "hidden" }}>
         <PresenceStrip snapshot={state} pinned={false} onStop={noop} onPin={noop} menu={<MenuItem primary="Abrir Peace Breaker Bot" />} />
         {children}
       </div>
@@ -45,13 +45,13 @@ function Panel({ state, height = 520, children }: { state: PresenceSnapshot; hei
   );
 }
 
-function Favorites({ state, ...props }: { state: PresenceSnapshot } & Partial<PanelFavoritesProps>) {
+function Favorites({ state, ...props }: { state: PresenceSnapshot } & Partial<QuickAccessFavoritesProps>) {
   const [query, setQuery] = useState(props.query ?? "");
   const shown = query ? clips.filter(({ name }) => name.toLowerCase().includes(query.toLowerCase())) : clips;
 
   return (
     <Panel state={state}>
-      <PanelFavorites
+      <QuickAccessFavorites
         instants={props.instants ?? shown}
         total={props.total ?? clips.length}
         query={query}
@@ -142,10 +142,10 @@ function Connection({
   state,
   height = 400,
   ...props
-}: { state: PresenceSnapshot; height?: number } & Partial<React.ComponentProps<typeof PanelConnection>>) {
+}: { state: PresenceSnapshot; height?: number } & Partial<React.ComponentProps<typeof QuickAccessConnection>>) {
   return (
     <Panel state={state} height={height}>
-      <PanelConnection
+      <QuickAccessConnection
         servers={servers}
         activeUrl={server}
         healthy

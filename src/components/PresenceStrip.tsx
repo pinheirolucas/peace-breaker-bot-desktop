@@ -6,9 +6,9 @@ import { MoreIcon, PinIcon, StopIcon } from "../icons";
 import { formatApiUrl } from "../ServerMenu";
 import { IconButton } from "./Button";
 import { Menu } from "./Menu";
-import "./panel.css";
+import "./quickAccess.css";
 
-/** Green connected, amber out of channel, red silent, grey unknown: the window's server chip, in a panel. */
+/** Green connected, amber out of channel, red silent, grey unknown: the window's server chip, in quick access. */
 export type StripTone = "ok" | "warn" | "down" | "unknown";
 
 export function stripTone(snapshot: PresenceSnapshot): StripTone {
@@ -28,7 +28,7 @@ export interface PresenceStripProps {
 }
 
 /**
- * The panel's first row, the same in both styles: what the app is doing, and
+ * Quick access's first row, the same in both styles: what the app is doing, and
  * Stop. Fixed at 56px, and Stop is never absent, only disabled, so nothing
  * shifts under a pointer that is mid-call. It reads main's snapshot, so a clip
  * started in the window shows as playing here and the other way round.
