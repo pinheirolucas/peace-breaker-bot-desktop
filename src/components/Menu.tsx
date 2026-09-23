@@ -1,5 +1,5 @@
 import * as RadixMenu from "@radix-ui/react-dropdown-menu";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import "./overlays.css";
 
 export interface MenuProps {
@@ -54,6 +54,7 @@ export interface MenuItemProps {
   trail?: ReactNode;
   trailLabel?: string;
   onTrailSelect?: () => void;
+  onContextMenu?: (event: MouseEvent) => void;
 }
 
 export function MenuItem({
@@ -66,12 +67,14 @@ export function MenuItem({
   closeOnSelect = true,
   trail,
   trailLabel,
-  onTrailSelect
+  onTrailSelect,
+  onContextMenu
 }: MenuItemProps) {
   return (
     <RadixMenu.Item
       className="mitem"
       disabled={disabled}
+      onContextMenu={onContextMenu}
       onSelect={(event) => {
         if (!closeOnSelect) {
           event.preventDefault();

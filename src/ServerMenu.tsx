@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { Server } from "../electron/discovery";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "./components/Menu";
+import { menuBridge } from "./hooks/useMenuBridge";
 import { ServerChip } from "./components/ServerChip";
 import { CheckIcon, CloseIcon, PlusIcon, RefreshIcon } from "./icons";
 import type { BotStatus } from "./service";
@@ -99,6 +100,13 @@ export default function ServerMenu({
         trail={server.manual ? <CloseIcon size={12} /> : undefined}
         trailLabel={server.manual ? t("server.remove", { address: formatApiUrl(server.apiUrl) }) : undefined}
         onTrailSelect={server.manual ? () => onRemoveServer(server) : undefined}
+        onContextMenu={(event) => {
+          // The row menu opens over the picker, so unlike other right-clicks it is not held back by the open menu.
+          const bridge = menuBridge();
+          if (!bridge) return;
+          event.preventDefault();
+          bridge.serverRowContext(server.id);
+        }}
       />
     );
   }
@@ -107,7 +115,19 @@ export default function ServerMenu({
     <Menu
       open={open}
       onOpenChange={onOpenChange}
-      trigger={<ServerChip address={current} healthy={healthy} botStatus={botStatus} />}
+      trigger={
+        <ServerChip
+          address={current}
+          healthy={healthy}
+          botStatus={botStatus}
+          onContextMenu={(event) => {
+            const bridge = menuBridge();
+            if (!bridge) return;
+            event.preventDefault();
+            bridge.serverContext();
+          }}
+        />
+      }
     >
       {/* With no active server there is nothing discovered either — the two
        *  never disagree in this app — so the empty list state below already

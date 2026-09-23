@@ -230,16 +230,29 @@
       "title": "Keyboard shortcuts",
       "lede": "They work on any tab, as long as you aren't typing.",
       "yourSounds": "Your sounds · on Discord",
-      "shiftHint": "Shift + key plays only here.",
-      "unkeyed_one": "{{count}} sound without a key",
-      "unkeyed_other": "{{count}} sounds without a key",
       "setInOrganize": "Set in Organize",
       "inApp": "In the app",
       "stop": "Stop the sound",
       "find": "Search",
       "add": "Add a sound",
       "list": "This list",
-      "close": "Close"
+      "close": "Close",
+      "legendDiscord": "plays on Discord",
+      "legendLocal": "plays only here",
+      "legendStop": "stops",
+      "filter": "Filter shortcuts",
+      "counts": "{{keyed}} with a key · {{unkeyed}} without",
+      "noneKeyed": "none with a key",
+      "noneBody": "Give a key to the sounds you use all the time and they play without the mouse, from any tab.",
+      "groupPlay": "Play",
+      "groupNavigate": "Navigate",
+      "groupAdd": "Add",
+      "groupApp": "The app",
+      "reload": "Reload the listing",
+      "appearance": "Appearance",
+      "noMatches": "No shortcut matches “{{filter}}”",
+      "menuApp": "Peace Breaker Bot",
+      "legend": "Legend"
     },
     "global": {
       "lede": "With the app focused, the key alone plays the sound. Outside it, use the key with the modifier.",
@@ -254,6 +267,104 @@
       "failedToast_one": "{{count}} shortcut won't work outside the app",
       "failedToast_other": "{{count}} shortcuts won't work outside the app",
       "see": "See"
+    }
+  },
+  "menu": {
+    "app": {
+      "about": "About {{name}}",
+      "checkForUpdates": "Check for Updates…",
+      "appearance": "Appearance…",
+      "language": "Language",
+      "services": "Services",
+      "hide": "Hide {{name}}",
+      "hideOthers": "Hide Others",
+      "showAll": "Show All",
+      "quit": "Quit {{name}}"
+    },
+    "file": {
+      "title": "File",
+      "add": "Add Instant…",
+      "addServer": "Add Server…",
+      "import": "Import…",
+      "export": "Export…",
+      "close": "Close Window",
+      "quit": "Quit"
+    },
+    "edit": {
+      "title": "Edit",
+      "undo": "Undo",
+      "redo": "Redo",
+      "cut": "Cut",
+      "copy": "Copy",
+      "paste": "Paste",
+      "selectAll": "Select All"
+    },
+    "view": {
+      "title": "View",
+      "find": "Search",
+      "reload": "Reload Listing",
+      "site": "Site",
+      "region": "Region",
+      "resetFilters": "Restore Defaults",
+      "fullscreen": "Full Screen",
+      "devReload": "Reload (development only)",
+      "devTools": "Developer Tools"
+    },
+    "playback": {
+      "title": "Playback",
+      "stop": "Stop Playback",
+      "playFocused": "Play Focused Card",
+      "sendFocused": "Send Focused Card to Discord",
+      "globalKeys": "Global Keys",
+      "globalModifier": "Modifier"
+    },
+    "server": {
+      "title": "Server",
+      "botAway": "Bot is not in a voice channel",
+      "switch": "Switch Server",
+      "copy": "Copy Address",
+      "copyAddress": "Copy Server Address",
+      "refresh": "Search Again",
+      "add": "Add Server…"
+    },
+    "window": {
+      "title": "Window",
+      "minimize": "Minimize",
+      "zoom": "Zoom",
+      "front": "Bring All to Front"
+    },
+    "help": {
+      "title": "Help",
+      "shortcuts": "Keyboard Shortcuts…",
+      "repo": "GitHub Repository",
+      "report": "Report a Problem"
+    },
+    "card": {
+      "play": "Play Here",
+      "playAgain": "Play Again",
+      "discord": "Send to Discord",
+      "stop": "Stop",
+      "stopDiscord": "Stop on Discord",
+      "botAway": "Bot is not in a voice channel",
+      "copyLink": "Copy Audio Link",
+      "open": "Open on Site",
+      "openIn": "Open on {{provider}}",
+      "rename": "Rename…",
+      "setKey": "Set Key…",
+      "moveStart": "Move to Start",
+      "moveEnd": "Move to End",
+      "remove": "Remove from Favorites",
+      "addFavorite": "Add to Favorites",
+      "removeFavorite": "Remove from Favorites"
+    },
+    "grid": {
+      "add": "Add Instant…",
+      "organize": "Organize Favorites"
+    },
+    "row": {
+      "use": "Use This Server",
+      "test": "Test Connection",
+      "remove": "Remove Server"
     }
   }
 }

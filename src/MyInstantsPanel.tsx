@@ -3,9 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Button } from "./components/Button";
 import { CardSkeleton } from "./components/CardSkeleton";
 import { EmptyState } from "./components/EmptyState";
-import InstantCard from "./components/InstantCard";
+import InstantCard, { cardState } from "./components/InstantCard";
 import type { Playback } from "./components/InstantCard";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { useMenuCommands } from "./hooks/useMenuBridge";
 import { DEFAULT_PROVIDER_NAME } from "./hooks/useProvider";
 import { StarIcon } from "./icons";
 import { apiErrorMessage } from "./i18n/apiError";
@@ -53,6 +54,8 @@ export interface MyInstantsPanelProps {
   onSwitchServer: () => void;
   onSummary: (summary: string) => void;
   onClearSearch: () => void;
+  /** Which path is playing, for the menu bar's Parar reprodução. */
+  onPlaybackChange?: (playback: "local" | "discord" | null) => void;
 }
 
 export default function MyInstantsPanel({
@@ -64,7 +67,8 @@ export default function MyInstantsPanel({
   serverAddress,
   onSwitchServer,
   onSummary,
-  onClearSearch
+  onClearSearch,
+  onPlaybackChange
 }: MyInstantsPanelProps) {
   const { t } = useTranslation();
   const [audioUrl, isAudioPlaying, playAudio, stopAudio] = useAudioPlayer();
@@ -205,6 +209,41 @@ export default function MyInstantsPanel({
   const anyPlaying = isAudioPlaying || isDiscordPlaying;
   const reload = () => setReloadKey((key) => key + 1);
 
+  const playbackNow = isDiscordPlaying ? "discord" : isAudioPlaying ? "local" : null;
+
+  useEffect(() => {
+    onPlaybackChange?.(playbackNow);
+  }, [playbackNow, onPlaybackChange]);
+
+  // This panel unmounts with its tab; whatever it was playing goes with it.
+  useEffect(() => () => onPlaybackChange?.(null), [onPlaybackChange]);
+
+  // Same handlers as the buttons, re-checked against cardState at run time.
+  useMenuCommands((command) => {
+    if (command.type === "reload") {
+      reload();
+      return;
+    }
+
+    if (command.type === "stop") {
+      if (anyPlaying) void handleStop();
+      return;
+    }
+
+    if (command.type !== "card" || command.surface !== "explore") return;
+
+    const instant = instants.find(({ url }) => url === command.url);
+    if (!instant) return;
+
+    const playback = playbackOf(instant);
+    const state = cardState(playback, anyPlaying && playback === "idle", botStatus);
+
+    if (command.action === "play" && !state.playDisabled) void handlePlay(instant);
+    else if (command.action === "discord" && !state.discordDisabled) void handlePlayOnDiscord(instant);
+    else if (command.action === "stop") void handleStop();
+    else if (command.action === "toggle-favorite" && !state.trailDisabled) toggleFavorite(instant);
+  });
+
   let content;
 
   if (firstLoad) {
@@ -271,6 +310,13 @@ export default function MyInstantsPanel({
               onPlay={handlePlay}
               onPlayOnDiscord={handlePlayOnDiscord}
               onStop={handleStop}
+              menu={{
+                surface: "explore",
+                index: instants.indexOf(instant),
+                total: instants.length,
+                favorite: isFavorite,
+                providerName
+              }}
               trail={{
                 label: t("myinstants.favorite"),
                 icon: <StarIcon filled={isFavorite} />,

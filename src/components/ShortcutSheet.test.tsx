@@ -19,6 +19,18 @@ function installBridge() {
   };
 }
 
+function installMenuBridge() {
+  window.instantsMenu = {
+    setState: vi.fn(),
+    onCommand: () => () => undefined,
+    cardContext: vi.fn(),
+    gridContext: vi.fn(),
+    serverContext: vi.fn(),
+    serverRowContext: vi.fn(),
+    selectionContext: vi.fn()
+  };
+}
+
 function renderSheet(props: Partial<React.ComponentProps<typeof ShortcutSheet>> = {}) {
   const onOrganize = vi.fn();
   const onOpenChange = vi.fn();
@@ -40,6 +52,7 @@ describe("ShortcutSheet", () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => {
     delete window.instantsShortcuts;
+    delete window.instantsMenu;
     localStorage.clear();
   });
 
@@ -52,7 +65,101 @@ describe("ShortcutSheet", () => {
       "BBruxaria",
       "VVish"
     ]);
-    expect(section.getByText(/1 som sem tecla/)).toBeInTheDocument();
+    expect(section.getByText("3 com tecla · 1 sem")).toBeInTheDocument();
+  });
+
+  it("draws the legend as three keycaps in place of the Shift sentence", () => {
+    renderSheet();
+
+    const legend = within(screen.getByRole("list", { name: "Legenda" }));
+    expect(legend.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Atoca no Discord",
+      "ShiftAtoca só aqui",
+      "Escpara"
+    ]);
+    expect(screen.queryByText("Shift + tecla toca só aqui.")).toBeNull();
+  });
+
+  it("says what a key is for when no sound has one, and drops the legend", () => {
+    renderSheet({ instants: [{ name: "Sem tecla", url: "u4" }] });
+
+    expect(screen.getByText("nenhum com tecla")).toBeInTheDocument();
+    expect(screen.getByText(/Dê uma tecla aos sons/)).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Legenda" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Definir em Organizar" })).toBeInTheDocument();
+  });
+
+  it("groups the window's keys, with modifiers as separate keycaps", () => {
+    renderSheet();
+
+    const app = within(screen.getByRole("region", { name: "No app" }));
+    expect(app.getAllByRole("heading", { level: 4 }).map((h) => h.textContent)).toEqual([
+      "Tocar",
+      "Navegar",
+      "Adicionar",
+      "O app"
+    ]);
+    const favorites = app.getByText("Favoritos").closest("li")!;
+    expect([...favorites.querySelectorAll("kbd")].map((k) => k.textContent)).toEqual(["Ctrl", "1"]);
+  });
+
+  it("names each command's menu, and lists menu-only keys, only with the menu bar", () => {
+    const { unmount } = render(
+      <ShortcutSheet open onOpenChange={vi.fn()} instants={instants} os="win" status={{ registered: [], failed: [] }} onOrganize={vi.fn()} />
+    );
+    expect(screen.queryByText("Visualizar")).toBeNull();
+    expect(screen.queryByText("Recarregar a listagem")).toBeNull();
+    expect(screen.queryByText("Aparência")).toBeNull();
+    unmount();
+
+    installMenuBridge();
+    renderSheet();
+
+    const reload = screen.getByText("Recarregar a listagem").closest("li")!;
+    expect(within(reload).getByText("Visualizar")).toBeInTheDocument();
+    expect(within(screen.getByText("Aparência").closest("li")!).getByText("Arquivo")).toBeInTheDocument();
+  });
+
+  it("names the app menu for Aparência on macOS", () => {
+    installMenuBridge();
+    renderSheet({ os: "mac" });
+
+    expect(within(screen.getByText("Aparência").closest("li")!).getByText("Peace Breaker Bot")).toBeInTheDocument();
+  });
+
+  it("filters sounds and commands together, and says when nothing matches", async () => {
+    const user = userEvent.setup();
+    renderSheet();
+
+    const field = screen.getByRole("textbox", { name: "Filtrar atalhos" });
+    await user.type(field, "bru");
+    const sounds = within(screen.getByRole("region", { name: "Seus sons · no Discord" }));
+    expect(sounds.getAllByRole("listitem").map((li) => li.textContent)).toEqual(["BBruxaria"]);
+    expect(screen.queryByRole("region", { name: "No app" })).toBeNull();
+
+    await user.clear(field);
+    await user.type(field, "explorar");
+    expect(screen.getByText("Explorar")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Seus sons · no Discord" })).toBeNull();
+
+    await user.clear(field);
+    await user.type(field, "zzz");
+    expect(screen.getByRole("status")).toHaveTextContent("Nenhum atalho com “zzz”");
+  });
+
+  it("starts on the filter, and / returns to it from elsewhere in the sheet", async () => {
+    const user = userEvent.setup();
+    renderSheet();
+
+    const field = screen.getByRole("textbox", { name: "Filtrar atalhos" });
+    expect(field).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Definir em Organizar" }).closest("section")!);
+    (screen.getByRole("button", { name: "Fechar" }) as HTMLElement).focus();
+    await user.keyboard("/");
+
+    expect(field).toHaveFocus();
+    expect(field).toHaveValue("");
   });
 
   it("has no global section without the Electron bridge", () => {
@@ -74,7 +181,13 @@ describe("ShortcutSheet", () => {
 
     expect(toggle).toBeChecked();
     expect(JSON.parse(localStorage.getItem("globalShortcuts")!).enabled).toBe(true);
-    expect(await screen.findByText("Ctrl+Alt+Shift+V")).toBeInTheDocument();
+    const combo = await screen.findByLabelText("Ctrl+Alt+Shift+V");
+    expect([...combo.querySelectorAll("kbd")].map((k) => k.textContent)).toEqual([
+      "Ctrl",
+      "Alt",
+      "Shift",
+      "V"
+    ]);
   });
 
   it("marks a combo another app holds as in use", () => {

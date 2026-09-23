@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Server } from "../electron/discovery";
+import type { MenuCommand, MenuState } from "../electron/menuState";
 import type { ShortcutResult } from "../electron/shortcuts";
 import { sortServers } from "../electron/discovery";
 import AddMenu from "./AddMenu";
@@ -16,7 +17,15 @@ import { Toast, ToastProvider } from "./components/Toast";
 import { TooltipProvider } from "./components/Tooltip";
 import FavoritesPanel from "./FavoritesPanel";
 import FilterMenu, { FilterMenuItems, hasFilters } from "./FilterMenu";
-import { noGlobalStatus } from "./hooks/useGlobalShortcuts";
+import { noGlobalStatus, useGlobalShortcutSettings } from "./hooks/useGlobalShortcuts";
+import {
+  clickFocusedCard,
+  menuBridge,
+  useFocusedCard,
+  useMenuCommands,
+  useMenuState,
+  useNativeContextMenu
+} from "./hooks/useMenuBridge";
 import { useAppearance } from "./hooks/useAppearance";
 import { useLanguage } from "./hooks/useLanguage";
 import { useNativeChrome } from "./hooks/useNativeChrome";
@@ -29,8 +38,9 @@ import {
   useDesktop,
   usePlatform
 } from "./hooks/usePlatform";
-import { DEFAULT_PROVIDER_NAME, useProvider } from "./hooks/useProvider";
+import { DEFAULT_PROVIDER_KEY, DEFAULT_PROVIDER_NAME, useProvider } from "./hooks/useProvider";
 import { useRegion } from "./hooks/useRegion";
+import { DEFAULT_REGION, isRegion, regionOptions } from "./regions";
 import { useStamp } from "./hooks/useStamp";
 import { useTier } from "./hooks/useTier";
 import { AppMarkIcon, CheckIcon, MenuIcon, MoreIcon } from "./icons";
@@ -44,7 +54,8 @@ import {
   onConnectionError,
   onHealthChange,
   resetApiUrl,
-  setApiUrl
+  setApiUrl,
+  testServer
 } from "./service";
 import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
@@ -118,6 +129,11 @@ export default function App() {
   const [addServerOpen, setAddServerOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [globalStatus, setGlobalStatus] = useState<ShortcutResult>(noGlobalStatus);
+  const globalSettings = useGlobalShortcutSettings();
+  const [favoritesPlayback, setFavoritesPlayback] = useState<"local" | "discord" | null>(null);
+  const [explorePlayback, setExplorePlayback] = useState<"local" | "discord" | null>(null);
+  const focusedCard = useFocusedCard();
+  useNativeContextMenu();
 
   const [discovered, setDiscovered] = useState<Server[]>([]);
   const [manualServers, setManualServers] = useManualServers([]);
@@ -156,7 +172,16 @@ export default function App() {
     [t, os]
   );
 
+  // Under Electron these are menu accelerators (see the commands below), and
+  // a second listener here would run each one twice. A plain browser tab has
+  // no menu bar, so it keeps them.
+  const nativeMenu = menuBridge() !== null;
+
   useEffect(() => {
+    if (nativeMenu) {
+      return undefined;
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       // Per-platform: Cmd on macOS, where Ctrl+F moves the cursor forward a
       // character and is not a find at all. None of them while Aparência is
@@ -194,7 +219,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [os, editing, organizing, tab, addOpen, importOpen, addServerOpen]);
+  }, [nativeMenu, os, editing, organizing, tab, addOpen, importOpen, addServerOpen]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -468,6 +493,157 @@ export default function App() {
       ? t("favorites.organizeBlockedSearch")
       : null;
 
+  // ---- the native menus ----
+  // What the menu bar and the right-click menus need to know: only this
+  // side does. Reported on change; labels follow the in-app language.
+  const dialogOpen = addOpen || importOpen || addServerOpen || sheetOpen || editing;
+  const regions = useMemo(
+    () => regionOptions(language).map(({ value, label }) => ({ code: value, label })),
+    [language]
+  );
+
+  const menuState: MenuState = {
+    tab,
+    playing: favoritesPlayback ?? explorePlayback,
+    botConnected: typeof botStatus?.connected === "boolean" ? botStatus.connected : null,
+    botChannel:
+      botStatus?.connected && botStatus.guildName && botStatus.channelName
+        ? t("server.inVoice", { guildName: botStatus.guildName, channelName: botStatus.channelName })
+        : null,
+    healthy,
+    organizing,
+    hasFavorites: favorites.length > 0,
+    hasQuery: query !== "",
+    organizeBlocked: favoritesPlaying ? "playing" : query ? "search" : null,
+    focusedCard,
+    blocked: dialogOpen,
+    language,
+    activeAddress: serverAddress,
+    activeIsLocal: servers.some((server) => server.apiUrl === activeUrl && server.isLocal),
+    servers: servers.map((server) => ({
+      id: server.id,
+      address: formatApiUrl(server.apiUrl),
+      isLocal: server.isLocal,
+      manual: Boolean(server.manual),
+      active: server.apiUrl === activeUrl
+    })),
+    providers: providers?.map(({ key, name }) => ({ key, name })) ?? null,
+    provider: provider?.key ?? null,
+    regionSupported,
+    region,
+    regions,
+    filtersDefault:
+      (provider === null || provider.key === DEFAULT_PROVIDER_KEY) &&
+      (!regionSupported || region === DEFAULT_REGION),
+    globalKeys: {
+      available: globalSettings.available,
+      enabled: globalSettings.enabled,
+      modifier: globalSettings.modifier
+    }
+  };
+
+  useMenuState(menuState);
+
+  // Commands arrive as data and run the same handlers the buttons run. The
+  // guards the old key handlers had (no tab switching behind a dialog, no
+  // find while Aparência is open) live here now. Card commands, Parar and
+  // Recarregar are handled by the panels that own those handlers.
+  useMenuCommands((command: MenuCommand) => {
+    const blocked = dialogOpen || overlayOpen();
+
+    switch (command.type) {
+      case "tab":
+        if (!blocked) setTab(command.tab);
+        break;
+      case "find":
+        if (!editing && searchRef.current) {
+          searchRef.current.focus();
+          searchRef.current.select();
+        }
+        break;
+      case "add":
+        if (!blocked && !organizing) {
+          setTab("favorites");
+          setAddOpen(true);
+        }
+        break;
+      case "add-server":
+        if (!blocked) setAddServerOpen(true);
+        break;
+      case "import":
+        if (!blocked) setImportOpen(true);
+        break;
+      case "export":
+        exportToJSON();
+        break;
+      case "organize":
+        if (!blocked && favorites.length > 0 && !organizeBlockedReason) {
+          setTab("favorites");
+          setOrganizing(true);
+        }
+        break;
+      case "play-focused":
+        clickFocusedCard("play");
+        break;
+      case "send-focused":
+        clickFocusedCard("discord");
+        break;
+      case "appearance":
+        if (!blocked) appearance.begin();
+        break;
+      case "shortcuts":
+        if (!editing && (sheetOpen || !blocked)) setSheetOpen(true);
+        break;
+      case "language":
+        setLanguage(command.language);
+        break;
+      case "provider":
+        if (providers?.some(({ key }) => key === command.key)) setProvider(command.key);
+        break;
+      case "region":
+        if (isRegion(command.region)) setRegion(command.region);
+        break;
+      case "reset-filters":
+        setProvider(DEFAULT_PROVIDER_KEY);
+        setRegion(DEFAULT_REGION);
+        break;
+      case "clear-search":
+        clearSearch();
+        break;
+      case "server-select": {
+        const server = servers.find(({ id }) => id === command.id);
+        if (server) setSelectedServer(server.apiUrl);
+        break;
+      }
+      case "server-test": {
+        const server = servers.find(({ id }) => id === command.id);
+        if (server) {
+          testServer(server.apiUrl).then(
+            () => showToast({ message: t("server.testSuccess") }),
+            () => showToast({ message: t("server.testUnreachable") })
+          );
+        }
+        break;
+      }
+      case "server-remove": {
+        const server = servers.find(({ id }) => id === command.id);
+        if (server?.manual) removeManualServer(server);
+        break;
+      }
+      case "server-refresh":
+        refreshDiscovery();
+        break;
+      case "global-enabled":
+        globalSettings.setEnabled(command.enabled);
+        break;
+      case "global-modifier":
+        if (globalSettings.modifiers.includes(command.modifier)) {
+          globalSettings.setModifier(command.modifier);
+        }
+        break;
+    }
+  });
+
   return (
     <SnackbarContext.Provider value={snackbar}>
       <TooltipProvider>
@@ -501,6 +677,7 @@ export default function App() {
                       <SearchField
                         ref={searchRef}
                         aria-label={t("app.searchAriaLabel")}
+                        data-ctx="search"
                         placeholder={
                           tab === "favorites"
                             ? t("app.searchInFavorites", { count: favorites.length })
@@ -671,6 +848,7 @@ export default function App() {
                     organizing={organizing}
                     onOrganizingChange={setOrganizing}
                     onPlayingChange={setFavoritesPlaying}
+                    onPlaybackChange={setFavoritesPlayback}
                     active={tab === "favorites"}
                     onGlobalStatus={setGlobalStatus}
                     onGlobalSetupFailed={(count) =>
@@ -693,6 +871,7 @@ export default function App() {
                     onSwitchServer={openServerMenu}
                     onSummary={setSummary}
                     onClearSearch={clearSearch}
+                    onPlaybackChange={setExplorePlayback}
                   />
                 </SegmentedPanel>
               </main>

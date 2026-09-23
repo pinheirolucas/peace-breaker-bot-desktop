@@ -4,6 +4,17 @@ import type { Server } from "./discovery";
 import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
+  cardContextChannel,
+  gridContextChannel,
+  isMenuCommand,
+  menuCommandChannel,
+  menuStateChannel,
+  selectionContextChannel,
+  serverContextChannel,
+  serverRowContextChannel
+} from "./menuState";
+import type { CardContext, MenuCommand, MenuState } from "./menuState";
+import {
   modifiersFor,
   shortcutsFiredChannel,
   shortcutsSetChannel
@@ -180,4 +191,29 @@ contextBridge.exposeInMainWorld("instantsShortcuts", {
     ipcRenderer.on(shortcutsFiredChannel, handler);
     return () => ipcRenderer.removeListener(shortcutsFiredChannel, handler);
   }
+});
+
+// The native menus. State goes up, commands come down; the popups themselves
+// are built in the main process, which validates everything sent here again.
+contextBridge.exposeInMainWorld("instantsMenu", {
+  setState: (state: MenuState) => ipcRenderer.send(menuStateChannel, state),
+  onCommand: (listener: (command: MenuCommand) => void) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    const handler = (_event: unknown, command: unknown) => {
+      if (isMenuCommand(command)) {
+        listener(command);
+      }
+    };
+
+    ipcRenderer.on(menuCommandChannel, handler);
+    return () => ipcRenderer.removeListener(menuCommandChannel, handler);
+  },
+  cardContext: (context: CardContext) => ipcRenderer.send(cardContextChannel, context),
+  gridContext: () => ipcRenderer.send(gridContextChannel),
+  serverContext: () => ipcRenderer.send(serverContextChannel),
+  serverRowContext: (id: string) => ipcRenderer.send(serverRowContextChannel, { id }),
+  selectionContext: () => ipcRenderer.send(selectionContextChannel)
 });

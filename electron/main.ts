@@ -1,5 +1,4 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeTheme, net, shell } from "electron";
-import type { MenuItemConstructorOptions } from "electron";
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, nativeTheme, net, shell } from "electron";
 import { createWriteStream } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -29,8 +28,33 @@ import { isShortcutRequest, shortcutsSetChannel } from "./shortcuts";
 import { createShortcutRegistry, shouldHideOnClose } from "./shortcutRegistry";
 import type { ShortcutResult } from "./shortcuts";
 import {
+  cardContextChannel,
+  gridContextChannel,
+  httpsUrl,
+  isCardContext,
+  isMenuState,
+  isServerRowContext,
+  menuCommandChannel,
+  menuStateChannel,
+  selectionContextChannel,
+  serverContextChannel,
+  serverRowContextChannel
+} from "./menuState";
+import type { MenuCommand, MenuState } from "./menuState";
+import { translatorFor } from "./menuI18n";
+import {
+  cardMenu,
+  fieldMenu,
+  gridMenu,
+  initialMenuState,
+  menuBar,
+  selectionMenu,
+  serverMenu,
+  serverRowMenu
+} from "./menuTemplates";
+import type { Item, MenuDeps } from "./menuTemplates";
+import {
   checkForUpdatesChannel,
-  checkForUpdatesLabel,
   openReleasePageChannel,
   openUpdateChannel,
   pickDmgUrl,
@@ -178,44 +202,49 @@ function startUpdateChecks(): void {
   setInterval(() => void autoUpdater.checkForUpdates().catch(() => {}), 60 * 60 * 1000);
 }
 
-/**
- * macOS only: in production, Windows and Linux windows have no menu bar at
- * all — mainWindow.setMenu(null) removes it in favour of the custom title
- * row, and that per-window override would hide any app-level menu set here
- * regardless. macOS's menu bar lives outside the window, so it's the one
- * place a native "Check for Updates" item is reachable without adding a
- * menu bar those platforms otherwise deliberately don't have.
- *
- * Built from Electron's own role shorthands rather than a hand-rolled
- * template, so Edit/View/Window keep every default (Cut/Copy/Paste,
- * reload, zoom, minimize…) exactly as they were before this menu existed —
- * only the app submenu is customized, to add the one new item.
- */
-function buildAppMenu(): Menu {
-  const template: MenuItemConstructorOptions[] = [
-    {
-      role: "appMenu",
-      submenu: [
-        { role: "about" },
-        { type: "separator" },
-        { label: checkForUpdatesLabel(app.getLocale()), click: () => checkForUpdatesManually() },
-        { type: "separator" },
-        { role: "services" },
-        { type: "separator" },
-        { role: "hide" },
-        { role: "hideOthers" },
-        { role: "unhide" },
-        { type: "separator" },
-        { role: "quit" }
-      ]
-    },
-    { role: "fileMenu" },
-    { role: "editMenu" },
-    { role: "viewMenu" },
-    { role: "windowMenu" }
-  ];
+// The menus follow the app's language, not the OS's: until the renderer has
+// reported which one is active, the OS locale is the best guess.
+let menuState: MenuState = initialMenuState(
+  app.getLocale().split("-")[0]?.toLowerCase() === "pt" ? "pt-BR" : "en-US"
+);
 
-  return Menu.buildFromTemplate(template);
+function menuDeps(): MenuDeps {
+  return {
+    t: translatorFor(menuState.language),
+    platform: process.platform,
+    send: (command: MenuCommand) => sendToWindow(menuCommandChannel, command),
+    copy: (text) => clipboard.writeText(text),
+    // Only https ever reaches the shell; the url may come from a stored favourite.
+    openExternal: (url) => {
+      const safe = httpsUrl(url);
+      if (safe) void shell.openExternal(safe);
+    }
+  };
+}
+
+/**
+ * The menu bar, rebuilt from the state the renderer reports. On macOS it is
+ * the system's; on Windows and Linux it stays hidden behind the custom
+ * toolbar (setMenuBarVisibility in createWindow) but is still the window's
+ * menu, so its Cmd/Ctrl accelerators keep working. Setting no menu at all
+ * would delete them.
+ */
+function rebuildMenuBar(): void {
+  const template = menuBar(menuState, menuDeps(), {
+    isDev,
+    appName: app.name,
+    checkForUpdates: checkForUpdatesManually
+  });
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function popup(items: Item[]): void {
+  if (items.length === 0 || !mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  Menu.buildFromTemplate(items).popup({ window: mainWindow });
 }
 
 function localAddresses(): Set<string> {
@@ -333,9 +362,43 @@ function createWindow(): void {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.setMenu(null);
     mainWindow.loadURL(`file://${path.join(__dirname, "index.html")}`);
   }
+
+  // Windows and Linux: the toolbar is the title bar, so no menu bar is drawn.
+  // The application menu is still there for its accelerators.
+  if (process.platform !== "darwin") {
+    mainWindow.setMenuBarVisibility(false);
+  }
+
+  // Electron draws no context menu of its own, so a text field gets one here.
+  // The renderer suppresses the browser's everywhere else. Which field it is
+  // (only the search field offers Limpar busca) is read from the page.
+  mainWindow.webContents.on("context-menu", (_event, params) => {
+    if (!params.isEditable || !mainWindow) {
+      return;
+    }
+
+    const contents = mainWindow.webContents;
+
+    void contents
+      .executeJavaScript("document.activeElement?.getAttribute('data-ctx') ?? ''")
+      .catch(() => "")
+      .then((field: unknown) => {
+        popup(
+          fieldMenu(
+            {
+              misspelledWord: params.misspelledWord,
+              dictionarySuggestions: params.dictionarySuggestions,
+              isSearch: field === "search"
+            },
+            menuState,
+            menuDeps(),
+            (word) => contents.replaceMisspelling(word)
+          )
+        );
+      });
+  });
 
   startDiscovery();
 
@@ -412,6 +475,62 @@ ipcMain.on(chromeChannel, (event, colors: unknown) => {
   }
 });
 
+function fromMainWindow(event: Electron.IpcMainEvent): boolean {
+  return Boolean(mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents);
+}
+
+// What the menus need to know that only the renderer does. Untrusted: it is
+// validated, and the bar is rebuilt only when something changed.
+ipcMain.on(menuStateChannel, (event, state: unknown) => {
+  if (!fromMainWindow(event) || !isMenuState(state, process.platform)) {
+    return;
+  }
+
+  const languageChanged = state.language !== menuState.language;
+  const before = JSON.stringify(menuState);
+  menuState = state;
+
+  if (languageChanged || before !== JSON.stringify(menuState)) {
+    rebuildMenuBar();
+  }
+});
+
+// A card is the one thing main cannot identify, so it sends its own state.
+ipcMain.on(cardContextChannel, (event, ctx: unknown) => {
+  if (fromMainWindow(event) && isCardContext(ctx)) {
+    popup(cardMenu(ctx, menuDeps()));
+  }
+});
+
+ipcMain.on(gridContextChannel, (event) => {
+  if (fromMainWindow(event)) {
+    popup(gridMenu(menuState, menuDeps()));
+  }
+});
+
+ipcMain.on(serverContextChannel, (event) => {
+  if (fromMainWindow(event)) {
+    popup(serverMenu(menuState, menuDeps()));
+  }
+});
+
+ipcMain.on(serverRowContextChannel, (event, row: unknown) => {
+  if (!fromMainWindow(event) || !isServerRowContext(row)) {
+    return;
+  }
+
+  const server = menuState.servers.find(({ id }) => id === row.id);
+  if (server) {
+    popup(serverRowMenu(server, menuDeps()));
+  }
+});
+
+ipcMain.on(selectionContextChannel, (event) => {
+  if (fromMainWindow(event)) {
+    popup(selectionMenu(menuDeps()));
+  }
+});
+
 ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult => {
   const empty: ShortcutResult = { registered: [], failed: [] };
 
@@ -451,9 +570,11 @@ app.on("ready", () => {
   createWindow();
   registerUpdateListeners();
 
-  if (process.platform === "darwin") {
-    Menu.setApplicationMenu(buildAppMenu());
-  }
+  app.setAboutPanelOptions({
+    applicationName: app.name,
+    credits: "Break the peace, on command."
+  });
+  rebuildMenuBar();
 
   if (!isDev) {
     startUpdateChecks();

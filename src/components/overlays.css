@@ -25,6 +25,18 @@
   color: var(--fg);
 }
 .dlg .db { padding: 20px 22px 18px; }
+/* The keyboard sheet: as wide as two columns need, and only the body scrolls,
+ * so the title stays put and the footer never leaves the window. */
+.dlg--wide {
+  width: min(640px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.dlg--wide .db {
+  min-height: 0;
+  overflow: auto;
+}
 .dlg h2 {
   margin: 0 0 5px;
   font-size: 17px;
