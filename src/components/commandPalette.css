@@ -1,0 +1,218 @@
+/* The command palette. Tokens only; the platform layer (--rpad --rctl --rbtn) does
+ * the corner radii, and the selected row follows each system's own dialect: a filled
+ * pill on macOS, a soft ground with a 3px accent bar on Windows and KDE, the soft
+ * ground alone on GNOME. */
+
+.pscrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: color-mix(in oklch, var(--bg) 45%, transparent);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.pal {
+  position: fixed;
+  z-index: 41;
+  top: min(14%, 120px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100% - 32px));
+  max-height: min(560px, calc(100% - 64px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: var(--rpad);
+  /* The palette is the container: a narrow window, or a framed story, answers to its own width. */
+  container: pal / inline-size;
+  box-shadow: 0 30px 80px color-mix(in oklch, var(--fg) 28%, transparent);
+}
+.pal:focus { outline: 0; }
+.pal .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.pin {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.pin input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--fg);
+  padding: 0;
+}
+.pin input::placeholder { color: var(--muted); }
+.crumb {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--rbtn);
+  background: color-mix(in oklch, var(--accent) 14%, var(--panel));
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pbd { flex: 1; min-height: 0; overflow: auto; padding: 4px 8px 8px; }
+.pgh {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pgh span { margin-left: auto; letter-spacing: 0; text-transform: none; font-weight: 500; font-size: 11.5px; }
+
+.prow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--rctl);
+  color: var(--fg);
+  cursor: default;
+}
+.prow[data-dim] { opacity: 0.5; }
+.pic {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--rbtn);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklch, var(--fg) 7%, transparent);
+  color: var(--fg);
+  font-size: 13px;
+}
+.pic b { font-weight: 800; text-transform: uppercase; }
+.pic.tile { background: var(--fill); color: var(--ink); }
+.pic .sw8 {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--bg) 0 50%, var(--accent) 50% 100%);
+}
+.ptx { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.ptt { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.psb { font-size: 12px; color: var(--muted); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prt { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+
+.pcp {
+  flex: none;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rbtn);
+  font-size: 11.5px;
+  font-weight: 700;
+  background: color-mix(in oklch, var(--fg) 8%, transparent);
+  color: var(--fg);
+}
+.ptg {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* A warning has to read as one in every palette, like the server chip's amber. */
+.ptg.warn { border-color: oklch(0.78 0.16 75); color: oklch(0.55 0.13 75); }
+:root[data-mode="dark"] .ptg.warn { color: oklch(0.82 0.14 78); }
+
+/* the selected row: macOS */
+.prow[data-selected] { background: var(--accent); color: var(--onAccent); }
+.prow[data-selected] .psb,
+.prow[data-selected] .prt { color: color-mix(in oklch, var(--onAccent) 84%, transparent); }
+.prow[data-selected] .pic { background: color-mix(in oklch, var(--onAccent) 20%, transparent); color: var(--onAccent); }
+.prow[data-selected] .pic.tile { background: var(--fill); color: var(--ink); box-shadow: 0 0 0 2px color-mix(in oklch, var(--onAccent) 88%, transparent); }
+.prow[data-selected] .pcp { background: color-mix(in oklch, var(--onAccent) 22%, transparent); color: var(--onAccent); }
+.prow[data-selected] .ptg { border-color: color-mix(in oklch, var(--onAccent) 45%, transparent); color: inherit; }
+
+/* Windows, KDE and the rest: a soft ground with the 3px bar, and GNOME the ground alone. */
+[data-os="win"] .prow[data-selected],
+[data-os="linux"] .prow[data-selected] { background: color-mix(in oklch, var(--fg) 8%, transparent); color: var(--fg); }
+[data-os="win"] .prow[data-selected] .psb,
+[data-os="win"] .prow[data-selected] .prt,
+[data-os="linux"] .prow[data-selected] .psb,
+[data-os="linux"] .prow[data-selected] .prt { color: var(--muted); }
+[data-os="win"] .prow[data-selected] .pic:not(.tile),
+[data-os="linux"] .prow[data-selected] .pic:not(.tile) { background: color-mix(in oklch, var(--fg) 7%, transparent); color: var(--fg); }
+[data-os="win"] .prow[data-selected] .pcp,
+[data-os="linux"] .prow[data-selected] .pcp { background: color-mix(in oklch, var(--fg) 8%, transparent); color: var(--fg); }
+[data-os="win"] .prow[data-selected] .ptg,
+[data-os="linux"] .prow[data-selected] .ptg { border-color: var(--line); color: var(--muted); }
+[data-os="win"] .prow[data-selected]::before,
+[data-desktop="kde"] .prow[data-selected]::before,
+[data-desktop="other"] .prow[data-selected]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.pft {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.pst { display: inline-flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pst i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.pst i[data-tone="warn"] { background: oklch(0.78 0.16 75); }
+.pst i[data-tone="bad"] { background: oklch(0.62 0.2 25); }
+.phs { margin-left: auto; display: inline-flex; align-items: center; gap: 14px; flex: none; }
+.phs > span { display: inline-flex; align-items: center; gap: 6px; }
+.phs > span[data-dim] { opacity: 0.45; }
+.phs .pcp { min-width: 20px; height: 20px; font-size: 11px; background: color-mix(in oklch, var(--fg) 8%, var(--bg)); }
+/* A narrow window keeps the hints for the row and drops the rest of the row's slack. */
+@container pal (max-width: 520px) {
+  .phs > span:not(:first-child):not(:last-child) { display: none; }
+  .pft { gap: 8px; padding: 0 12px; }
+}
+
+.pemp { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 20px 14px; text-align: center; }
+.pemp b { font-size: 14px; font-weight: 700; }
+.pemp span { font-size: 12.5px; line-height: 1.5; color: var(--muted); max-width: 380px; }

@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
+import type { MutableRefObject } from "react";
 import { useTranslation } from "react-i18next";
 import {
   closestCenter,
@@ -49,6 +50,14 @@ import useDiscordPlayer from "./useDiscordPlayer";
 
 const noop = () => undefined;
 
+/** What the command palette asks of the panel that owns both players: the same checks a card's own buttons make. */
+export interface FavoritesControls {
+  /** Plays a favourite as its card would, and refuses where the card refuses. */
+  play: (url: string, mode: ClipMode) => "played" | "none" | "busy" | "bot-away";
+  /** Stops whatever plays. False when nothing did. */
+  stop: () => boolean;
+}
+
 export interface FavoritesPanelProps {
   search: string;
   healthy: boolean;
@@ -77,6 +86,8 @@ export interface FavoritesPanelProps {
   active?: boolean;
   onGlobalStatus?: (status: ShortcutResult) => void;
   onGlobalSetupFailed?: (count: number) => void;
+  /** Filled with this panel's controls, for the command palette. */
+  controlsRef?: MutableRefObject<FavoritesControls | null>;
 }
 
 const FLASH_MS = { press: 120, refuse: 320 } as const;
@@ -99,7 +110,8 @@ export default function FavoritesPanel({
   onPlaybackChange,
   active = true,
   onGlobalStatus,
-  onGlobalSetupFailed
+  onGlobalSetupFailed,
+  controlsRef
 }: FavoritesPanelProps) {
   const { t } = useTranslation();
   const os = usePlatform();
@@ -237,7 +249,10 @@ export default function FavoritesPanel({
 
   function triggerClip(key: string, mode: ClipMode): "played" | "none" | "busy" | "bot-away" {
     const instant = instants.find((item) => item.key === key);
-    if (!instant) return "none";
+    return instant ? triggerInstant(instant, mode) : "none";
+  }
+
+  function triggerInstant(instant: Instant, mode: ClipMode): "played" | "none" | "busy" | "bot-away" {
 
     const playback = playbackOf(instant);
     const state = cardState(playback, anyPlaying && playback === "idle", botStatus);
@@ -275,6 +290,17 @@ export default function FavoritesPanel({
     void handleStop();
     setAnnouncement(t("shortcuts.stopped"));
     return true;
+  }
+
+  if (controlsRef) {
+    controlsRef.current = {
+      play: (url, mode) => {
+        const instant = instants.find((item) => item.url === url);
+        // Organizar takes the keys off, and the palette with them.
+        return instant && !organizing ? triggerInstant(instant, mode) : "none";
+      },
+      stop: stopFromKeyboard
+    };
   }
 
   useClipShortcuts(!organizing, {

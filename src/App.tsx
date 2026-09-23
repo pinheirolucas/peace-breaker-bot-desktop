@@ -13,11 +13,13 @@ import { AppearanceStage } from "./components/AppearanceStage";
 import { Button, IconButton } from "./components/Button";
 import { Menu, MenuItem, MenuSeparator } from "./components/Menu";
 import { SearchField } from "./components/SearchField";
+import CommandPalette from "./components/CommandPalette";
 import ShortcutSheet from "./components/ShortcutSheet";
 import { Segmented, SegmentedPanel, SegmentedRoot } from "./components/Segmented";
 import { Toast, ToastProvider } from "./components/Toast";
 import { TooltipProvider } from "./components/Tooltip";
 import FavoritesPanel from "./FavoritesPanel";
+import type { FavoritesControls } from "./FavoritesPanel";
 import FilterMenu, { FilterMenuItems, hasFilters } from "./FilterMenu";
 import { noGlobalStatus, useGlobalShortcutSettings } from "./hooks/useGlobalShortcuts";
 import {
@@ -32,6 +34,7 @@ import { useAppearance } from "./hooks/useAppearance";
 import { useLanguage } from "./hooks/useLanguage";
 import { useNativeChrome } from "./hooks/useNativeChrome";
 import {
+  comboLabel,
   findShortcutLabel,
   isFindShortcut,
   isModShortcut,
@@ -63,7 +66,13 @@ import {
 import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
-import { useInstantsState, useManualServers, useSelectedServer } from "./storage";
+import { clearPersisted, useInstantsState, useManualServers, useRecentClipsState, useSelectedServer } from "./storage";
+import { pushRecent } from "./lib/palette";
+import type { PaletteCandidates, PaletteItem } from "./lib/palette";
+import { slotFor } from "./lib/slot";
+import { THEMES } from "./themes";
+import type { ColorMode } from "./themes";
+import { isLanguageId } from "./i18n/detect";
 import { useQuickAccessShortcut } from "./hooks/useQuickAccessShortcut";
 import useBotStatus from "./useBotStatus";
 import { usePresenceSettings, useReportPlaying, useReportPresenceSettings } from "./hooks/usePresence";
@@ -96,7 +105,7 @@ export default function App() {
   const appearance = useAppearance();
   const { theme, resolved, editing } = appearance;
 
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
   const os = usePlatform();
   const chrome = useChromeKind();
@@ -139,6 +148,9 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false);
   const [addServerOpen, setAddServerOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const favoritesControls = useRef<FavoritesControls | null>(null);
+  const [recents, setRecents] = useRecentClipsState([]);
   const [globalStatus, setGlobalStatus] = useState<ShortcutResult>(noGlobalStatus);
   const globalSettings = useGlobalShortcutSettings();
   const [favoritesNow, setFavoritesNow] = useState<NowPlaying | null>(null);
@@ -172,6 +184,15 @@ export default function App() {
     []
   );
   const nowPlaying = favoritesNow ?? exploreNow;
+  const playedName = favoritesNow?.name ?? null;
+
+  // What plays is remembered by name in the player and by url here: the palette's Recentes.
+  useEffect(() => {
+    const clip = playedName ? favorites.find(({ name }) => name === playedName) : undefined;
+    if (clip) setRecents((current) => (current[0] === clip.url ? current : pushRecent(current, clip.url)));
+    // Only a different clip starting is a new entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playedName]);
   useReportPlaying(
     nowPlaying ? { mode: nowPlaying.mode, name: nowPlaying.name ?? t("presence.someSound") } : null
   );
@@ -283,6 +304,27 @@ export default function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [editing, sheetOpen]);
+
+  // Cmd/Ctrl+K opens the command palette from any tab, the search field
+  // included; it is a dialog like the rest, so none of them may be open, and
+  // the shortcut again closes it.
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const mod = os === "mac" ? event.metaKey : event.ctrlKey;
+      if (!mod || event.altKey || event.shiftKey || event.key.toLowerCase() !== "k") return;
+
+      if (paletteOpen) {
+        event.preventDefault();
+        setPaletteOpen(false);
+      } else if (!(editing || addOpen || importOpen || addServerOpen || sheetOpen || overlayOpen())) {
+        event.preventDefault();
+        setPaletteOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [os, paletteOpen, editing, addOpen, importOpen, addServerOpen, sheetOpen]);
 
   // With no favourites there is nothing on Favoritos to search, so the field
   // is left out. The query is shared with Explorar, so one left behind would
@@ -534,10 +576,285 @@ export default function App() {
       ? t("favorites.organizeBlockedSearch")
       : null;
 
+  // ---- the command palette ----
+  // Every row runs what its own button, menu or card already runs; nothing
+  // here is a second implementation. Built only while it is open.
+  const mod = os === "mac" ? "⌘" : "Ctrl";
+  const savedMode = appearance.saved.mode;
+
+  function paletteCandidates(): PaletteCandidates {
+    const away = botStatus?.connected === false;
+    const anyPlaying = favoritesNow !== null;
+    const byUrl = new Map(favorites.map((clip) => [clip.url, clip]));
+
+    const sound = (clip: (typeof favorites)[number]): PaletteItem => ({
+      id: `sound:${clip.url}`,
+      kind: "sound",
+      title: clip.name,
+      sub: clip.key ? undefined : t("palette.noKey"),
+      glyph: clip.key,
+      slot: slotFor(clip.url),
+      keys:
+        globalSettings.enabled && globalSettings.modifier && clip.key
+          ? [comboLabel(os, globalSettings.modifier, clip.key)]
+          : undefined,
+      tag: away ? t("palette.onlyHere") : undefined,
+      tagTone: away ? "warn" : undefined,
+      dim: away || anyPlaying,
+      refused: away,
+      run: (secondary) => {
+        // The card's own checks: a sound it would refuse is refused here too.
+        const result = favoritesControls.current?.play(clip.url, secondary ? "local" : "discord");
+        if (result === "bot-away") showToast({ message: t("shortcuts.botAway") });
+        else if (result === "busy") showToast({ message: t("shortcuts.busy") });
+      }
+    });
+
+    const sounds = organizing ? [] : favorites.map(sound);
+    const recentSounds = organizing
+      ? []
+      : (recents.length > 0 ? recents.flatMap((url) => (byUrl.has(url) ? [byUrl.get(url)!] : [])) : favorites.slice(0, 3)).map(sound);
+
+    const action = (
+      id: string,
+      title: string,
+      icon: string,
+      sub: string,
+      keywords: string,
+      run: () => void,
+      keys?: string[]
+    ): PaletteItem => ({ id: `action:${id}`, kind: "action", title, icon, sub, keywords, keys, run });
+
+    const actions: PaletteItem[] = [
+      ...(organizing
+        ? [action("done", t("palette.organizeDone"), "check", t("palette.organizeDoneSub"), "concluir organizar terminar", () => setOrganizing(false))]
+        : []),
+      ...(!organizing
+        ? [action("add", t("palette.add"), "plus", t("app.tabFavorites"), "adicionar novo som favorito add", () => { setTab("favorites"); setAddOpen(true); }, [mod, "N"])]
+        : []),
+      ...(favorites.length > 0 && !organizing
+        ? [action("organize", t("favorites.organize"), "reorder", organizeBlockedReason ?? t("palette.organizeSub"), "organizar ordenar teclas reordenar organize", () => {
+            if (organizeBlockedReason) return showToast({ message: organizeBlockedReason });
+            setTab("favorites");
+            setOrganizing(true);
+          })]
+        : []),
+      tab === "explore"
+        ? action("favorites", t("palette.goFavorites"), "star", t("palette.tab"), "favoritos aba favorites", () => setTab("favorites"), [mod, "1"])
+        : action("explore", t("palette.goExplore"), "compass", t("palette.tab"), "explorar catalogo aba explore", () => setTab("explore"), [mod, "2"]),
+      action("settings", t("palette.openSettings"), "sliders", t("palette.openSettingsSub"), "configuracoes ajustes preferencias settings", () => openSettings(), [mod, ","]),
+      ...(showSearch
+        ? [action("find", t("palette.find"), "search", t("palette.findSub"), "buscar procurar busca search find", () => {
+            // After the palette has given focus back.
+            setTimeout(() => {
+              searchRef.current?.focus();
+              searchRef.current?.select();
+            }, 50);
+          }, [mod, "F"])]
+        : []),
+      action("import", t("app.import"), "upload", t("settings.sections.data"), "importar backup restaurar import", () => setImportOpen(true)),
+      action("export", t("app.export"), "download", t("settings.sections.data"), "exportar backup salvar export", () => exportToJSON()),
+      action("sheet", t("shortcuts.sheet.title"), "keyboard", t("menu.help.title"), "atalhos teclas lista ajuda shortcuts", () => setSheetOpen(true), ["?"])
+    ];
+
+    const sectionRow = (id: SettingsSection, label: string, icon: string): PaletteItem => ({
+      id: `section:${id}`,
+      kind: "action",
+      title: t("palette.settingsTo", { section: label }),
+      sub: t(`palette.sections.${id}`),
+      keywords: `${t(`palette.sectionWords.${id}`)} configuracoes settings`,
+      icon,
+      tag: t("palette.settings"),
+      // The Aparência section has no pane: it is the door to the stage, here as in the sidebar.
+      run: () => (id === "appearance" ? appearance.begin() : openSettings(id))
+    });
+    const sectionName = (id: string) => t(`settings.sections.${id === "presence" ? (os === "mac" ? "menuBar" : "tray") : id}`);
+
+    const inline = (id: string, title: string, sub: string, keywords: string, icon: string, current: boolean, run: () => void, extra: Partial<PaletteItem> = {}): PaletteItem => ({
+      id: `setting:${id}`,
+      kind: "setting",
+      title,
+      sub,
+      keywords,
+      icon,
+      current,
+      run,
+      ...extra
+    });
+
+    const modeLabel: Record<ColorMode, string> = { auto: t("palette.modes.auto"), light: t("palette.modes.light"), dark: t("palette.modes.dark") };
+    const languageLabel = { auto: t("settings.general.langAuto"), "pt-BR": t("settings.general.langPt"), "en-US": t("settings.general.langEn") } as const;
+    const storedLanguage = (() => {
+      try {
+        const raw = window.localStorage.getItem("language");
+        return raw !== null && isLanguageId(JSON.parse(raw)) ? "stored" : "auto";
+      } catch {
+        return "auto";
+      }
+    })();
+
+    const settingRows: PaletteItem[] = [
+      {
+        id: "setting:palette",
+        kind: "drill",
+        title: t("palette.paletteRow"),
+        sub: t("palette.paletteSub"),
+        keywords: "paleta tema cores aparencia theme palette",
+        icon: "palette",
+        run: () => undefined
+      },
+      ...(["auto", "light", "dark"] as ColorMode[]).map((mode) =>
+        inline(
+          `mode:${mode}`,
+          t("palette.modeTitle", { mode: modeLabel[mode] }),
+          t("settings.sections.appearance"),
+          "modo escuro claro automatico dark light tema mode",
+          "moon",
+          savedMode === mode,
+          () => {
+            appearance.commit({ mode });
+            showToast({ message: t("palette.appliedMode", { mode: modeLabel[mode].toLowerCase() }) });
+          },
+          { preview: { mode } }
+        )
+      ),
+      ...(["auto", "pt-BR", "en-US"] as const).map((choice) =>
+        inline(
+          `language:${choice}`,
+          t("palette.languageTitle", { language: languageLabel[choice] }),
+          t("settings.sections.general"),
+          "idioma language linguagem",
+          "globe",
+          choice === "auto" ? storedLanguage === "auto" : storedLanguage === "stored" && language === choice,
+          () => {
+            if (choice === "auto") clearPersisted(["language"]);
+            else setLanguage(choice);
+            showToast({ message: t("palette.appliedLanguage", { language: languageLabel[choice] }) });
+          }
+        )
+      ),
+      ...(providers ?? []).map((candidate) =>
+        inline(
+          `site:${candidate.key}`,
+          t("palette.siteTitle", { site: candidate.name }),
+          t("settings.sections.explore"),
+          "site provedor explorar catalogo provider",
+          "compass",
+          provider?.key === candidate.key,
+          () => {
+            setProvider(candidate.key);
+            showToast({ message: t("palette.appliedSite", { site: candidate.name }) });
+          }
+        )
+      ),
+      ...(globalSettings.available
+        ? [
+            inline(
+              "globalKeys",
+              globalSettings.enabled ? t("palette.globalOff") : t("palette.globalOn"),
+              t("settings.sections.keys"),
+              "teclas globais atalhos fora do app ligar desligar global keys",
+              "keyboard",
+              false,
+              () => {
+                globalSettings.setEnabled(!globalSettings.enabled);
+                showToast({ message: globalSettings.enabled ? t("palette.globalOffToast") : t("palette.globalOnToast") });
+              }
+            )
+          ]
+        : [])
+    ];
+
+    const settings: PaletteItem[] = [
+      ...(["general", "appearance", "server", "explore", "keys", "presence", "data"] as SettingsSection[]).map((id) =>
+        sectionRow(id, sectionName(id), ({ general: "sliders", appearance: "palette", server: "server", explore: "compass", keys: "keyboard", presence: "sliders", data: "download" } as const)[id])
+      ),
+      ...settingRows
+    ];
+
+    const serverRows: PaletteItem[] = [
+      ...servers.map((server) =>
+        inline(
+          `server:${server.id}`,
+          t("palette.serverTitle", { address: formatApiUrl(server.apiUrl) }),
+          server.isLocal ? t("server.thisComputer") : server.manual ? t("settings.server.manual") : t("palette.onNetwork"),
+          `servidor trocar bot ${formatApiUrl(server.apiUrl)} server`,
+          "server",
+          server.apiUrl === activeUrl,
+          () => {
+            setSelectedServer(server.apiUrl);
+            showToast({ message: t("palette.appliedServer", { address: formatApiUrl(server.apiUrl) }) });
+          }
+        )
+      ),
+      inline("rescan", t("palette.rescan"), t("settings.sections.server"), "servidor procurar novamente descobrir refresh", "refresh", false, () => refreshDiscovery())
+    ];
+
+    return {
+      recents: recentSounds,
+      sounds,
+      // Favoritos' player is the one the palette can stop; Explorar's answers to Esc and the menu.
+      playing: favoritesNow
+        ? {
+            id: "stop",
+            kind: "stop",
+            title: t("palette.stop"),
+            sub: favoritesNow.name ? t("palette.stopSub", { name: favoritesNow.name }) : undefined,
+            keywords: "parar silenciar stop",
+            icon: "stop",
+            keys: ["esc"],
+            tag: t("palette.playingTag"),
+            run: () => void favoritesControls.current?.stop()
+          }
+        : undefined,
+      explore: (query) => ({
+        id: "explore",
+        kind: "explore",
+        title: t("palette.exploreRow", { query, site: provider?.name ?? DEFAULT_PROVIDER_NAME }),
+        sub: t("palette.exploreSub"),
+        icon: "compass",
+        run: () => {
+          setTab("explore");
+          clearTimeout(debounce.current);
+          setQuery(query);
+          setSearch(query);
+        }
+      }),
+      actions,
+      defaultActions: 4,
+      settings,
+      servers: serverRows
+    };
+  }
+
+  const noCandidates: PaletteCandidates = { recents: [], sounds: [], actions: [], defaultActions: 0, settings: [], servers: [] };
+
+  const themeRows: PaletteItem[] = THEMES.map((theme) => ({
+    id: `theme:${theme.id}`,
+    kind: "setting",
+    title: theme.name,
+    sub: theme.desc,
+    swatch: theme.id,
+    current: appearance.saved.theme === theme.id,
+    preview: { theme: theme.id },
+    run: () => {
+      appearance.commit({ theme: theme.id });
+      showToast({ message: t("palette.appliedTheme", { name: theme.name }) });
+    }
+  }));
+
+  const paletteStatus = !activeUrl
+    ? { tone: "warn" as const, text: t("server.none") }
+    : !healthy
+      ? { tone: "bad" as const, text: `${serverAddress} ${t("server.notResponding")}` }
+      : botStatus?.connected === false
+        ? { tone: "warn" as const, text: t("server.notInVoice") }
+        : { tone: "ok" as const, text: botLine(healthy, botStatus, t) ?? t("palette.serverOk") };
+
   // ---- the native menus ----
   // What the menu bar and the right-click menus need to know: only this
   // side does. Reported on change; labels follow the in-app language.
-  const dialogOpen = addOpen || importOpen || addServerOpen || sheetOpen || editing;
+  const dialogOpen = addOpen || importOpen || addServerOpen || sheetOpen || paletteOpen || editing;
   const regions = useMemo(
     () => regionOptions(language).map(({ value, label }) => ({ code: value, label })),
     [language]
@@ -584,6 +901,16 @@ export default function App() {
   };
 
   useMenuState(menuState);
+
+  // The palette's preview is the one draft useAppearance holds, without the shell.
+  const previewAppearance = (preview: Parameters<typeof appearance.preview>[0] | null) => {
+    if (preview === null) {
+      appearance.cancel();
+    } else {
+      appearance.beginPreview();
+      appearance.preview(preview);
+    }
+  };
 
   // Commands arrive as data and run the same handlers the buttons run. The
   // guards the old key handlers had (no tab switching behind a dialog, no
@@ -872,6 +1199,7 @@ export default function App() {
                     onPlayingChange={setFavoritesPlaying}
                     onPlaybackChange={reportFavorites}
                     active={tab === "favorites"}
+                    controlsRef={favoritesControls}
                     onGlobalStatus={setGlobalStatus}
                     onGlobalSetupFailed={(count) =>
                       showToast({
@@ -907,10 +1235,20 @@ export default function App() {
                 onThemeChange={(next) => appearance.preview({ theme: next })}
                 onModeChange={(next) => appearance.preview({ mode: next })}
                 onCancel={appearance.cancel}
-                onConfirm={appearance.commit}
+                onConfirm={() => appearance.commit()}
               />
             )}
           </SegmentedRoot>
+
+          {/* Always mounted, so a closing palette drops its preview; its rows are built only while it is open. */}
+          <CommandPalette
+            open={paletteOpen}
+            onOpenChange={setPaletteOpen}
+            candidates={paletteOpen ? paletteCandidates() : noCandidates}
+            themes={themeRows}
+            onPreview={previewAppearance}
+            status={paletteStatus}
+          />
 
           <ImportForm open={importOpen} onClose={() => setImportOpen(false)} />
 

@@ -90,3 +90,6 @@ export function resetSettings(): void {
 }
 
 export { clearPersisted };
+
+/** The last three clips played, newest first, by url: the command palette's "Recentes". Not a setting: Restaurar configurações leaves it. */
+export const useRecentClipsState = createPersistedState<string[]>("recentClips");
