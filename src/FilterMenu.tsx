@@ -5,7 +5,7 @@ import { Menu, MenuItem, MenuLabel, MenuSeparator } from "./components/Menu";
 import { DEFAULT_PROVIDER_KEY } from "./hooks/useProvider";
 import { isLanguageId } from "./i18n/detect";
 import { CheckIcon, FilterIcon } from "./icons";
-import { DEFAULT_REGION, REGIONS, regionLabel } from "./regions";
+import { DEFAULT_REGION, regionOptions } from "./regions";
 import type { Region } from "./regions";
 import type { ProviderInfo } from "./service";
 
@@ -44,13 +44,7 @@ export function FilterMenuItems(props: FilterMenuProps) {
   const { t, i18n } = useTranslation();
   const language = isLanguageId(i18n.language) ? i18n.language : "en-US";
 
-  const regions = useMemo(
-    () =>
-      REGIONS.map((value) => ({ value, label: regionLabel(value, language) })).sort((a, b) =>
-        a.label.localeCompare(b.label, language)
-      ),
-    [language]
-  );
+  const regions = useMemo(() => regionOptions(language), [language]);
 
   const showProviders = providers !== null && provider !== null;
 

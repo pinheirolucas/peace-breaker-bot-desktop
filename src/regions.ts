@@ -56,3 +56,10 @@ export function regionLabel(region: Region, language: LanguageId): string {
 
   return displayNames?.of(region.toUpperCase()) ?? region.toUpperCase();
 }
+
+/** Every region with its label in `language`, sorted by that label. */
+export function regionOptions(language: LanguageId): { value: Region; label: string }[] {
+  return REGIONS.map((value) => ({ value, label: regionLabel(value, language) })).sort((a, b) =>
+    a.label.localeCompare(b.label, language)
+  );
+}

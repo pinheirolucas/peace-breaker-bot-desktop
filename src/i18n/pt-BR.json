@@ -230,16 +230,29 @@
       "title": "Atalhos do teclado",
       "lede": "Funcionam em qualquer aba, desde que você não esteja digitando.",
       "yourSounds": "Seus sons · no Discord",
-      "shiftHint": "Shift + tecla toca só aqui.",
-      "unkeyed_one": "{{count}} som sem tecla",
-      "unkeyed_other": "{{count}} sons sem tecla",
       "setInOrganize": "Definir em Organizar",
       "inApp": "No app",
       "stop": "Parar o som",
       "find": "Buscar",
       "add": "Adicionar um som",
       "list": "Esta lista",
-      "close": "Fechar"
+      "close": "Fechar",
+      "legendDiscord": "toca no Discord",
+      "legendLocal": "toca só aqui",
+      "legendStop": "para",
+      "filter": "Filtrar atalhos",
+      "counts": "{{keyed}} com tecla · {{unkeyed}} sem",
+      "noneKeyed": "nenhum com tecla",
+      "noneBody": "Dê uma tecla aos sons que você usa toda hora e eles tocam sem o mouse, de qualquer aba.",
+      "groupPlay": "Tocar",
+      "groupNavigate": "Navegar",
+      "groupAdd": "Adicionar",
+      "groupApp": "O app",
+      "reload": "Recarregar a listagem",
+      "appearance": "Aparência",
+      "noMatches": "Nenhum atalho com “{{filter}}”",
+      "menuApp": "Peace Breaker Bot",
+      "legend": "Legenda"
     },
     "global": {
       "lede": "Com o app em foco, a tecla sozinha toca o som. Fora dele, use a tecla com o modificador.",
@@ -254,6 +267,104 @@
       "failedToast_one": "{{count}} atalho não funciona fora do app",
       "failedToast_other": "{{count}} atalhos não funcionam fora do app",
       "see": "Ver"
+    }
+  },
+  "menu": {
+    "app": {
+      "about": "Sobre o {{name}}",
+      "checkForUpdates": "Verificar atualizações…",
+      "appearance": "Aparência…",
+      "language": "Idioma",
+      "services": "Serviços",
+      "hide": "Ocultar {{name}}",
+      "hideOthers": "Ocultar outros",
+      "showAll": "Mostrar tudo",
+      "quit": "Encerrar {{name}}"
+    },
+    "file": {
+      "title": "Arquivo",
+      "add": "Adicionar instant…",
+      "addServer": "Adicionar servidor…",
+      "import": "Importar…",
+      "export": "Exportar…",
+      "close": "Fechar janela",
+      "quit": "Sair"
+    },
+    "edit": {
+      "title": "Editar",
+      "undo": "Desfazer",
+      "redo": "Refazer",
+      "cut": "Recortar",
+      "copy": "Copiar",
+      "paste": "Colar",
+      "selectAll": "Selecionar tudo"
+    },
+    "view": {
+      "title": "Visualizar",
+      "find": "Buscar",
+      "reload": "Recarregar listagem",
+      "site": "Site",
+      "region": "Região",
+      "resetFilters": "Restaurar padrão",
+      "fullscreen": "Tela cheia",
+      "devReload": "Recarregar (só em desenvolvimento)",
+      "devTools": "Ferramentas do desenvolvedor"
+    },
+    "playback": {
+      "title": "Reprodução",
+      "stop": "Parar reprodução",
+      "playFocused": "Tocar no cartão em foco",
+      "sendFocused": "Enviar cartão em foco ao Discord",
+      "globalKeys": "Teclas globais",
+      "globalModifier": "Modificador"
+    },
+    "server": {
+      "title": "Servidor",
+      "botAway": "Bot fora de um canal de voz",
+      "switch": "Trocar de servidor",
+      "copy": "Copiar endereço",
+      "copyAddress": "Copiar endereço do servidor",
+      "refresh": "Procurar novamente",
+      "add": "Adicionar servidor…"
+    },
+    "window": {
+      "title": "Janela",
+      "minimize": "Minimizar",
+      "zoom": "Zoom",
+      "front": "Trazer tudo para a frente"
+    },
+    "help": {
+      "title": "Ajuda",
+      "shortcuts": "Atalhos de teclado…",
+      "repo": "Repositório no GitHub",
+      "report": "Relatar um problema"
+    },
+    "card": {
+      "play": "Tocar aqui",
+      "playAgain": "Tocar de novo",
+      "discord": "Enviar ao Discord",
+      "stop": "Parar",
+      "stopDiscord": "Parar no Discord",
+      "botAway": "Bot fora de um canal de voz",
+      "copyLink": "Copiar link do áudio",
+      "open": "Abrir no site",
+      "openIn": "Abrir em {{provider}}",
+      "rename": "Renomear…",
+      "setKey": "Definir tecla…",
+      "moveStart": "Mover para o início",
+      "moveEnd": "Mover para o fim",
+      "remove": "Remover dos favoritos",
+      "addFavorite": "Adicionar aos favoritos",
+      "removeFavorite": "Remover dos favoritos"
+    },
+    "grid": {
+      "add": "Adicionar instant…",
+      "organize": "Organizar favoritos"
+    },
+    "row": {
+      "use": "Usar este servidor",
+      "test": "Testar conexão",
+      "remove": "Remover servidor"
     }
   }
 }

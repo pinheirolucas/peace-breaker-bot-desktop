@@ -1,3 +1,4 @@
+import type { CardContext, MenuCommand, MenuState } from "../../electron/menuState";
 import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
 import { isPlatformId } from "../themes";
 import type { PlatformId } from "../themes";
@@ -31,6 +32,15 @@ declare global {
       modifiers: GlobalModifier[];
       setGlobal: (request: ShortcutRequest) => Promise<ShortcutResult>;
       onFired: (listener: (key: string) => void) => () => void;
+    };
+    instantsMenu?: {
+      setState: (state: MenuState) => void;
+      onCommand: (listener: (command: MenuCommand) => void) => () => void;
+      cardContext: (context: CardContext) => void;
+      gridContext: () => void;
+      serverContext: () => void;
+      serverRowContext: (id: string) => void;
+      selectionContext: () => void;
     };
     instantsUpdates?: {
       onAvailable: (listener: (version: string) => void) => () => void;
@@ -147,6 +157,14 @@ export function comboLabel(os: PlatformId, modifier: GlobalModifier, key: string
 
   const names = { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Cmd", super: "Super" } as const;
   return [...parts.map((part) => names[part]), upper].join("+");
+}
+
+/** A combo as separate keycaps: ["⌃", "⌥", "V"] on macOS, ["Ctrl", "Alt", "Shift", "V"] elsewhere. */
+export function comboParts(os: PlatformId, modifier: GlobalModifier, key: string): string[] {
+  const parts = modifier.split("-") as (keyof typeof macGlyphs)[];
+  const names = { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Cmd", super: "Super" } as const;
+  const labels = os === "mac" ? parts.map((part) => macGlyphs[part]).filter(Boolean) : parts.map((part) => names[part]);
+  return [...labels, key.toUpperCase()];
 }
 
 /** Cmd + key on macOS, Ctrl + key elsewhere — with no Alt or Shift, so it

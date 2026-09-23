@@ -66,3 +66,14 @@ export function isShortcutRequest(x: unknown, platform: string): x is ShortcutRe
     new Set(keys).size === keys.length
   );
 }
+
+const macGlyphs = { ctrl: "⌃", alt: "⌥", shift: "⇧", cmd: "⌘", super: "" } as const;
+const names = { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Cmd", super: "Super" } as const;
+
+/** A preset's own name: "⌃⌥" on macOS, "Ctrl+Alt+Shift" elsewhere. */
+export function modifierLabel(platform: string, modifier: GlobalModifier): string {
+  const parts = modifier.split("-") as (keyof typeof macGlyphs)[];
+  return platform === "darwin"
+    ? parts.map((part) => macGlyphs[part]).join("")
+    : parts.map((part) => names[part]).join("+");
+}

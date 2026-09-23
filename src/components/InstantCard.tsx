@@ -1,7 +1,9 @@
 import { useId } from "react";
-import type { ButtonHTMLAttributes, CSSProperties, ReactNode, Ref } from "react";
+import type { ButtonHTMLAttributes, CSSProperties, MouseEvent, ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { GripIcon, KeyboardIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
+import { menuBridge } from "../hooks/useMenuBridge";
+import { overlayOpen } from "../lib/clipKeys";
 import { slotFor } from "../lib/slot";
 import { wavePath } from "../lib/wave";
 import type { BotStatus } from "../service";
@@ -43,6 +45,17 @@ export interface OrganizeProps {
   style?: CSSProperties;
 }
 
+/** What the native right-click menu needs beyond the card's own state. */
+export interface CardMenuInfo {
+  surface: "favorites" | "explore";
+  /** 0-based, in the whole list. */
+  index: number;
+  total: number;
+  /** Explorar: already a favourite. */
+  favorite: boolean;
+  providerName: string;
+}
+
 export interface InstantCardProps {
   instant: Instant;
   playback: Playback;
@@ -59,6 +72,8 @@ export interface InstantCardProps {
   trail: CardAction;
   /** Set while the panel is in Organizar. */
   organize?: OrganizeProps;
+  /** Absent, the card has no right-click menu. */
+  menu?: CardMenuInfo;
   /** Favoritos only: the look the card briefly takes when its key is pressed or refused. */
   shortcut?: { flash?: "press" | "refuse" };
 }
@@ -104,6 +119,7 @@ export default function InstantCard({
   onStop,
   trail,
   organize,
+  menu,
   shortcut
 }: InstantCardProps) {
   const { t } = useTranslation();
@@ -116,8 +132,41 @@ export default function InstantCard({
   const showKeycap = Boolean(clipKey) && (organize ? true : !state.live);
   const showEmptyKeycap = !clipKey && Boolean(organize) && !organize?.drag;
 
+  // The menu is built by the main process, which cannot tell which card was
+  // hit: this sends cardState's own answers, so it never offers what a
+  // button here would refuse.
+  function handleContextMenu(event: MouseEvent<HTMLElement>) {
+    const bridge = menuBridge();
+    if (!bridge || !menu || dragging) return;
+
+    event.preventDefault();
+    if (overlayOpen()) return;
+
+    bridge.cardContext({
+      surface: menu.surface,
+      url: instant.url,
+      name: instant.name,
+      playback,
+      state: {
+        playDisabled: state.playDisabled,
+        discordDisabled: state.discordDisabled,
+        botGated: state.botGated,
+        stopDisabled: state.stopDisabled,
+        trailDisabled: state.trailDisabled
+      },
+      key: clipKey ?? null,
+      organizing: Boolean(organize),
+      favorite: menu.favorite,
+      providerName: menu.providerName,
+      index: menu.index,
+      total: menu.total,
+      width: event.currentTarget.offsetWidth
+    });
+  }
+
   return (
     <article
+      onContextMenu={handleContextMenu}
       ref={organize?.rootRef}
       style={organize?.style}
       className={`pad ${slotFor(instant.url)}`}
@@ -177,6 +226,7 @@ export default function InstantCard({
             type="button"
             className="phit"
             title={t("card.play")}
+            data-act="play"
             aria-keyshortcuts={
               clipKey ? `${clipKey.toUpperCase()} Shift+${clipKey.toUpperCase()}` : undefined
             }
@@ -234,6 +284,7 @@ export default function InstantCard({
               className="pb"
               aria-label={discordLabel}
               title={discordLabel}
+              data-act="discord"
               disabled={state.discordDisabled}
               onClick={() => onPlayOnDiscord(instant)}
             >

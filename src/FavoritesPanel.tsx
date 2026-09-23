@@ -31,6 +31,7 @@ import SortableInstantCard from "./components/SortableInstantCard";
 import { useClipShortcuts } from "./hooks/useClipShortcuts";
 import type { ClipMode } from "./hooks/useClipShortcuts";
 import { useGlobalShortcuts, useGlobalShortcutSettings } from "./hooks/useGlobalShortcuts";
+import { useMenuCommands } from "./hooks/useMenuBridge";
 import { comboLabel, usePlatform } from "./hooks/usePlatform";
 import { assignKey } from "./lib/clipKeys";
 import type { ShortcutResult } from "../electron/shortcuts";
@@ -69,6 +70,8 @@ export interface FavoritesPanelProps {
   onOrganizingChange: (organizing: boolean) => void;
   /** Whether a clip is playing — the tools row blocks Organizar while one is. */
   onPlayingChange: (playing: boolean) => void;
+  /** Which path is playing, for the menu bar's Parar reprodução. */
+  onPlaybackChange?: (playback: "local" | "discord" | null) => void;
   /** False while hidden on Explorar, so it doesn't overwrite that tab's summary. Defaults to true. */
   active?: boolean;
   onGlobalStatus?: (status: ShortcutResult) => void;
@@ -92,6 +95,7 @@ export default function FavoritesPanel({
   organizing,
   onOrganizingChange,
   onPlayingChange,
+  onPlaybackChange,
   active = true,
   onGlobalStatus,
   onGlobalSetupFailed
@@ -354,6 +358,71 @@ export default function FavoritesPanel({
     onPlayingChange(anyPlaying);
   }, [anyPlaying, onPlayingChange]);
 
+  const playbackNow = isDiscordPlaying ? "discord" : isAudioPlaying ? "local" : null;
+
+  useEffect(() => {
+    onPlaybackChange?.(playbackNow);
+  }, [playbackNow, onPlaybackChange]);
+
+  // The right-click menu and the menu bar run the same handlers the buttons
+  // do, re-checked against cardState now: the menu may have been open while
+  // playback changed underneath it.
+  useMenuCommands((command) => {
+    if (command.type === "stop") {
+      if (anyPlaying) void handleStop();
+      return;
+    }
+
+    if (command.type !== "card" || command.surface !== "favorites") return;
+
+    const index = instants.findIndex(({ url }) => url === command.url);
+    if (index < 0) return;
+
+    const instant = instants[index];
+    const playback = organizing ? "idle" : playbackOf(instant);
+    const state = cardState(playback, anyPlaying && playback === "idle", botStatus);
+
+    switch (command.action) {
+      case "play":
+        if (!state.playDisabled) void handlePlay(instant);
+        break;
+      case "discord":
+        if (!state.discordDisabled) void handlePlayOnDiscord(instant);
+        break;
+      case "stop":
+        void handleStop();
+        break;
+      case "rename":
+        setRenaming({ instant, cardWidth: command.width });
+        break;
+      case "set-key":
+        setKeying(instant);
+        break;
+      case "move-start":
+      case "move-end": {
+        const to = command.action === "move-start" ? 0 : instants.length - 1;
+        setInstants((current) => {
+          const from = current.findIndex(({ url }) => url === command.url);
+          return from < 0 ? current : arrayMove(current, from, to);
+        });
+        break;
+      }
+      case "remove":
+        if (!state.trailDisabled) handleRemove(instant);
+        break;
+    }
+  });
+
+  function cardMenu(instant: Instant) {
+    return {
+      surface: "favorites" as const,
+      index: instants.indexOf(instant),
+      total: instants.length,
+      favorite: true,
+      providerName: ""
+    };
+  }
+
   function handleRename(name: string) {
     if (!renaming) return;
 
@@ -448,6 +517,7 @@ export default function FavoritesPanel({
                 onPlay={handlePlay}
                 onPlayOnDiscord={handlePlayOnDiscord}
                 onStop={handleStop}
+                menu={cardMenu(instant)}
                 organize={{
                   position: index + 1,
                   total,
@@ -513,6 +583,7 @@ export default function FavoritesPanel({
               onPlay={handlePlay}
               onPlayOnDiscord={handlePlayOnDiscord}
               onStop={handleStop}
+              menu={cardMenu(instant)}
               shortcut={{ flash: flash?.url === instant.url ? flash.kind : undefined }}
               trail={{
                 label: t("favorites.remove"),
