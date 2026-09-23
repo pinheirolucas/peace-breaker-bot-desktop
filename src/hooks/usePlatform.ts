@@ -1,3 +1,4 @@
+import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
 import { isPlatformId } from "../themes";
 import type { PlatformId } from "../themes";
 
@@ -25,6 +26,11 @@ declare global {
     instantsDiscovery?: {
       onServers: (listener: (servers: unknown[]) => void) => () => void;
       refresh: () => void;
+    };
+    instantsShortcuts?: {
+      modifiers: GlobalModifier[];
+      setGlobal: (request: ShortcutRequest) => Promise<ShortcutResult>;
+      onFired: (listener: (key: string) => void) => () => void;
     };
     instantsUpdates?: {
       onAvailable: (listener: (version: string) => void) => () => void;
@@ -126,6 +132,22 @@ export function findShortcutLabel(os: PlatformId): string {
 /** The label for a Cmd/Ctrl + key shortcut: "⌘1" on macOS, "Ctrl+1" elsewhere. */
 export function shortcutLabel(os: PlatformId, key: string): string {
   return os === "mac" ? `⌘${key.toUpperCase()}` : `Ctrl+${key.toUpperCase()}`;
+}
+
+const macGlyphs = { ctrl: "⌃", alt: "⌥", shift: "⇧", cmd: "⌘", super: "" } as const;
+
+/** A global combo as a person reads it: "⌃⌥V" on macOS, "Ctrl+Alt+Shift+V"
+ *  elsewhere. The multi-modifier counterpart of shortcutLabel. */
+export function comboLabel(os: PlatformId, modifier: GlobalModifier, key: string): string {
+  const parts = modifier.split("-") as (keyof typeof macGlyphs)[];
+  const upper = key.toUpperCase();
+
+  if (os === "mac") {
+    return parts.map((part) => macGlyphs[part]).join("") + upper;
+  }
+
+  const names = { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Cmd", super: "Super" } as const;
+  return [...parts.map((part) => names[part]), upper].join("+");
 }
 
 /** Cmd + key on macOS, Ctrl + key elsewhere — with no Alt or Shift, so it

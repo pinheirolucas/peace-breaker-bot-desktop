@@ -1,4 +1,5 @@
 import type { Server } from "../electron/discovery";
+import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
 import { createPersistedState } from "./lib/persisted";
 import type { Region } from "./regions";
@@ -7,6 +8,9 @@ import type { ColorMode, ThemeId } from "./themes";
 export interface Instant {
   name: string;
   url: string;
+  /** One letter or digit that plays this sound. Absent means none, so every
+   *  stored list and old backup loads unchanged. See lib/clipKeys. */
+  key?: string;
 }
 
 export const useInstantsState = createPersistedState<Instant[]>("instants");
@@ -33,3 +37,13 @@ export const useRegionState = createPersistedState<Region>("region");
 export const useProviderState = createPersistedState<string>("provider");
 
 export const useLanguageState = createPersistedState<LanguageId>("language");
+
+export interface GlobalShortcutsSetting {
+  enabled: boolean;
+  /** Null resolves to the OS default in useGlobalShortcutSettings, so a
+   *  backup moved to another OS never holds a modifier it doesn't have. */
+  modifier: GlobalModifier | null;
+}
+
+/** Keys that work while another app has focus. Off by default. */
+export const useGlobalShortcutsState = createPersistedState<GlobalShortcutsSetting>("globalShortcuts");

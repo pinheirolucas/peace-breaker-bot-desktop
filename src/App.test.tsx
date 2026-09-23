@@ -518,6 +518,33 @@ describe("shell", () => {
     await waitFor(() => expect(document.title).toMatch(/^Explorar/));
   });
 
+  it("keeps Favoritos mounted but hidden on Explorar, so its keys keep working", async () => {
+    localStorage.setItem(
+      "instants",
+      JSON.stringify([{ name: "Vish", url: "https://www.myinstants.com/v/", key: "v" }])
+    );
+    render(<App />);
+
+    await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
+
+    expect(screen.getAllByRole("tabpanel", { hidden: true })[0]).not.toBeVisible();
+    await waitFor(() => expect(document.title).toMatch(/^Explorar/));
+  });
+
+  it("opens the keyboard sheet with ? and closes it with ? again", async () => {
+    localStorage.setItem(
+      "instants",
+      JSON.stringify([{ name: "Vish", url: "https://www.myinstants.com/v/", key: "v" }])
+    );
+    render(<App />);
+
+    await userEvent.keyboard("?");
+    expect(await screen.findByRole("dialog", { name: "Atalhos do teclado" })).toBeInTheDocument();
+
+    await userEvent.keyboard("?");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
   it("says how many favourites the search covers, and which site on Explorar", async () => {
     localStorage.setItem(
       "instants",
@@ -1018,7 +1045,7 @@ describe("Organizar", () => {
     expect(screen.getByRole("button", { name: "Concluir" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Adicionar" })).toBeNull();
     expect(screen.queryByRole("searchbox")).toBeNull();
-    expect(screen.getByText("Arraste para reordenar", { selector: ".toolbar__hint" })).toBeInTheDocument();
+    expect(screen.getByText("Arraste para reordenar · ⌨ define a tecla", { selector: ".toolbar__hint" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Concluir" }));
 

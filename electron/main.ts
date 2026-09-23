@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeTheme, net, shell } from "electron";
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeTheme, net, shell } from "electron";
 import type { MenuItemConstructorOptions } from "electron";
 import { createWriteStream } from "node:fs";
 import os from "node:os";
@@ -25,6 +25,13 @@ import {
   titleBarHeight,
   windowChromeFor
 } from "./chrome";
+import {
+  acceleratorFor,
+  isShortcutRequest,
+  shortcutsFiredChannel,
+  shortcutsSetChannel
+} from "./shortcuts";
+import type { ShortcutResult } from "./shortcuts";
 import {
   checkForUpdatesChannel,
   checkForUpdatesLabel,
@@ -62,6 +69,66 @@ let macUpdateVersion: string | null = null;
 // stays exactly as silent on "no update"/"check failed" as it always was —
 // only a check a person actually asked for gets an answer either way.
 let manualCheckPending = false;
+
+// Global shortcuts. Only the accelerators this process registered are ever
+// released, so a combo another app owns is never touched.
+let registeredAccelerators: string[] = [];
+let globalKeysEnabled = false;
+let isQuitting = false;
+const lastFired = new Map<string, number>();
+
+// Holding a combo can auto-repeat on some platforms.
+const shortcutDebounceMs = 250;
+
+// Wayland gives an app no way to grab keys itself; Chromium can go through
+// the XDG GlobalShortcuts portal instead. Must be set before "ready".
+if (process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland") {
+  app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
+}
+
+function releaseGlobalShortcuts(): void {
+  registeredAccelerators.forEach((accelerator) => globalShortcut.unregister(accelerator));
+  registeredAccelerators = [];
+  lastFired.clear();
+}
+
+function registerGlobalShortcuts(modifier: Parameters<typeof acceleratorFor>[0], keys: string[]): ShortcutResult {
+  const result: ShortcutResult = { registered: [], failed: [] };
+  const wayland = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland";
+
+  for (const key of keys) {
+    const accelerator = acceleratorFor(modifier, key);
+    let ok = false;
+
+    try {
+      ok = globalShortcut.register(accelerator, () => {
+        const now = Date.now();
+        if (now - (lastFired.get(key) ?? 0) < shortcutDebounceMs) {
+          return;
+        }
+        lastFired.set(key, now);
+        sendToWindow(shortcutsFiredChannel, key);
+      });
+    } catch {
+      ok = false;
+    }
+
+    if (ok) {
+      registeredAccelerators.push(accelerator);
+      result.registered.push(key);
+    } else {
+      result.failed.push({ key, reason: "in-use" });
+    }
+  }
+
+  // Nothing registered on Wayland means there is no portal to ask, not that
+  // every combo happens to be taken.
+  if (wayland && keys.length > 0 && result.registered.length === 0) {
+    result.failed = result.failed.map(({ key }) => ({ key, reason: "unsupported" as const }));
+  }
+
+  return result;
+}
 
 function sendToWindow(channel: string, payload?: unknown): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -321,8 +388,22 @@ function createWindow(): void {
 
   startDiscovery();
 
+  // The renderer is what plays, so a global key works exactly as long as the
+  // window exists. On macOS the app outlives its last window, which would
+  // leave keys registered with nothing to answer them: while they are on,
+  // close hides the window instead, and the Dock icon brings it back.
+  mainWindow.on("close", (event) => {
+    if (process.platform === "darwin" && globalKeysEnabled && !isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   mainWindow.on("closed", () => {
     stopDiscovery();
+    // The renderer that answers presses is gone.
+    releaseGlobalShortcuts();
+    globalKeysEnabled = false;
     mainWindow = null;
   });
 }
@@ -385,6 +466,45 @@ ipcMain.on(chromeChannel, (event, colors: unknown) => {
   }
 });
 
+ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult => {
+  const empty: ShortcutResult = { registered: [], failed: [] };
+
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) {
+    return empty;
+  }
+
+  if (!isShortcutRequest(request, process.platform)) {
+    return empty;
+  }
+
+  releaseGlobalShortcuts();
+  globalKeysEnabled = request.enabled;
+
+  return request.enabled ? registerGlobalShortcuts(request.modifier, request.keys) : empty;
+});
+
+// A second launch would get "in use" for every key, which is accurate but
+// baffling. Take the lock, and hand the second launch's focus to this one.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
+app.on("before-quit", () => {
+  isQuitting = true;
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
+});
+
 app.on("ready", () => {
   createWindow();
   registerUpdateListeners();
@@ -407,5 +527,7 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (mainWindow === null) {
     createWindow();
+  } else if (!mainWindow.isVisible()) {
+    mainWindow.show();
   }
 });

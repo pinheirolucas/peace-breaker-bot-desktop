@@ -6,7 +6,7 @@ import InstantCard from "./InstantCard";
 import type { InstantCardProps, OrganizeProps } from "./InstantCard";
 
 export interface SortableInstantCardProps extends Omit<InstantCardProps, "organize"> {
-  organize: Pick<OrganizeProps, "position" | "total" | "onRename">;
+  organize: Pick<OrganizeProps, "position" | "total" | "onRename" | "onSetKey">;
 }
 
 /**

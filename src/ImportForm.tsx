@@ -7,6 +7,7 @@ import { DropZone } from "./components/DropZone";
 import type { DropState } from "./components/DropZone";
 import { RadioGroup } from "./components/Radio";
 import { Switch } from "./components/Switch";
+import { mergeImported, sanitizeKeys } from "./lib/clipKeys";
 import { useInstantsState } from "./storage";
 import type { Instant } from "./storage";
 import "./forms.css";
@@ -107,12 +108,13 @@ export default function ImportForm({ open, onClose }: ImportFormProps) {
     }
 
     if (strategy === "replace") {
-      setInstants(incoming);
+      // The file's keys come with it, minus any that repeat.
+      setInstants(sanitizeKeys(incoming));
     } else {
       // Keep what is stored; add only urls not already there, so a stored
-      // name wins over an incoming one for the same clip.
-      const saved = instants.map(({ url }) => url);
-      setInstants([...instants, ...incoming.filter(({ url }) => !saved.includes(url))]);
+      // name (and key) wins over an incoming one for the same clip. An
+      // imported key that collides with a stored one is dropped.
+      setInstants(mergeImported(instants, incoming));
     }
 
     onClose();

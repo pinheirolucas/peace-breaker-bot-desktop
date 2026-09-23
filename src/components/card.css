@@ -152,6 +152,66 @@
   pointer-events: none;
 }
 
+/* The key that plays this sound. Same corner as the chip and the grip, and
+ * only one of them is ever there. --ink at 14% like the footer buttons, so it
+ * resolves on all six slots of every palette. Decoration: the key reaches
+ * assistive tech through aria-keyshortcuts on the clip button. */
+.kc {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: var(--rbtn);
+  background: color-mix(in oklch, var(--ink) 14%, transparent);
+  color: var(--ink);
+  pointer-events: none;
+}
+.pad[data-organize="true"] .kc {
+  right: 40px;
+}
+/* No key yet, in Organizar: a dashed slot, so it is clear at a glance which
+ * sounds still have none. An inset shadow cannot dash, so an outline does. */
+.kc[data-empty] {
+  background: transparent;
+  outline: 1.5px dashed color-mix(in oklch, var(--ink) 45%, transparent);
+  outline-offset: -1.5px;
+}
+/* Key down: the pressed look a click gives, and the keycap inverts. It is the
+ * only feedback that the key registered before audio arrives. */
+.pad[data-flash="press"] {
+  filter: brightness(0.93);
+  transform: translateY(1px) scale(0.985);
+  box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--ink) 48%, transparent);
+}
+.pad[data-flash="press"] .kc {
+  background: var(--ink);
+  color: var(--fill);
+}
+/* Refused: the bot plays one clip at a time, or is out of its channel. */
+.pad[data-flash="refuse"] {
+  animation: shake 320ms ease-in-out;
+}
+@keyframes shake {
+  0%, 100% { translate: 0; }
+  20% { translate: -5px; }
+  40% { translate: 5px; }
+  60% { translate: -3px; }
+  80% { translate: 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pad[data-flash="refuse"] {
+    animation: none;
+  }
+}
+
 /* Another clip is playing: this one steps back. */
 .pad[data-dim="true"] {
   opacity: 0.45;

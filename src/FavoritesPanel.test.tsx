@@ -438,7 +438,7 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
     it("reports what the count line should say", () => {
       const { onSummary } = renderPanel({ organizing: true });
 
-      expect(onSummary).toHaveBeenLastCalledWith("Arraste para reordenar");
+      expect(onSummary).toHaveBeenLastCalledWith("Arraste para reordenar · ⌨ define a tecla");
     });
 
     it("shows every favourite even when a search is set", () => {

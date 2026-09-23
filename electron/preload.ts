@@ -4,6 +4,12 @@ import type { Server } from "./discovery";
 import { chromeChannel, chromeKind, desktopFor } from "./chrome";
 import type { ChromeColors } from "./chrome";
 import {
+  modifiersFor,
+  shortcutsFiredChannel,
+  shortcutsSetChannel
+} from "./shortcuts";
+import type { ShortcutRequest, ShortcutResult } from "./shortcuts";
+import {
   checkForUpdatesChannel,
   openReleasePageChannel,
   openUpdateChannel,
@@ -154,4 +160,27 @@ contextBridge.exposeInMainWorld("instantsPlatform", {
   chrome: chromeKind(process.platform, desktop),
   // Validated again in the main process; the renderer is not trusted.
   setChrome: (colors: ChromeColors) => ipcRenderer.send(chromeChannel, colors)
+});
+
+// Keys that work while another app has focus. Main validates the request
+// again; all the renderer can ask for is up to 36 combos from a fixed preset.
+contextBridge.exposeInMainWorld("instantsShortcuts", {
+  // For the picker, default first.
+  modifiers: modifiersFor(process.platform),
+  setGlobal: (request: ShortcutRequest): Promise<ShortcutResult> =>
+    ipcRenderer.invoke(shortcutsSetChannel, request),
+  onFired: (listener: (key: string) => void) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    const handler = (_event: unknown, key: unknown) => {
+      if (typeof key === "string") {
+        listener(key);
+      }
+    };
+
+    ipcRenderer.on(shortcutsFiredChannel, handler);
+    return () => ipcRenderer.removeListener(shortcutsFiredChannel, handler);
+  }
 });
