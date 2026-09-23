@@ -136,8 +136,7 @@ export function shortcutLabel(os: PlatformId, key: string): string {
 
 const macGlyphs = { ctrl: "⌃", alt: "⌥", shift: "⇧", cmd: "⌘", super: "" } as const;
 
-/** A global combo as a person reads it: "⌃⌥V" on macOS, "Ctrl+Alt+Shift+V"
- *  elsewhere. The multi-modifier counterpart of shortcutLabel. */
+/** "⌃⌥V" on macOS, "Ctrl+Alt+Shift+V" elsewhere. */
 export function comboLabel(os: PlatformId, modifier: GlobalModifier, key: string): string {
   const parts = modifier.split("-") as (keyof typeof macGlyphs)[];
   const upper = key.toUpperCase();

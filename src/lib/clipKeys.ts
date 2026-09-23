@@ -1,8 +1,6 @@
 import type { Instant } from "../storage";
 
-/** A favourite's key: one letter or digit, lower case, as the keyboard
- *  prints it. Ç and punctuation are out — they move between layouts and
- *  would break a backup restored on another machine. */
+// Letters and digits only: punctuation and Ç move between layouts.
 const CLIP_KEY = /^[a-z0-9]$/;
 
 export function isClipKey(value: unknown): value is string {
@@ -15,12 +13,7 @@ interface KeyLike {
   shiftKey?: boolean;
 }
 
-/**
- * The clip key a keydown stands for, or null. Matched on `event.key` so the
- * keycap reads what the keyboard prints (ABNT2 and AZERTY alike). With Shift
- * a digit row key reports "!" rather than "1", so that one case falls back
- * to `event.code`.
- */
+/** The clip key a keydown stands for, or null. Uses `event.code` only for Shift + digit, where `key` is "!". */
 export function clipKeyFromEvent(event: KeyLike): string | null {
   const key = event.key.toLowerCase();
   if (isClipKey(key)) {
@@ -31,10 +24,7 @@ export function clipKeyFromEvent(event: KeyLike): string | null {
   return event.shiftKey && digit ? digit[1] : null;
 }
 
-/**
- * One key per sound and one sound per key. Returns the new list and the
- * sound the key was taken from, for the undo toast. A null key clears it.
- */
+/** Assigns a key (null clears it), taking it from any other sound. Returns that sound as `displaced`. */
 export function assignKey(
   instants: Instant[],
   url: string,
@@ -61,8 +51,7 @@ export function assignKey(
   };
 }
 
-/** Drops keys that are not valid or repeat one already seen, so a hand-edited
- *  or older backup can never give two sounds the same key. */
+/** Drops invalid keys and duplicates, including any in `taken`. */
 export function sanitizeKeys(instants: Instant[], taken: Iterable<string> = []): Instant[] {
   const seen = new Set(taken);
 
@@ -76,8 +65,7 @@ export function sanitizeKeys(instants: Instant[], taken: Iterable<string> = []):
   });
 }
 
-/** "Manter os meus": a stored favourite wins, and an imported key that
- *  collides with a stored one is dropped. */
+/** Adds new urls only; a stored favourite wins, and a colliding imported key is dropped. */
 export function mergeImported(stored: Instant[], incoming: Instant[]): Instant[] {
   const urls = new Set(stored.map(({ url }) => url));
   const fresh = incoming.filter(({ url }) => !urls.has(url));
@@ -86,7 +74,7 @@ export function mergeImported(stored: Instant[], incoming: Instant[]): Instant[]
   return [...stored, ...sanitizeKeys(fresh, used)];
 }
 
-/** Whether a keydown target is somewhere a letter means something else. */
+/** Whether the target is a text field. */
 export function isEditableTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el || typeof el.tagName !== "string") return false;
@@ -99,7 +87,7 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
-/** A Radix dialog or menu is open. Closed ones unmount, so presence is enough. */
+/** Whether a dialog or menu is open. */
 export function overlayOpen(): boolean {
   return document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]') !== null;
 }

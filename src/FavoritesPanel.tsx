@@ -69,20 +69,14 @@ export interface FavoritesPanelProps {
   onOrganizingChange: (organizing: boolean) => void;
   /** Whether a clip is playing — the tools row blocks Organizar while one is. */
   onPlayingChange: (playing: boolean) => void;
-  /** The panel stays mounted on Explorar so its keys keep working, and must
-   *  not then write its summary over the other tab's. Defaults to true. */
+  /** False while hidden on Explorar, so it doesn't overwrite that tab's summary. Defaults to true. */
   active?: boolean;
-  /** Where the last global-key registration landed, for the sheet. */
   onGlobalStatus?: (status: ShortcutResult) => void;
-  /** Turning global keys on left some unregistered. */
   onGlobalSetupFailed?: (count: number) => void;
 }
 
-/** How long a card wears its pressed or refused look. */
 const FLASH_MS = { press: 120, refuse: 320 } as const;
 
-/** Native notifications for a refusal while another app has focus: at most
- *  one per 30s, so a held combo is not a burst. */
 const NOTIFY_EVERY_MS = 30_000;
 
 export default function FavoritesPanel({
@@ -231,12 +225,6 @@ export default function FavoritesPanel({
 
   useEffect(() => () => clearTimeout(flashTimer.current), []);
 
-  /**
-   * What a key press does — the one code path both the window's keydown and
-   * the OS's global callback share. It asks cardState what a click would be
-   * allowed to do, so a key can never do what the card's own buttons refuse.
-   * Returns why nothing played, so the caller can decide how loudly to say so.
-   */
   function triggerClip(key: string, mode: ClipMode): "played" | "none" | "busy" | "bot-away" {
     const instant = instants.find((item) => item.key === key);
     if (!instant) return "none";
@@ -247,7 +235,7 @@ export default function FavoritesPanel({
 
     if (refused) {
       flashCard(instant.url, "refuse");
-      // Only confirmed out of the channel: an unknown status is never "out".
+      // Unknown status is never "out of the channel".
       if (mode === "discord" && state.botGated) {
         setAnnouncement(t("shortcuts.botAway"));
         return "bot-away";
@@ -279,8 +267,6 @@ export default function FavoritesPanel({
     return true;
   }
 
-  // Window keys: not in Organizar, where a letter typed must never fire a
-  // sound. Every other guard is inside the hook.
   useClipShortcuts(!organizing, {
     trigger: (key, mode) => {
       if (triggerClip(key, mode) === "bot-away") {
@@ -295,9 +281,7 @@ export default function FavoritesPanel({
     onFire: (key) => {
       if (triggerClip(key, "discord") !== "bot-away") return;
 
-      // Nothing to shake and no toast to see: only "bot not in a channel" is
-      // worth interrupting for. A clip already playing is refused silently —
-      // the person can hear it.
+      // Only "bot not in a channel" is worth a notification while unfocused.
       const now = Date.now();
       if (
         now - lastNotified.current >= NOTIFY_EVERY_MS &&
@@ -332,7 +316,6 @@ export default function FavoritesPanel({
         }),
         actionLabel: t("shortcuts.undo"),
         onAction: () => {
-          // Put both back exactly as they were.
           setInstants((current) =>
             current.map((item) =>
               item.url === target.url

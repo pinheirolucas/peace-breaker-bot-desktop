@@ -31,7 +31,7 @@ export interface OrganizeProps {
   /** Gets the card's rendered width, so the rename dialog can preview the
    *  card at the size it really is in the grid. */
   onRename: (cardWidth: number) => void;
-  /** Opens the key dialog. Absent (the rename preview) leaves the button out. */
+  /** Opens the key dialog; absent leaves the button out. */
   onSetKey?: () => void;
   /** "ghost" is the slot a dragged card left; "overlay" is the copy that
    *  follows the pointer. Neither is interactive. */
@@ -59,8 +59,7 @@ export interface InstantCardProps {
   trail: CardAction;
   /** Set while the panel is in Organizar. */
   organize?: OrganizeProps;
-  /** Favoritos only: the key that plays this sound, and the brief look the
-   *  card takes when that key is pressed ("press") or refused ("refuse"). */
+  /** Favoritos only: the look the card briefly takes when its key is pressed or refused. */
   shortcut?: { flash?: "press" | "refuse" };
 }
 
@@ -113,8 +112,7 @@ export default function InstantCard({
   const discordLabel = state.botGated ? t("card.discordUnavailable") : t("card.playOnDiscord");
   const dragging = organize?.drag === "overlay";
   const clipKey = instant.key;
-  // The keycap and the playing chip share a corner; only one is ever there.
-  // In Organizar the chip is gone and the keycap moves left of the grip.
+  // The keycap and the playing chip share a corner.
   const showKeycap = Boolean(clipKey) && (organize ? true : !state.live);
   const showEmptyKeycap = !clipKey && Boolean(organize) && !organize?.drag;
 

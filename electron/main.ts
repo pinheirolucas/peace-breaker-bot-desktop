@@ -70,18 +70,14 @@ let macUpdateVersion: string | null = null;
 // only a check a person actually asked for gets an answer either way.
 let manualCheckPending = false;
 
-// Global shortcuts. Only the accelerators this process registered are ever
-// released, so a combo another app owns is never touched.
 let registeredAccelerators: string[] = [];
 let globalKeysEnabled = false;
 let isQuitting = false;
 const lastFired = new Map<string, number>();
 
-// Holding a combo can auto-repeat on some platforms.
 const shortcutDebounceMs = 250;
 
-// Wayland gives an app no way to grab keys itself; Chromium can go through
-// the XDG GlobalShortcuts portal instead. Must be set before "ready".
+// Wayland apps can't grab keys themselves; Chromium goes through the portal. Set before "ready".
 if (process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland") {
   app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
 }
@@ -121,8 +117,7 @@ function registerGlobalShortcuts(modifier: Parameters<typeof acceleratorFor>[0],
     }
   }
 
-  // Nothing registered on Wayland means there is no portal to ask, not that
-  // every combo happens to be taken.
+  // Nothing registered on Wayland means no portal, not that every combo is taken.
   if (wayland && keys.length > 0 && result.registered.length === 0) {
     result.failed = result.failed.map(({ key }) => ({ key, reason: "unsupported" as const }));
   }
@@ -388,10 +383,7 @@ function createWindow(): void {
 
   startDiscovery();
 
-  // The renderer is what plays, so a global key works exactly as long as the
-  // window exists. On macOS the app outlives its last window, which would
-  // leave keys registered with nothing to answer them: while they are on,
-  // close hides the window instead, and the Dock icon brings it back.
+  // The renderer plays the sound, so on macOS hide instead of close while global keys are on.
   mainWindow.on("close", (event) => {
     if (process.platform === "darwin" && globalKeysEnabled && !isQuitting) {
       event.preventDefault();
@@ -401,7 +393,6 @@ function createWindow(): void {
 
   mainWindow.on("closed", () => {
     stopDiscovery();
-    // The renderer that answers presses is gone.
     releaseGlobalShortcuts();
     globalKeysEnabled = false;
     mainWindow = null;
@@ -483,8 +474,7 @@ ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult =>
   return request.enabled ? registerGlobalShortcuts(request.modifier, request.keys) : empty;
 });
 
-// A second launch would get "in use" for every key, which is accurate but
-// baffling. Take the lock, and hand the second launch's focus to this one.
+// Without the lock, a second launch would see every combo as in use.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {

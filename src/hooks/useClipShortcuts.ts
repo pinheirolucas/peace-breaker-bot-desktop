@@ -4,19 +4,12 @@ import { clipKeyFromEvent, isEditableTarget, overlayOpen } from "../lib/clipKeys
 export type ClipMode = "discord" | "local";
 
 export interface ClipShortcutHandlers {
-  /** A favourite's key was pressed. Bare plays on Discord, Shift plays here. */
   trigger: (key: string, mode: ClipMode) => void;
-  /** Esc. Returns whether it stopped anything, so Esc keeps its other
-   *  meanings (close a menu, leave Organizar) when nothing is playing. */
+  /** Esc. Returns whether it stopped anything. */
   stop: () => boolean;
 }
 
-/**
- * The window's own keys. Every rule is one guard: never in a text field,
- * behind a dialog or menu (Aparência included — its dock is a dialog), in
- * Organizar, or with Cmd, Ctrl or Alt held. Clip keys are bare because the
- * point is speed mid-call, which is safe only because of these guards.
- */
+/** Window keydown for clip keys: bare plays on Discord, Shift plays here, Esc stops. Ignored in text fields, behind overlays, and with Cmd/Ctrl/Alt held. */
 export function useClipShortcuts(enabled: boolean, handlers: ClipShortcutHandlers): void {
   const latest = useRef(handlers);
   latest.current = handlers;

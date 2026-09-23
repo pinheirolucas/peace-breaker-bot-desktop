@@ -7,16 +7,14 @@ import { clipKeyFromEvent } from "../lib/clipKeys";
 import type { Instant } from "../storage";
 import "./shortcuts.css";
 
-/** What the dialog says about the key outside the app, when global keys are on. */
+/** Global-key details shown for the captured key. */
 export interface GlobalHint {
-  /** The full combo for a key, as a person reads it. */
   combo: (key: string) => string;
-  /** Another app holds the combo for this key. */
   inUse: (key: string) => boolean;
 }
 
 export interface ShortcutDialogProps {
-  /** The favourite being given a key; null keeps the dialog closed. */
+  /** The favourite being given a key; null closes the dialog. */
   instant: Instant | null;
   instants: Instant[];
   global?: GlobalHint;
@@ -25,15 +23,10 @@ export interface ShortcutDialogProps {
   onSave: (key: string | null) => void;
 }
 
-// Never captured: they keep their meaning. Modifiers alone say nothing yet.
+// Keys that keep their own meaning instead of being captured.
 const passThrough = new Set(["Tab", "Escape", "Enter", "Shift", "Control", "Alt", "Meta", "CapsLock"]);
 
-/**
- * One small dialog, opened from the card's keyboard button in Organizar. The
- * capture box has focus when it opens, so the flow is keyboard-only: press
- * the key, press Enter. Cmd, Ctrl and Alt combinations are ignored rather
- * than rejected, so an app shortcut pressed by habit does nothing.
- */
+/** Captures a letter or digit for a favourite: press the key, then Enter. */
 export default function ShortcutDialog({
   instant,
   instants,
@@ -46,12 +39,10 @@ export default function ShortcutDialog({
   const [refused, setRefused] = useState(false);
   const url = instant?.url;
 
-  // Every open starts from the sound's current key.
   useEffect(() => {
     setKey(instant?.key ?? null);
     setRefused(false);
-    // Keyed on the url: a save rewrites instant.key, which must not reset an
-    // open dialog, and a different favourite must.
+    // Keyed on the url: saving rewrites instant.key and must not reset the dialog.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 

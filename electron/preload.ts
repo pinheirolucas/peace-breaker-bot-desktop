@@ -162,10 +162,7 @@ contextBridge.exposeInMainWorld("instantsPlatform", {
   setChrome: (colors: ChromeColors) => ipcRenderer.send(chromeChannel, colors)
 });
 
-// Keys that work while another app has focus. Main validates the request
-// again; all the renderer can ask for is up to 36 combos from a fixed preset.
 contextBridge.exposeInMainWorld("instantsShortcuts", {
-  // For the picker, default first.
   modifiers: modifiersFor(process.platform),
   setGlobal: (request: ShortcutRequest): Promise<ShortcutResult> =>
     ipcRenderer.invoke(shortcutsSetChannel, request),

@@ -196,8 +196,6 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [os, editing, organizing, tab, addOpen, importOpen, addServerOpen]);
 
-  // ? opens the keyboard sheet, and closes it again. The clip keys themselves
-  // live in FavoritesPanel, which owns both players.
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "?" || event.ctrlKey || event.metaKey || event.altKey || editing) {
@@ -658,8 +656,7 @@ export default function App() {
                   setScrolled((current) => (current === next ? current : next));
                 }}
               >
-                {/* Kept mounted (and hidden) on Explorar, so the clip keys and
-                    both players stay alive there. */}
+                {/* Stays mounted, hidden, on Explorar so its keys keep working. */}
                 <SegmentedPanel value="favorites" forceMount hidden={tab !== "favorites"}>
                   <FavoritesPanel
                     search={search}

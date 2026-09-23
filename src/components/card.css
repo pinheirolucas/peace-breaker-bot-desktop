@@ -152,10 +152,7 @@
   pointer-events: none;
 }
 
-/* The key that plays this sound. Same corner as the chip and the grip, and
- * only one of them is ever there. --ink at 14% like the footer buttons, so it
- * resolves on all six slots of every palette. Decoration: the key reaches
- * assistive tech through aria-keyshortcuts on the clip button. */
+/* Keycap. Shares a corner with the chip and the grip. */
 .kc {
   position: absolute;
   z-index: 1;
@@ -177,15 +174,13 @@
 .pad[data-organize="true"] .kc {
   right: 40px;
 }
-/* No key yet, in Organizar: a dashed slot, so it is clear at a glance which
- * sounds still have none. An inset shadow cannot dash, so an outline does. */
+/* Empty slot in Organizar. An outline, since an inset shadow can't dash. */
 .kc[data-empty] {
   background: transparent;
   outline: 1.5px dashed color-mix(in oklch, var(--ink) 45%, transparent);
   outline-offset: -1.5px;
 }
-/* Key down: the pressed look a click gives, and the keycap inverts. It is the
- * only feedback that the key registered before audio arrives. */
+/* Key down: the pressed look a click gives. */
 .pad[data-flash="press"] {
   filter: brightness(0.93);
   transform: translateY(1px) scale(0.985);
@@ -195,7 +190,7 @@
   background: var(--ink);
   color: var(--fill);
 }
-/* Refused: the bot plays one clip at a time, or is out of its channel. */
+/* Key refused. */
 .pad[data-flash="refuse"] {
   animation: shake 320ms ease-in-out;
 }

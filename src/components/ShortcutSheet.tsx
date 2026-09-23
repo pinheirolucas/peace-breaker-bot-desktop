@@ -17,15 +17,10 @@ export interface ShortcutSheetProps {
   instants: Instant[];
   os: PlatformId;
   status: ShortcutResult;
-  /** "Definir em Organizar": closes the sheet and enters the mode. */
   onOrganize: () => void;
 }
 
-/**
- * Atalhos do teclado, opened with ? or from ⋯. Sounds are sorted by key,
- * digits first, each in its card's colour so it is findable on the grid.
- * The global section exists only where the Electron bridge does.
- */
+/** Lists every key, sorted with digits first. The global section needs the Electron bridge. */
 export default function ShortcutSheet({
   open,
   onOpenChange,

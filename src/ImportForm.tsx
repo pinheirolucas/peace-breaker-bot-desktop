@@ -108,12 +108,9 @@ export default function ImportForm({ open, onClose }: ImportFormProps) {
     }
 
     if (strategy === "replace") {
-      // The file's keys come with it, minus any that repeat.
       setInstants(sanitizeKeys(incoming));
     } else {
-      // Keep what is stored; add only urls not already there, so a stored
-      // name (and key) wins over an incoming one for the same clip. An
-      // imported key that collides with a stored one is dropped.
+      // Stored name and key win over an incoming one for the same clip.
       setInstants(mergeImported(instants, incoming));
     }
 

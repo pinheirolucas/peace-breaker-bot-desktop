@@ -1,6 +1,3 @@
-/* Keyboard shortcuts: the key dialog's capture box and the sheet. Tokens
- * only — a colour is never named here. */
-
 .kcap {
   display: grid;
   gap: 10px;
@@ -57,7 +54,6 @@
   color: var(--fg);
 }
 
-/* The sheet. */
 .ksheet {
   display: grid;
   gap: 18px;
@@ -82,8 +78,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px 18px;
 }
-/* The sheet is portaled to <body>, outside the .app container, so the tier
- * is the window's own width. */
+/* Portaled outside .app, so a container query can't reach it. */
 @media (max-width: 599px) {
   .ksheet__list {
     grid-template-columns: minmax(0, 1fr);
@@ -137,8 +132,7 @@
 }
 .ksheet__dot[data-status="in-use"],
 .ksheet__dot[data-status="unsupported"] {
-  /* Hardcoded like the server chip's amber: a warning has to read as one
-   * whatever the active palette is. */
+  /* Hardcoded like the server chip's amber, so it reads as a warning in every palette. */
   background: oklch(0.78 0.16 75);
 }
 .ksheet__note {

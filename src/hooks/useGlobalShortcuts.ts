@@ -5,11 +5,10 @@ import { useGlobalShortcutsState } from "../storage";
 export const noGlobalStatus: ShortcutResult = { registered: [], failed: [] };
 
 export interface GlobalShortcutSettings {
-  /** False without the Electron bridge (a browser tab, Storybook): the
-   *  section is then not rendered at all, the way discovery degrades. */
+  /** False without the Electron bridge. */
   available: boolean;
   enabled: boolean;
-  /** Resolved: a stored value this OS does not offer falls back to its default. */
+  /** Falls back to the OS default when the stored one isn't offered. */
   modifier: GlobalModifier | null;
   modifiers: GlobalModifier[];
   setEnabled: (enabled: boolean) => void;
@@ -34,21 +33,14 @@ export function useGlobalShortcutSettings(): GlobalShortcutSettings {
 }
 
 export interface UseGlobalShortcutsOptions {
-  /** Every key a favourite has. */
   keys: string[];
-  /** A combo fired while another app had focus. */
   onFire: (key: string) => void;
-  /** Where the last request landed, for the sheet and the key dialog. */
   onStatus: (status: ShortcutResult) => void;
-  /** Turning the switch on, or changing the modifier, left keys unregistered. */
+  /** Enabling or changing the modifier left some keys unregistered. */
   onSetupFailed: (count: number) => void;
 }
 
-/**
- * Registers the favourites' keys with the main process. Sends only when a
- * derived string changes (enabled, modifier and the sorted keys), never on
- * every render, and releases everything when turned off.
- */
+/** Registers the favourites' keys with the main process, only when enabled, modifier or keys change. */
 export function useGlobalShortcuts({ keys, onFire, onStatus, onSetupFailed }: UseGlobalShortcutsOptions) {
   const { available, enabled, modifier } = useGlobalShortcutSettings();
   const sortedKeys = [...new Set(keys)].sort();
@@ -66,8 +58,7 @@ export function useGlobalShortcuts({ keys, onFire, onStatus, onSetupFailed }: Us
     return bridge.onFired((key) => latest.current.onFire(key));
   }, []);
 
-  // A change of switch or modifier, as opposed to of keys, is what earns the
-  // "N shortcuts won't work" toast: editing one key shouldn't nag.
+  // Only a switch or modifier change earns the failure toast, not editing a key.
   const previousSetup = useRef<string | null>(null);
 
   useEffect(() => {
@@ -99,7 +90,7 @@ export function useGlobalShortcuts({ keys, onFire, onStatus, onSetupFailed }: Us
     return () => {
       cancelled = true;
     };
-    // The signature is the whole input; sortedKeys is rebuilt every render.
+    // signature covers the inputs; sortedKeys is rebuilt every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, available]);
 }

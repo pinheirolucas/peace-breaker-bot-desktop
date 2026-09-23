@@ -48,7 +48,7 @@ export interface MenuItemProps {
   tick?: ReactNode;
   primary: ReactNode;
   secondary?: ReactNode;
-  /** A key shown at the row's right edge, on the same line as the label. */
+  /** A key shown at the row's right edge. */
   hint?: ReactNode;
   closeOnSelect?: boolean;
   trail?: ReactNode;
