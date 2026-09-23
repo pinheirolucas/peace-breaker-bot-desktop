@@ -1,20 +1,20 @@
-// The quick panel's pure rules, inlined into the sandboxed preload like
+// Quick access's pure rules, inlined into the sandboxed preload like
 // chrome.ts: where it opens, how it may be resized, and what an untrusted
-// renderer may ask of it. The panel is a second renderer, so main validates
+// renderer may ask of it. Quick access is a second renderer, so main validates
 // everything it sends the way it does the window's.
 
 import { modifiersFor } from "./shortcuts";
 import type { GlobalModifier } from "./shortcuts";
 
-export const panelActionChannel = "panel:action";
-export const panelShownChannel = "panel:shown";
-export const panelShortcutSetChannel = "panel-shortcut:set";
+export const quickAccessActionChannel = "quick-access:action";
+export const quickAccessShownChannel = "quick-access:shown";
+export const quickAccessShortcutSetChannel = "quick-access-shortcut:set";
 
-export const panelSize = { width: 360, height: 520 } as const;
+export const quickAccessSize = { width: 360, height: 520 } as const;
 /** The Conexão style hugs its content between these; Favoritos is always the top one. */
-export const panelMinHeight = 260;
+export const quickAccessMinHeight = 260;
 
-export type PanelAction =
+export type QuickAccessAction =
   | { type: "hide" }
   | { type: "open-app" }
   | { type: "refresh" }
@@ -25,7 +25,7 @@ export type PanelAction =
 
 const simpleActions: readonly string[] = ["hide", "open-app", "refresh", "settings", "quit"];
 
-export function isPanelAction(x: unknown): x is PanelAction {
+export function isQuickAccessAction(x: unknown): x is QuickAccessAction {
   const action = x as Record<string, unknown> | null;
   if (!action || typeof action !== "object" || typeof action.type !== "string") return false;
 
@@ -37,9 +37,9 @@ export function isPanelAction(x: unknown): x is PanelAction {
   return false;
 }
 
-/** Whatever the renderer measured, held to what the panel may be. */
+/** Whatever the renderer measured, held to what quick access may be. */
 export function clampHeight(height: number): number {
-  return Math.round(Math.min(panelSize.height, Math.max(panelMinHeight, height)));
+  return Math.round(Math.min(quickAccessSize.height, Math.max(quickAccessMinHeight, height)));
 }
 
 export interface Box {
@@ -56,7 +56,7 @@ function within(value: number, low: number, high: number): number {
   return Math.round(Math.max(low, Math.min(high, value)));
 }
 
-/** Keeps the panel wholly inside the work area, with a small margin. */
+/** Keeps quick access wholly inside the work area, with a small margin. */
 function clamped(box: Box, area: Box): Box {
   return {
     ...box,
@@ -66,20 +66,20 @@ function clamped(box: Box, area: Box): Box {
 }
 
 /**
- * Where the panel opens. macOS hangs it under the menu-bar icon; Windows sits
+ * Where quick access opens. macOS hangs it under the menu-bar icon; Windows sits
  * it above the notification area when the icon is in the lower half of the
  * display (below it otherwise); both are clamped to the work area, so an icon
  * at a screen edge never pushes it off. Linux has no anchor: a small floating
  * window centred on the display. An icon whose bounds are unknown (an empty
  * rectangle, GNOME with no tray) is treated the same way.
  */
-export function panelBounds(
+export function quickAccessBounds(
   platform: string,
   anchor: Box | null,
   area: Box,
-  height: number = panelSize.height
+  height: number = quickAccessSize.height
 ): Box {
-  const size = { width: panelSize.width, height };
+  const size = { width: quickAccessSize.width, height };
   const known = anchor !== null && (anchor.width > 0 || anchor.height > 0);
 
   if (platform === "linux" || !known) {
@@ -108,7 +108,7 @@ export function panelBounds(
 }
 
 /**
- * A new height for an open panel, holding the edge the icon anchors it by:
+ * A new height for an open quick access, holding the edge the icon anchors it by:
  * the top when it hangs below the icon, the bottom when it sits above.
  */
 export function resizedBounds(box: Box, height: number, area: Box): Box {
@@ -119,31 +119,31 @@ export function resizedBounds(box: Box, height: number, area: Box): Box {
   return clamped({ ...box, y, height: next }, area);
 }
 
-/** The panel's own global shortcut: one key, a modifier preset. */
-export interface PanelShortcutRequest {
+/** Quick access's own global shortcut: one key, a modifier preset. */
+export interface QuickAccessShortcutRequest {
   enabled: boolean;
   modifier: GlobalModifier;
 }
 
-export const panelShortcutKey = "p";
+export const quickAccessShortcutKey = "p";
 
-export function isPanelShortcutRequest(x: unknown, platform: string): x is PanelShortcutRequest {
-  const request = x as Partial<PanelShortcutRequest> | null;
+export function isQuickAccessShortcutRequest(x: unknown, platform: string): x is QuickAccessShortcutRequest {
+  const request = x as Partial<QuickAccessShortcutRequest> | null;
   if (!request || typeof request !== "object" || typeof request.enabled !== "boolean") return false;
 
   return modifiersFor(platform).includes(request.modifier as GlobalModifier);
 }
 
-/** Focus left the panel: it hides, unless pinned or a drag that began in it is still in flight. */
+/** Focus left quick access: it hides, unless pinned or a drag that began in it is still in flight. */
 export function hidesOnBlur(state: { pinned: boolean; dragging: boolean }): boolean {
   return !state.pinned && !state.dragging;
 }
 
-/** How long a drag from the panel may keep it open if the pointer never reports coming back. */
+/** How long a drag from quick access may keep it open if the pointer never reports coming back. */
 export const dragCeilingMs = 30_000;
 
 /**
- * Esc in the panel: playback first, then a typed query, then the panel itself
+ * Esc in quick access: playback first, then a typed query, then quick access itself
  * (even when pinned). So a stray Esc mid-call never loses your place.
  */
 export function escapeAction(state: { playing: boolean; query: string }): "stop" | "clear" | "hide" {

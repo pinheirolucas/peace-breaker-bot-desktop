@@ -1,22 +1,17 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { statusLine } from "../../electron/presence";
-import type { PresenceSnapshot } from "../../electron/presence";
+import { statusLine, statusTone } from "../../electron/presence";
+import type { PresenceSnapshot, StatusTone } from "../../electron/presence";
 import { MoreIcon, PinIcon, StopIcon } from "../icons";
 import { formatApiUrl } from "../ServerMenu";
 import { IconButton } from "./Button";
 import { Menu } from "./Menu";
-import "./panel.css";
+import "./quickAccess.css";
 
-/** Green connected, amber out of channel, red silent, grey unknown: the window's server chip, in a panel. */
-export type StripTone = "ok" | "warn" | "down" | "unknown";
-
-export function stripTone(snapshot: PresenceSnapshot): StripTone {
-  if (snapshot.server === null) return "unknown";
-  if (snapshot.silent) return "down";
-  if (snapshot.bot === null) return "unknown";
-  return snapshot.bot.connected ? "ok" : "warn";
-}
+/** Green connected, amber out of channel, red silent, grey unknown: the window's server chip, in quick access.
+ *  The decision is presence.ts's, so the tray menu's dot cannot drift from this one. */
+export type StripTone = StatusTone;
+export const stripTone = statusTone;
 
 export interface PresenceStripProps {
   snapshot: PresenceSnapshot;
@@ -28,7 +23,7 @@ export interface PresenceStripProps {
 }
 
 /**
- * The panel's first row, the same in both styles: what the app is doing, and
+ * Quick access's first row, the same in both styles: what the app is doing, and
  * Stop. Fixed at 56px, and Stop is never absent, only disabled, so nothing
  * shifts under a pointer that is mid-call. It reads main's snapshot, so a clip
  * started in the window shows as playing here and the other way round.
@@ -49,17 +44,17 @@ export function PresenceStrip({ snapshot, pinned, onStop, onPin, menu }: Presenc
         className="pstop"
         data-active={playing}
         disabled={!playing}
-        aria-label={t("panel.stop")}
+        aria-label={t("quickAccess.stop")}
         onClick={onStop}
       >
         <StopIcon size={13} />
-        <span>{t("panel.stop")}</span>
-        <span className="kbd">{t("panel.esc")}</span>
+        <span>{t("quickAccess.stop")}</span>
+        <span className="kbd">{t("quickAccess.esc")}</span>
       </button>
-      <IconButton label={t("panel.pin")} aria-pressed={pinned} className="ppin" onClick={onPin}>
+      <IconButton label={t("quickAccess.pin")} aria-pressed={pinned} className="ppin" onClick={onPin}>
         <PinIcon filled={pinned} />
       </IconButton>
-      <Menu trigger={<IconButton label={t("panel.more")}><MoreIcon /></IconButton>}>{menu}</Menu>
+      <Menu trigger={<IconButton label={t("quickAccess.more")}><MoreIcon /></IconButton>}>{menu}</Menu>
     </header>
   );
 }

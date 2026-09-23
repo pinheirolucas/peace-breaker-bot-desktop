@@ -5,27 +5,31 @@
 
 import type { MenuItemConstructorOptions } from "electron";
 import type { Translate } from "./menuI18n";
-import { statusLine } from "./presence";
+import { statusLine, statusTone } from "./presence";
+import type { StatusTone } from "./presence";
 import type { PresenceSnapshot } from "./presence";
 
-export type TrayAction = "stop" | "open-panel" | "open-app" | "refresh";
+export type TrayAction = "stop" | "open-quick-access" | "open-app" | "refresh";
 
 /** The `--action=` values a second launch (Jump List, desktop entry) may carry. */
-const actionArg = /^--action=(stop|open-panel|open-app|refresh)$/;
+const actionArg = /^--action=(stop|open-quick-access|open-panel|open-app|refresh)$/;
 
 export function actionFromArgv(argv: readonly string[]): TrayAction | null {
   for (const arg of argv) {
     const match = actionArg.exec(arg);
-    if (match) return match[1] as TrayAction;
+    // open-panel is what a Jump List or desktop entry written before the rename still launches with.
+    if (match) return match[1] === "open-panel" ? "open-quick-access" : (match[1] as TrayAction);
   }
   return null;
 }
 
 export interface TrayMenuOptions {
-  /** "Abrir painel" appears only when the panel is on. */
-  panel: boolean;
+  /** "Abrir acesso rápido" appears only when quick access is on. */
+  quickAccess: boolean;
   /** The Dock menu already has Quit of its own. */
   quit: boolean;
+  /** The image for a status colour, drawn before the status line. Absent, the line has no dot. */
+  dot?: (tone: StatusTone) => MenuItemConstructorOptions["icon"];
 }
 
 export type TrayHandlers = Record<TrayAction | "quit", () => void>;
@@ -36,18 +40,26 @@ export function trayMenu(
   t: Translate,
   on: TrayHandlers
 ): MenuItemConstructorOptions[] {
+  // Opening comes first, then what acts on playback and the server.
   const items: MenuItemConstructorOptions[] = [
-    { label: statusLine(snapshot, t), enabled: false },
+    // Kept disabled, not enabled-without-a-click: a disabled row is what says
+    // "this is not a button" in every OS's menu, in the grey text it has always had.
+    {
+      label: statusLine(snapshot, t),
+      enabled: false,
+      ...(options.dot ? { icon: options.dot(statusTone(snapshot)) } : {})
+    },
     { type: "separator" },
-    { label: t("presence.stop"), enabled: snapshot.playing !== null, click: on.stop }
+    { label: t("presence.openApp"), click: on["open-app"] }
   ];
 
-  if (options.panel) {
-    items.push({ label: t("presence.openPanel"), click: on["open-panel"] });
+  if (options.quickAccess) {
+    items.push({ label: t("presence.openQuickAccess"), click: on["open-quick-access"] });
   }
 
   items.push(
-    { label: t("presence.openApp"), click: on["open-app"] },
+    { type: "separator" },
+    { label: t("presence.stop"), enabled: snapshot.playing !== null, click: on.stop },
     { label: t("presence.refresh"), click: on.refresh }
   );
 
@@ -65,7 +77,7 @@ export interface JumpListTask {
 }
 
 /** Windows Jump List tasks: a click launches the exe again with `--action=`, which the running instance receives. */
-export function jumpListTasks(snapshot: PresenceSnapshot, panel: boolean, t: Translate): JumpListTask[] {
+export function jumpListTasks(snapshot: PresenceSnapshot, quickAccess: boolean, t: Translate): JumpListTask[] {
   const task = (action: TrayAction, label: string): JumpListTask => ({
     title: label,
     description: label,
@@ -73,7 +85,7 @@ export function jumpListTasks(snapshot: PresenceSnapshot, panel: boolean, t: Tra
   });
 
   return [
-    ...(panel ? [task("open-panel", t("presence.openPanel"))] : []),
+    ...(quickAccess ? [task("open-quick-access", t("presence.openQuickAccess"))] : []),
     ...(snapshot.playing ? [task("stop", t("presence.stop"))] : []),
     task("refresh", t("presence.refresh"))
   ];

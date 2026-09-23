@@ -297,6 +297,17 @@
   }
 }
 
+/* Quick access's card has no footer, so it is the name and the wave and
+ * nothing under them. Declared after the tiers so it wins at every width. */
+.pad[data-bare="true"] {
+  height: 108px;
+}
+@container app (max-width: 599px) {
+  .pad[data-bare="true"] {
+    height: 100px;
+  }
+}
+
 /* Dragging a clip out as a file (useClipDrag). The card is the drag source
  * after a 6px threshold; these are the states it passes through. Nothing here
  * applies in Organizar, where the card has no drag source. */

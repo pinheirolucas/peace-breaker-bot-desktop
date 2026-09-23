@@ -21,7 +21,8 @@ import {
   trayState,
   trayTitle
 } from "./presence";
-import type { PlayingReport, PresenceAction, PresenceSettings, PresenceSnapshot } from "./presence";
+import type { PlayingReport, PresenceAction, PresenceSettings, PresenceSnapshot, StatusTone } from "./presence";
+import { dotColors, dotPng } from "./statusDot";
 import { jumpListTasks, trayMenu } from "./trayMenu";
 import type { TrayAction } from "./trayMenu";
 
@@ -33,15 +34,15 @@ export interface PresenceHostDeps {
   /** The folder the tray PNGs are in (build/tray). */
   iconDir: string;
   language: () => MenuLanguage;
-  /** Sends to every renderer window, the panel included. */
+  /** Sends to every renderer window, quick access included. */
   sendAll: (channel: string, payload?: unknown) => void;
   openApp: () => void;
-  /** Toggles the quick panel, anchored to the tray icon. Absent until the panel exists. */
-  togglePanel?: (trayBounds: Rectangle) => void;
-  openPanel?: () => void;
+  /** Toggles the quick access, anchored to the tray icon. Absent until quick access exists. */
+  toggleQuickAccess?: (trayBounds: Rectangle) => void;
+  openQuickAccess?: () => void;
   refreshDiscovery: () => void;
   quit: () => void;
-  /** The settings in force changed: the panel window is created or destroyed here. */
+  /** The settings in force changed: quick access window is created or destroyed here. */
   onSettings?: (settings: PresenceSettings) => void;
 }
 
@@ -150,16 +151,31 @@ export function createPresenceHost(deps: PresenceHostDeps) {
 
   const handlers = (): Record<TrayAction | "quit", () => void> => ({
     stop,
-    "open-panel": () => deps.openPanel?.(),
+    "open-quick-access": () => deps.openQuickAccess?.(),
     "open-app": deps.openApp,
     refresh: deps.refreshDiscovery,
     quit: deps.quit
   });
 
+  // One image per colour, built on first use (nativeImage needs the app ready)
+  // and kept: not a template image, which would lose its colour. The @2x
+  // representation is what a hi-dpi menu draws.
+  const dots = new Map<StatusTone, Electron.NativeImage>();
+  function dot(tone: StatusTone): Electron.NativeImage {
+    let image = dots.get(tone);
+    if (!image) {
+      image = nativeImage.createEmpty();
+      image.addRepresentation({ scaleFactor: 1, buffer: dotPng(dotColors[tone], 1) });
+      image.addRepresentation({ scaleFactor: 2, buffer: dotPng(dotColors[tone], 2) });
+      dots.set(tone, image);
+    }
+    return image;
+  }
+
   function menuFor(quit: boolean): Menu {
-    const { panel } = effectiveSettings(settings);
+    const { quickAccess } = effectiveSettings(settings);
     return Menu.buildFromTemplate(
-      trayMenu(snapshot, { panel: panel && Boolean(deps.openPanel), quit }, translatorFor(deps.language()), handlers())
+      trayMenu(snapshot, { quickAccess: quickAccess && Boolean(deps.openQuickAccess), quit, dot }, translatorFor(deps.language()), handlers())
     );
   }
 
@@ -189,12 +205,12 @@ export function createPresenceHost(deps: PresenceHostDeps) {
       tray = new Tray(iconFor());
 
       // Not setContextMenu: on macOS that swallows click and double-click,
-      // and the click is the panel's. Linux delivers no click at all, so it
+      // and the click is quick access's. Linux delivers no click at all, so it
       // is the one place the menu is attached.
       if (process.platform !== "linux") {
         tray.on("click", (_event, bounds) => {
-          if (effectiveSettings(settings).panel && deps.togglePanel) {
-            deps.togglePanel(bounds);
+          if (effectiveSettings(settings).quickAccess && deps.toggleQuickAccess) {
+            deps.toggleQuickAccess(bounds);
           } else {
             tray?.popUpContextMenu(menuFor(true));
           }
@@ -224,11 +240,11 @@ export function createPresenceHost(deps: PresenceHostDeps) {
     }
 
     if (process.platform === "win32") {
-      const { panel } = effectiveSettings(settings);
+      const { quickAccess } = effectiveSettings(settings);
       const t = translatorFor(deps.language());
 
       app.setUserTasks(
-        jumpListTasks(snapshot, panel && Boolean(deps.openPanel), t).map((task) => ({
+        jumpListTasks(snapshot, quickAccess && Boolean(deps.openQuickAccess), t).map((task) => ({
           program: process.execPath,
           arguments: task.arguments,
           iconPath: process.execPath,

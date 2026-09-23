@@ -7,11 +7,11 @@ import type { Instant } from "../storage";
 import type { Playback } from "./InstantCard";
 import { MenuItem } from "./Menu";
 import { PresenceStrip } from "./PresenceStrip";
-import { PanelConnection, PanelFavorites } from "./QuickPanelViews";
-import type { PanelFavoritesProps } from "./QuickPanelViews";
+import { QuickAccessConnection, QuickAccessFavorites } from "./QuickAccessViews";
+import type { QuickAccessFavoritesProps } from "./QuickAccessViews";
 import { ToastProvider } from "./Toast";
 
-const meta: Meta = { title: "Panel/Quick panel" };
+const meta: Meta = { title: "Quick access/Window" };
 export default meta;
 
 const noop = () => undefined;
@@ -33,11 +33,11 @@ const clips: Instant[] = [
   { name: "Risada do Ronaldinho", url: "https://x/6.mp3" }
 ];
 
-/** The panel's window at true size, 360 x 520. */
+/** Quick access's window at true size, 360 x 520. */
 function Panel({ state, height = 520, children }: { state: PresenceSnapshot; height?: number; children: React.ReactNode }) {
   return (
     <ToastProvider>
-      <div className="app panel" style={{ width: 360, height, border: "1px solid var(--line)", overflow: "hidden" }}>
+      <div className="app quick-access" style={{ width: 360, height, border: "1px solid var(--line)", overflow: "hidden" }}>
         <PresenceStrip snapshot={state} pinned={false} onStop={noop} onPin={noop} menu={<MenuItem primary="Abrir Peace Breaker Bot" />} />
         {children}
       </div>
@@ -45,13 +45,13 @@ function Panel({ state, height = 520, children }: { state: PresenceSnapshot; hei
   );
 }
 
-function Favorites({ state, ...props }: { state: PresenceSnapshot } & Partial<PanelFavoritesProps>) {
+function Favorites({ state, ...props }: { state: PresenceSnapshot } & Partial<QuickAccessFavoritesProps>) {
   const [query, setQuery] = useState(props.query ?? "");
   const shown = query ? clips.filter(({ name }) => name.toLowerCase().includes(query.toLowerCase())) : clips;
 
   return (
     <Panel state={state}>
-      <PanelFavorites
+      <QuickAccessFavorites
         instants={props.instants ?? shown}
         total={props.total ?? clips.length}
         query={query}
@@ -64,18 +64,30 @@ function Favorites({ state, ...props }: { state: PresenceSnapshot } & Partial<Pa
         matchUrl={props.matchUrl ?? null}
         hint={props.hint ?? false}
         onPlay={noop}
-        onPlayOnDiscord={noop}
-        onStop={noop}
         onOpenApp={noop}
       />
     </Panel>
   );
 }
 
+const many: Instant[] = Array.from({ length: 43 }, (_, i) => ({ name: `${clips[i % clips.length].name} ${i + 1}`, url: `https://x/many-${i}.mp3` }));
+
 const row = { display: "flex", flexWrap: "wrap", gap: 24, alignItems: "flex-start" } as const;
 
 /** Favoritos, the default style. Cards are the window's own components at the Tight tier's size. */
 export const FavoritosDefault: StoryObj = { name: "Favoritos · idle, with the drag hint", render: () => <Favorites state={snapshot()} hint /> };
+
+/** 43 favourites: only the grid scrolls. The strip, search, banner, hint and footer stay put. */
+export const FavoritosLongList: StoryObj = {
+  name: "Favoritos · 43 favorites, only the grid scrolls",
+  render: () => <Favorites state={snapshot({ silent: true })} instants={many} total={many.length} hint />
+};
+
+/** Two favourites: the footer still sits at the bottom of the 520px window. */
+export const FavoritosShortList: StoryObj = {
+  name: "Favoritos · 2 favorites, footer at the bottom",
+  render: () => <Favorites state={snapshot()} instants={clips.slice(0, 2)} total={2} />
+};
 
 export const FavoritosPlaying: StoryObj = {
   name: "Favoritos · playing",
@@ -130,10 +142,10 @@ function Connection({
   state,
   height = 400,
   ...props
-}: { state: PresenceSnapshot; height?: number } & Partial<React.ComponentProps<typeof PanelConnection>>) {
+}: { state: PresenceSnapshot; height?: number } & Partial<React.ComponentProps<typeof QuickAccessConnection>>) {
   return (
     <Panel state={state} height={height}>
-      <PanelConnection
+      <QuickAccessConnection
         servers={servers}
         activeUrl={server}
         healthy

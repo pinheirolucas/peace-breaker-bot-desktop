@@ -8,7 +8,7 @@ export interface PresenceSettingsApi {
   available: boolean;
   /** As stored, with anything missing or malformed filled in. */
   settings: PresenceSettings;
-  /** What is actually in force: the panel and the title need the icon. */
+  /** What is actually in force: quick access and the title need the icon. */
   effective: PresenceSettings;
   setSettings: (settings: PresenceSettings) => void;
 }
@@ -26,7 +26,7 @@ export function usePresenceSettings(): PresenceSettingsApi {
   };
 }
 
-/** Tells main what the tray and the panel are set to, whenever it changes. */
+/** Tells main what the tray and quick access are set to, whenever it changes. */
 export function useReportPresenceSettings(settings: PresenceSettings): void {
   const signature = JSON.stringify(settings);
 

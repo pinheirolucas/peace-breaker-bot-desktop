@@ -1,6 +1,6 @@
-// The quick panel's window: a small frameless BrowserWindow that opens under
+// Quick access's window: a small frameless BrowserWindow that opens under
 // the tray icon and hides when it loses focus. The rules (where it opens, when
-// blur hides it) are pure and tested in panel.ts; this is the wiring.
+// blur hides it) are pure and tested in quickAccess.ts; this is the wiring.
 
 import { BrowserWindow, nativeTheme, screen } from "electron";
 import type { Rectangle } from "electron";
@@ -9,16 +9,16 @@ import { defaultChromeColors } from "./chrome";
 import {
   dragCeilingMs,
   hidesOnBlur,
-  panelBounds,
-  panelShownChannel,
-  panelSize,
+  quickAccessBounds,
+  quickAccessShownChannel,
+  quickAccessSize,
   resizedBounds
-} from "./panel";
+} from "./quickAccess";
 
 /** A toggle this soon after a blur-hide is the same click that caused it. */
 const reopenGuardMs = 250;
 
-export interface PanelWindowDeps {
+export interface QuickAccessWindowDeps {
   isDev: boolean;
   /** Called with the window's webContents id when its renderer is gone. */
   onGone: (rendererId: number) => void;
@@ -26,21 +26,21 @@ export interface PanelWindowDeps {
   onLoaded: (contents: Electron.WebContents) => void;
 }
 
-export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) {
+export function createQuickAccessWindow({ isDev, onGone, onLoaded }: QuickAccessWindowDeps) {
   let window: BrowserWindow | null = null;
   let rendererId = -1;
   let pinned = false;
   let dragging = false;
   let dragTimer: NodeJS.Timeout | null = null;
-  let height: number = panelSize.height;
+  let height: number = quickAccessSize.height;
   let blurHiddenAt = 0;
 
   function create(): BrowserWindow {
     const colors = defaultChromeColors(nativeTheme.shouldUseDarkColors);
 
     const created = new BrowserWindow({
-      width: panelSize.width,
-      height: panelSize.height,
+      width: quickAccessSize.width,
+      height: quickAccessSize.height,
       show: false,
       frame: false,
       resizable: false,
@@ -49,7 +49,7 @@ export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) 
       fullscreenable: false,
       skipTaskbar: true,
       hasShadow: true,
-      // A first click on a card plays it; it does not first have to focus the panel.
+      // A first click on a card plays it; it does not first have to focus quick access.
       acceptFirstMouse: true,
       // Frosted where the OS can do it; a solid ground where it cannot.
       ...(process.platform === "darwin"
@@ -69,9 +69,9 @@ export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) 
     rendererId = created.webContents.id;
 
     if (isDev) {
-      void created.loadURL("http://localhost:3000/?panel=1");
+      void created.loadURL("http://localhost:3000/?quickAccess=1");
     } else {
-      void created.loadFile(path.join(__dirname, "index.html"), { query: { panel: "1" } });
+      void created.loadFile(path.join(__dirname, "index.html"), { query: { quickAccess: "1" } });
     }
 
     created.webContents.on("did-finish-load", () => onLoaded(created.webContents));
@@ -106,13 +106,13 @@ export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) 
   }
 
   function show(anchor: Rectangle | null): void {
-    const panel = ensure();
+    const win = ensure();
 
-    panel.setBounds(panelBounds(process.platform, anchor, areaFor(anchor), height));
-    panel.show();
-    panel.focus();
+    win.setBounds(quickAccessBounds(process.platform, anchor, areaFor(anchor), height));
+    win.show();
+    win.focus();
     // Every route in opens with the search field focused.
-    panel.webContents.send(panelShownChannel);
+    win.webContents.send(quickAccessShownChannel);
   }
 
   function hide(): void {
@@ -139,7 +139,7 @@ export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) 
   return {
     /** Creates the window ahead of time, so the first open does not wait for a renderer. */
     warm: () => void ensure(),
-    /** Destroys it: the panel was switched off. */
+    /** Destroys it: quick access was switched off. */
     destroy: () => {
       if (window && !window.isDestroyed()) window.destroy();
       window = null;
@@ -147,14 +147,14 @@ export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) 
     show,
     hide,
     isOpen,
-    /** Toggles: a click on an open, focused panel closes it. */
+    /** Toggles: a click on an open, focused quick access closes it. */
     toggle: (anchor: Rectangle | null) => {
       if (isOpen()) {
         hide();
         return;
       }
 
-      // Clicking the icon blurs the panel first, which hides it, and only then
+      // Clicking the icon blurs quick access first, which hides it, and only then
       // delivers the click: without this the click would open it again at once.
       if (Date.now() - blurHiddenAt < reopenGuardMs) return;
       show(anchor);
@@ -167,15 +167,15 @@ export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) 
     },
     /** Conexão hugs its content; the edge the icon anchors it by stays put. */
     resize: (next: number) => {
-      const panel = window;
-      if (!panel || panel.isDestroyed()) return;
+      const win = window;
+      if (!win || win.isDestroyed()) return;
 
-      const bounds = panel.getBounds();
+      const bounds = win.getBounds();
       const box = resizedBounds(bounds, next, screen.getDisplayMatching(bounds).workArea);
       height = box.height;
-      panel.setBounds(box);
+      win.setBounds(box);
     },
-    /** A drag that began in the panel is in flight: the blur it causes must not hide it. */
+    /** A drag that began in quick access is in flight: the blur it causes must not hide it. */
     beginDrag: () => {
       dragging = true;
       if (dragTimer) clearTimeout(dragTimer);
@@ -185,5 +185,5 @@ export function createPanelWindow({ isDev, onGone, onLoaded }: PanelWindowDeps) 
   };
 }
 
-export type PanelWindow = ReturnType<typeof createPanelWindow>;
+export type QuickAccessWindow = ReturnType<typeof createQuickAccessWindow>;
 

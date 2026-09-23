@@ -17,6 +17,10 @@ import {
   trayTitle
 } from "../electron/presence";
 import type { PresenceSnapshot } from "../electron/presence";
+import { dotColors, dotPng } from "../electron/statusDot";
+import { inflateSync } from "node:zlib";
+import { stripTone } from "./components/PresenceStrip";
+import { statusTone } from "../electron/presence";
 import { actionFromArgv, jumpListTasks, trayMenu } from "../electron/trayMenu";
 import type { TrayHandlers } from "../electron/trayMenu";
 
@@ -162,18 +166,18 @@ describe("validators", () => {
 
   it("isPresenceSettings needs every field", () => {
     expect(isPresenceSettings(defaultPresenceSettings)).toBe(true);
-    expect(isPresenceSettings({ ...defaultPresenceSettings, panelStyle: "x" })).toBe(false);
+    expect(isPresenceSettings({ ...defaultPresenceSettings, quickAccessStyle: "x" })).toBe(false);
     expect(isPresenceSettings({ ...defaultPresenceSettings, tray: 1 })).toBe(false);
     expect(isPresenceSettings({ tray: true })).toBe(false);
   });
 });
 
 describe("settings", () => {
-  it("switches the panel and the title off with the icon", () => {
-    const all = { ...defaultPresenceSettings, tray: true, panel: true, title: true };
+  it("switches quick access and the title off with the icon", () => {
+    const all = { ...defaultPresenceSettings, tray: true, quickAccess: true, title: true };
 
     expect(effectiveSettings(all)).toBe(all);
-    expect(effectiveSettings({ ...all, tray: false })).toMatchObject({ panel: false, title: false });
+    expect(effectiveSettings({ ...all, tray: false })).toMatchObject({ quickAccess: false, title: false });
   });
 
   it("shows a shortened clip name only when asked", () => {
@@ -191,7 +195,7 @@ describe("tray menu", () => {
   const t = translatorFor("pt-BR");
   const handlers = (): TrayHandlers & Record<string, ReturnType<typeof vi.fn>> => ({
     stop: vi.fn(),
-    "open-panel": vi.fn(),
+    "open-quick-access": vi.fn(),
     "open-app": vi.fn(),
     refresh: vi.fn(),
     quit: vi.fn()
@@ -199,49 +203,73 @@ describe("tray menu", () => {
   const labels = (items: { label?: string; type?: string }[]) =>
     items.map((item) => (item.type === "separator" ? "-" : item.label));
 
-  it("lists status, stop, open, search again and quit", () => {
-    const menu = trayMenu(snap({ server, bot: inChannel }), { panel: false, quit: true }, t, handlers());
+  it("lists status, open, stop, search again and quit, in that order", () => {
+    const menu = trayMenu(snap({ server, bot: inChannel }), { quickAccess: true, quit: true }, t, handlers());
 
     expect(labels(menu)).toEqual([
       "Casa · #geral",
       "-",
-      "Parar reprodução",
       "Abrir Peace Breaker Bot",
+      "Abrir acesso rápido",
+      "-",
+      "Parar reprodução",
       "Procurar servidor novamente",
       "-",
       "Sair"
     ]);
   });
 
-  it("offers the panel only when it is on, and no Quit on the Dock", () => {
-    const menu = trayMenu(snap({ server }), { panel: true, quit: false }, t, handlers());
+  it("leaves out Abrir acesso rápido when it is off, with no doubled or orphan separator", () => {
+    const menu = trayMenu(snap({ server }), { quickAccess: false, quit: true }, t, handlers());
 
-    expect(labels(menu)).toContain("Abrir painel");
-    expect(labels(menu)).not.toContain("Sair");
+    expect(labels(menu)).toEqual([
+      "Verificando o servidor…",
+      "-",
+      "Abrir Peace Breaker Bot",
+      "-",
+      "Parar reprodução",
+      "Procurar servidor novamente",
+      "-",
+      "Sair"
+    ]);
+  });
+
+  it("has no trailing separator on the Dock, which has no Quit, and no Sair", () => {
+    for (const quickAccess of [true, false]) {
+      const menu = trayMenu(snap({ server }), { quickAccess, quit: false }, t, handlers());
+      const shown = labels(menu);
+
+      expect(shown).not.toContain("Sair");
+      expect(shown.at(-1)).toBe("Procurar servidor novamente");
+      expect(shown.some((label, i) => label === "-" && shown[i - 1] === "-")).toBe(false);
+      expect(labels(menu).includes("Abrir acesso rápido")).toBe(quickAccess);
+    }
   });
 
   it("disables Parar reprodução until something plays", () => {
-    const idle = trayMenu(snap({ server }), { panel: false, quit: true }, t, handlers());
-    const busy = trayMenu(snap({ server, playing }), { panel: false, quit: true }, t, handlers());
+    const idle = trayMenu(snap({ server }), { quickAccess: false, quit: true }, t, handlers());
+    const busy = trayMenu(snap({ server, playing }), { quickAccess: false, quit: true }, t, handlers());
 
-    expect(idle[2].enabled).toBe(false);
-    expect(busy[2].enabled).toBe(true);
+    const stop = (items: { label?: string; enabled?: boolean }[]) => items.find((item) => item.label === "Parar reprodução");
+
+    expect(stop(idle)?.enabled).toBe(false);
+    expect(stop(busy)?.enabled).toBe(true);
     expect(idle[0].enabled).toBe(false);
   });
 
   it("wires each row to its handler", () => {
     const on = handlers();
-    const menu = trayMenu(snap({ server, playing }), { panel: true, quit: true }, t, on);
+    const menu = trayMenu(snap({ server, playing }), { quickAccess: true, quit: true }, t, on);
     const click = (label: string) =>
       (menu.find((item) => item.label === label)?.click as unknown as () => void)();
 
     click("Parar reprodução");
-    click("Abrir painel");
+    click("Abrir acesso rápido");
     click("Abrir Peace Breaker Bot");
     click("Procurar servidor novamente");
     click("Sair");
 
-    for (const key of ["stop", "open-panel", "open-app", "refresh", "quit"]) {
+    for (const key of ["stop", "open-quick-access", "open-app", "refresh", "quit"]) {
       expect(on[key]).toHaveBeenCalledTimes(1);
     }
   });
@@ -265,13 +293,13 @@ describe("tray menu", () => {
 describe("jump list and launch actions", () => {
   const t = translatorFor("pt-BR");
 
-  it("carries stop only while something plays, and the panel only when on", () => {
-    const titles = (state: PresenceSnapshot, panel: boolean) =>
-      jumpListTasks(state, panel, t).map((task) => task.title);
+  it("carries stop only while something plays, and quick access only when on", () => {
+    const titles = (state: PresenceSnapshot, quickAccess: boolean) =>
+      jumpListTasks(state, quickAccess, t).map((task) => task.title);
 
     expect(titles(snap({ server }), false)).toEqual(["Procurar servidor novamente"]);
     expect(titles(snap({ server, playing }), true)).toEqual([
-      "Abrir painel",
+      "Abrir acesso rápido",
       "Parar reprodução",
       "Procurar servidor novamente"
     ]);
@@ -279,8 +307,70 @@ describe("jump list and launch actions", () => {
 
   it("reads --action= from a launch", () => {
     expect(actionFromArgv(["app", "--action=stop"])).toBe("stop");
-    expect(actionFromArgv(["app", "--action=open-panel"])).toBe("open-panel");
+    expect(actionFromArgv(["app", "--action=open-quick-access"])).toBe("open-quick-access");
+    // a Jump List or desktop entry written before the rename
+    expect(actionFromArgv(["app", "--action=open-panel"])).toBe("open-quick-access");
     expect(actionFromArgv(["app", "--action=rm -rf"])).toBeNull();
     expect(actionFromArgv(["app"])).toBeNull();
+  });
+});
+
+describe("the tray menu's status dot", () => {
+  const t = translatorFor("pt-BR");
+  const on = (): TrayHandlers => ({
+    stop: vi.fn(),
+    "open-quick-access": vi.fn(),
+    "open-app": vi.fn(),
+    refresh: vi.fn(),
+    quit: vi.fn()
+  });
+  const cases: [string, PresenceSnapshot, "ok" | "warn" | "down" | "unknown"][] = [
+    ["server answers and the bot is connected", snap({ server, bot: inChannel }), "ok"],
+    ["server answers, bot out of its channel", snap({ server, bot: { connected: false } }), "warn"],
+    ["server silent", snap({ server, silent: true }), "down"],
+    ["bot status not known yet (null)", snap({ server, bot: null }), "unknown"],
+    ["no active server", snap(), "unknown"],
+    ["silent with no server is still just none", snap({ server: null, silent: true }), "unknown"]
+  ];
+
+  it.each(cases)("draws %s as %s", (_name, state, tone) => {
+    const menu = trayMenu(state, { quickAccess: false, quit: false, dot: (key) => key }, t, on());
+
+    expect(menu[0].icon).toBe(tone);
+    expect(menu[0].enabled).toBe(false);
+  });
+
+  it("is the same decision the quick access strip draws", () => {
+    for (const [, state, tone] of cases) {
+      expect(stripTone(state)).toBe(tone);
+      expect(statusTone(state)).toBe(tone);
+    }
+  });
+
+  it("leaves the text and the rest of the menu alone, and draws no dot without one", () => {
+    const state = snap({ server, bot: inChannel });
+    const plain = trayMenu(state, { quickAccess: true, quit: true }, t, on());
+    const dotted = trayMenu(state, { quickAccess: true, quit: true, dot: () => undefined }, t, on());
+
+    expect("icon" in plain[0]).toBe(false);
+    expect(dotted.map((item) => item.label)).toEqual(plain.map((item) => item.label));
+  });
+
+  it("encodes a round, coloured, transparent-cornered PNG at both scales", () => {
+    for (const scale of [1, 2]) {
+      const png = dotPng(dotColors.warn, scale);
+      const size = 12 * scale;
+
+      expect(png.subarray(1, 4).toString("ascii")).toBe("PNG");
+      expect(png.readUInt32BE(16)).toBe(size);
+      expect(png.readUInt32BE(20)).toBe(size);
+
+      const idat = png.indexOf("IDAT");
+      const data = inflateSync(png.subarray(idat + 4, idat + 4 + png.readUInt32BE(idat - 4)));
+      const pixel = (x: number, y: number) => [...data.subarray(y * (1 + size * 4) + 1 + x * 4).subarray(0, 4)];
+
+      expect(pixel(size / 2, size / 2)).toEqual([0xdc, 0x9e, 0x00, 255]);
+      expect(pixel(0, 0)[3]).toBe(0);
+    }
   });
 });

@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { emptyPresence } from "../electron/presence";
 import type { PresenceSnapshot } from "../electron/presence";
-import { escapeAction, panelMinHeight, panelSize } from "../electron/panel";
+import { escapeAction, quickAccessMinHeight, quickAccessSize } from "../electron/quickAccess";
 import { MenuItem, MenuLabel, MenuSeparator } from "./components/Menu";
 import { PresenceStrip } from "./components/PresenceStrip";
-import { PanelConnection, PanelFavorites } from "./components/QuickPanelViews";
+import { QuickAccessConnection, QuickAccessFavorites } from "./components/QuickAccessViews";
 import { Toast, ToastProvider } from "./components/Toast";
 import { useAppearance } from "./hooks/useAppearance";
 import { useClipShortcuts } from "./hooks/useClipShortcuts";
@@ -18,7 +18,7 @@ import { useServers } from "./hooks/useServers";
 import { useStamp } from "./hooks/useStamp";
 import { apiErrorMessage } from "./i18n/apiError";
 import { CheckIcon } from "./icons";
-import { cardState } from "./components/InstantCard";
+import { bodyClick, cardState } from "./components/InstantCard";
 import type { Playback } from "./components/InstantCard";
 import { getContent } from "./service";
 import SnackbarContext from "./SnackbarContext";
@@ -32,7 +32,7 @@ import useDiscordPlayer from "./useDiscordPlayer";
 /** How long "Procurando…" is shown: discovery reports no end, so this is the answer window multicast usually needs. */
 const SEARCH_MS = 2500;
 
-const hintKey = "panelHintSeen";
+const hintKey = "quickAccessHintSeen";
 
 function hintSeen(): boolean {
   try {
@@ -43,12 +43,12 @@ function hintSeen(): boolean {
 }
 
 /**
- * The quick panel's window content: `/?panel=1`, loaded by the panel's own
+ * Quick access's window content: `/?quickAccess=1`, loaded by quick access's own
  * BrowserWindow. It is a second renderer, so it plays clips itself (hidden, it
  * keeps playing) and reports what it plays to main like the window does; what
  * it shows about the app comes from main's one snapshot.
  */
-export default function QuickPanel() {
+export default function QuickAccess() {
   const { t } = useTranslation();
 
   // Same palette, mode and language as the window; the values are shared through storage.
@@ -92,7 +92,7 @@ export default function QuickPanel() {
     [openSnackbar]
   );
 
-  // What this window plays, told to main; the panel's own strip reads main's answer.
+  // What this window plays, told to main; quick access's own strip reads main's answer.
   const playingMode = isDiscordPlaying ? "discord" : isAudioPlaying ? "local" : null;
   const playingUrl = playingMode === "discord" ? discordUrl : audioUrl;
   useReportPlaying(
@@ -105,7 +105,7 @@ export default function QuickPanel() {
     window.instantsPresence?.setServer(activeUrl);
   }, [activeUrl]);
 
-  // With no bridge (a browser tab on ?panel=1) there is no main to ask, so the strip is built here.
+  // With no bridge (a browser tab on ?quickAccess=1) there is no main to ask, so the strip is built here.
   const snapshot: PresenceSnapshot =
     fromMain ??
     ({
@@ -161,7 +161,14 @@ export default function QuickPanel() {
   }
 
   // The body plays here by default; the setting flips it to send, for mid-call use.
-  const onBody = settings.panelClick === "discord" ? handlePlayOnDiscord : handlePlay;
+  // A click on a card and Enter on the search both come through here, so they cannot disagree.
+  function onBody(instant: Instant) {
+    const what = bodyClick(settings.quickAccessClick, playbackOf(instant), anyPlaying, botStatus);
+
+    if (what === "play") void handlePlay(instant);
+    else if (what === "discord") void handlePlayOnDiscord(instant);
+    else if (what === "bot") openSnackbar({ message: t("card.discordUnavailable") });
+  }
 
   // What the tray's Stop and the strip's Stop send: main tells every window, this one included.
   useMenuCommands((command) => {
@@ -177,10 +184,10 @@ export default function QuickPanel() {
   }
 
   function action(type: "hide" | "open-app" | "refresh" | "settings" | "quit") {
-    window.instantsPanel?.action({ type });
+    window.instantsQuickAccess?.action({ type });
   }
 
-  // Favourite keys still fire from the panel: bare plays on Discord, Shift plays here.
+  // Favourite keys still fire from quick access: bare plays on Discord, Shift plays here.
   function triggerClip(key: string, mode: ClipMode) {
     const instant = favorites.find((item) => item.key === key);
     if (!instant) return;
@@ -194,7 +201,7 @@ export default function QuickPanel() {
 
   const playingNow = anyPlaying || snapshot.playing !== null;
 
-  // Esc, at the window: stop first, then a typed query, then the panel itself.
+  // Esc, at the window: stop first, then a typed query, then quick access itself.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
@@ -215,7 +222,7 @@ export default function QuickPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playingNow, query]);
 
-  useClipShortcuts(settings.panelStyle === "favorites", {
+  useClipShortcuts(settings.quickAccessStyle === "favorites", {
     trigger: triggerClip,
     // Esc is the window listener's above.
     stop: () => false
@@ -224,7 +231,7 @@ export default function QuickPanel() {
   // Every route in opens with the search focused, and re-runs the fade.
   useEffect(
     () =>
-      window.instantsPanel?.onShown(() => {
+      window.instantsQuickAccess?.onShown(() => {
         const root = rootRef.current;
         if (root) {
           root.classList.remove("is-shown");
@@ -238,13 +245,13 @@ export default function QuickPanel() {
     []
   );
 
-  // Conexão hugs its content, between the panel's two heights; Favoritos is always the tall one.
+  // Conexão hugs its content, between quick access's two heights; Favoritos is always the tall one.
   useEffect(() => {
-    const bridge = window.instantsPanel;
+    const bridge = window.instantsQuickAccess;
     if (!bridge) return undefined;
 
-    if (settings.panelStyle === "favorites") {
-      bridge.action({ type: "resize", height: panelSize.height });
+    if (settings.quickAccessStyle === "favorites") {
+      bridge.action({ type: "resize", height: quickAccessSize.height });
       return undefined;
     }
 
@@ -253,16 +260,16 @@ export default function QuickPanel() {
 
     const observer = new ResizeObserver(() => {
       // The strip (56) and the footer (40) around the body.
-      bridge.action({ type: "resize", height: Math.max(panelMinHeight, body.scrollHeight + 96 + 24) });
+      bridge.action({ type: "resize", height: Math.max(quickAccessMinHeight, body.scrollHeight + 96 + 24) });
     });
     observer.observe(body);
     return () => observer.disconnect();
-  }, [settings.panelStyle, servers.length]);
+  }, [settings.quickAccessStyle, servers.length]);
 
   function pin() {
     const next = !pinned;
     setPinned(next);
-    window.instantsPanel?.action({ type: "pin", pinned: next });
+    window.instantsQuickAccess?.action({ type: "pin", pinned: next });
   }
 
   function searchAgain() {
@@ -282,9 +289,9 @@ export default function QuickPanel() {
 
   const styleItem = (style: "favorites" | "connection", label: string) => (
     <MenuItem
-      tick={settings.panelStyle === style ? <CheckIcon /> : null}
+      tick={settings.quickAccessStyle === style ? <CheckIcon /> : null}
       primary={label}
-      onSelect={() => setSettings({ ...settings, panelStyle: style })}
+      onSelect={() => setSettings({ ...settings, quickAccessStyle: style })}
     />
   );
 
@@ -293,9 +300,9 @@ export default function QuickPanel() {
       <MenuItem primary={t("presence.openApp")} onSelect={() => action("open-app")} />
       <MenuItem primary={t("presence.refresh")} onSelect={() => { refresh(); action("refresh"); }} />
       <MenuSeparator />
-      <MenuLabel>{t("panel.style")}</MenuLabel>
-      {styleItem("favorites", t("panel.styleFavorites"))}
-      {styleItem("connection", t("panel.styleConnection"))}
+      <MenuLabel>{t("quickAccess.style")}</MenuLabel>
+      {styleItem("favorites", t("quickAccess.styleFavorites"))}
+      {styleItem("connection", t("quickAccess.styleConnection"))}
       <MenuSeparator />
       <MenuItem primary={t("menuBar.title")} onSelect={() => action("settings")} />
       <MenuItem primary={t("presence.quit")} onSelect={() => action("quit")} />
@@ -306,7 +313,7 @@ export default function QuickPanel() {
     <SnackbarContext.Provider value={snackbar}>
       <ToastProvider>
         <div
-          className="app panel"
+          className="app quick-access"
           ref={rootRef}
           onPointerDownCapture={() => {
             // A drag out started here: the hint has done its job.
@@ -315,8 +322,8 @@ export default function QuickPanel() {
         >
           <PresenceStrip snapshot={snapshot} pinned={pinned} onStop={stopEverywhere} onPin={pin} menu={menu} />
 
-          {settings.panelStyle === "connection" ? (
-            <PanelConnection
+          {settings.quickAccessStyle === "connection" ? (
+            <QuickAccessConnection
               servers={servers}
               activeUrl={activeUrl}
               healthy={healthy}
@@ -327,37 +334,28 @@ export default function QuickPanel() {
               bodyRef={bodyRef}
             />
           ) : (
-            <div
-              className="pbody"
+            <QuickAccessFavorites
+              instants={filtered}
+              total={favorites.length}
+              query={query}
+              onQuery={setQuery}
+              searchRef={searchRef}
+              playbackOf={playbackOf}
+              otherPlaying={anyPlaying}
+              botStatus={botStatus}
+              offline={snapshot.silent}
+              onRetry={searchAgain}
+              matchUrl={matchUrl}
+              hint={hint}
+              onPlay={onBody}
+              onOpenApp={() => action("open-app")}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && event.target === searchRef.current && filtered[0]) {
                   event.preventDefault();
-                  const first = filtered[0];
-                  const state = cardState(playbackOf(first), anyPlaying && playbackOf(first) === "idle", botStatus);
-                  const blocked = settings.panelClick === "discord" ? state.discordDisabled : state.playDisabled;
-                  if (!blocked) void onBody(first);
+                  onBody(filtered[0]);
                 }
               }}
-            >
-              <PanelFavorites
-                instants={filtered}
-                total={favorites.length}
-                query={query}
-                onQuery={setQuery}
-                searchRef={searchRef}
-                playbackOf={playbackOf}
-                otherPlaying={anyPlaying}
-                botStatus={botStatus}
-                offline={snapshot.silent}
-                onRetry={searchAgain}
-                matchUrl={matchUrl}
-                hint={hint}
-                onPlay={onBody}
-                onPlayOnDiscord={handlePlayOnDiscord}
-                onStop={() => void handleStop()}
-                onOpenApp={() => action("open-app")}
-              />
-            </div>
+            />
           )}
         </div>
 

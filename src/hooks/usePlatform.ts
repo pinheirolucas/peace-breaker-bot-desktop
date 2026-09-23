@@ -1,6 +1,6 @@
 import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "../../electron/clip";
 import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "../../electron/presence";
-import type { PanelAction, PanelShortcutRequest } from "../../electron/panel";
+import type { QuickAccessAction, QuickAccessShortcutRequest } from "../../electron/quickAccess";
 import type { CardContext, MenuCommand, MenuState } from "../../electron/menuState";
 import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
 import { isPlatformId } from "../themes";
@@ -50,9 +50,9 @@ declare global {
       drag: (request: ClipRequest) => Promise<ClipDragResult>;
       dragEnd?: () => void;
     };
-    instantsPanel?: {
-      action: (action: PanelAction) => void;
-      setShortcut: (request: PanelShortcutRequest) => Promise<ShortcutResult>;
+    instantsQuickAccess?: {
+      action: (action: QuickAccessAction) => void;
+      setShortcut: (request: QuickAccessShortcutRequest) => Promise<ShortcutResult>;
       onShown: (listener: () => void) => () => void;
     };
     instantsPresence?: {

@@ -1,36 +1,36 @@
-/* The quick panel (360 x 520). It is the app's Tight tier with the toolbar
+/* The quick access (360 x 520). It is the app's Tight tier with the toolbar
  * and hero taken away and one new row on top, the presence strip. Every colour
  * is a token; the two status colours that are literals (amber, red) are the
  * same literals the window's server chip uses, so a warning reads as one in
  * any palette. */
 
-/* The panel window is frosted where the OS can do it (macOS vibrancy,
+/* Quick access window is frosted where the OS can do it (macOS vibrancy,
  * Windows acrylic), so its ground is the palette's, partly see-through. Linux
  * has no such material and keeps a solid one. */
-html[data-panel="1"],
-html[data-panel="1"] body {
+html[data-quick-access="1"],
+html[data-quick-access="1"] body {
   background: transparent;
 }
-html[data-panel="1"] .app.panel {
+html[data-quick-access="1"] .app.quick-access {
   background: color-mix(in oklch, var(--bg) 78%, transparent);
 }
-html[data-panel="1"][data-os="linux"] .app.panel {
+html[data-quick-access="1"][data-os="linux"] .app.quick-access {
   background: var(--bg);
 }
 
-.app.panel {
+.app.quick-access {
   height: 100vh;
 }
-/* Re-run on every open: the panel window is hidden and shown, never remounted. */
-.app.panel.is-shown {
-  animation: panel-in 120ms ease-out;
+/* Re-run on every open: quick access window is hidden and shown, never remounted. */
+.app.quick-access.is-shown {
+  animation: quick-access-in 120ms ease-out;
 }
-@keyframes panel-in {
+@keyframes quick-access-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .app.panel.is-shown { animation: none; }
+  .app.quick-access.is-shown { animation: none; }
 }
 
 /* ==== the presence strip ================================================== */
@@ -124,17 +124,34 @@ html[data-panel="1"][data-os="linux"] .app.panel {
 
 /* ==== Favoritos ============================================================ */
 
-.psearch { flex: none; padding: 10px 16px 0; }
+/* Favoritos' body: a flex column that fills what the strip leaves, so the
+ * search, banner, hint and footer stay put and only .scroll moves. Without
+ * min-height: 0 it would grow to its content and push the footer off. */
+.pbody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The gap under the field belongs to this fixed row, not to the scroller's
+ * padding: padding scrolls away with the content, and cards would then clip
+ * flush against the field's border. */
+.psearch { flex: none; padding: 10px 16px 8px; }
 .psearch .search { width: 100%; }
 
-.app.panel .banner { margin: 10px 16px 0; }
+.app.quick-access .banner { margin: 10px 16px 8px; }
+/* Under the search row, whose bottom padding is already the gap. */
+.psearch + .banner { margin-top: 0; }
 
-/* The panel has no toolbar to clear, so the grid starts right under the search. */
-.app.panel .scroll {
-  padding-top: 12px;
+/* Quick access has no toolbar to clear. The top padding is only what the first
+ * row's hover lift (2px) and focus ring (3px + 3px offset) need so this
+ * scroller's own overflow does not clip them; the visible gap is .psearch's. */
+.app.quick-access .scroll {
+  padding-top: 6px;
   padding-bottom: 12px;
 }
-[data-os="mac"] .app.panel .scroll { padding-top: 12px; }
+[data-os="mac"] .app.quick-access .scroll { padding-top: 6px; }
 
 .phint {
   flex: none;

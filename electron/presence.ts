@@ -1,7 +1,7 @@
 // The one record of what the app is doing, and how it is validated on the way
 // in. Pure, and inlined into the sandboxed preload like chrome.ts: the main
 // process owns a PresenceStore, every renderer reports into it over IPC, and
-// every native surface (tray glyph, menus, panel strip) is a view of it. The
+// every native surface (tray glyph, menus, quick access strip) is a view of it. The
 // renderers are untrusted, so everything they send goes through a validator
 // here first.
 
@@ -85,7 +85,7 @@ function samePlaying(a: Playing | null, b: Playing | null): boolean {
 }
 
 /**
- * Several renderers report at once (the window and the panel); the record
+ * Several renderers report at once (the window and quick access); the record
  * shows the one that started last. `since` is stamped here, and kept while the
  * same clip keeps playing on the same path.
  */
@@ -201,8 +201,8 @@ export function isPresenceSnapshot(x: unknown): x is PresenceSnapshot {
 /** renderer -> main: the settings that decide which native surfaces exist. */
 export const presenceSettingsChannel = "presence:settings";
 
-export type PanelStyle = "favorites" | "connection";
-export type PanelClick = "local" | "discord";
+export type QuickAccessStyle = "favorites" | "connection";
+export type QuickAccessClick = "local" | "discord";
 
 /**
  * Persisted by the renderer (src/storage.ts) and pushed up on change; main
@@ -212,10 +212,10 @@ export interface PresenceSettings {
   /** Mostrar na barra de menus. Everything below needs it. */
   tray: boolean;
   /** Painel rápido. */
-  panel: boolean;
-  panelStyle: PanelStyle;
-  /** What a click on a card's body does in the panel. */
-  panelClick: PanelClick;
+  quickAccess: boolean;
+  quickAccessStyle: QuickAccessStyle;
+  /** What a click on a card's body does in quick access. */
+  quickAccessClick: QuickAccessClick;
   /** macOS: the clip's name beside the glyph. */
   title: boolean;
   /** Windows and Linux: closing the window keeps the app running. */
@@ -224,9 +224,9 @@ export interface PresenceSettings {
 
 export const defaultPresenceSettings: PresenceSettings = {
   tray: false,
-  panel: false,
-  panelStyle: "favorites",
-  panelClick: "local",
+  quickAccess: false,
+  quickAccessStyle: "favorites",
+  quickAccessClick: "local",
   title: false,
   background: false
 };
@@ -236,17 +236,17 @@ export function isPresenceSettings(x: unknown): x is PresenceSettings {
 
   return (
     typeof x.tray === "boolean" &&
-    typeof x.panel === "boolean" &&
-    (x.panelStyle === "favorites" || x.panelStyle === "connection") &&
-    (x.panelClick === "local" || x.panelClick === "discord") &&
+    typeof x.quickAccess === "boolean" &&
+    (x.quickAccessStyle === "favorites" || x.quickAccessStyle === "connection") &&
+    (x.quickAccessClick === "local" || x.quickAccessClick === "discord") &&
     typeof x.title === "boolean" &&
     typeof x.background === "boolean"
   );
 }
 
-/** The panel needs the icon to be clicked; a setting cannot switch on what it depends on. */
+/** Quick access needs the icon to be clicked; a setting cannot switch on what it depends on. */
 export function effectiveSettings(settings: PresenceSettings): PresenceSettings {
-  return settings.tray ? settings : { ...settings, panel: false, title: false };
+  return settings.tray ? settings : { ...settings, quickAccess: false, title: false };
 }
 
 const maxTitle = 24;
@@ -262,6 +262,21 @@ export function trayTitle(snapshot: PresenceSnapshot, settings: PresenceSettings
 type Text = (key: string, options?: Record<string, unknown>) => string;
 
 /** One line for the top of every menu: what the app is doing, in the order that matters. */
+/**
+ * The colour of the status dot, shared by every view of presence: the quick
+ * access strip (`stripTone`) and the tray menu's first row. Green connected,
+ * amber the server answers but the bot is out of its channel, red silent, grey
+ * unknown. A null bot status is unknown, never amber or red.
+ */
+export type StatusTone = "ok" | "warn" | "down" | "unknown";
+
+export function statusTone(snapshot: PresenceSnapshot): StatusTone {
+  if (snapshot.server === null) return "unknown";
+  if (snapshot.silent) return "down";
+  if (snapshot.bot === null) return "unknown";
+  return snapshot.bot.connected ? "ok" : "warn";
+}
+
 export function statusLine(snapshot: PresenceSnapshot, t: Text): string {
   if (snapshot.server === null) return t("server.none");
   if (snapshot.silent) return t("presence.silent");

@@ -62,7 +62,7 @@ import type { SnackbarOptions } from "./SnackbarContext";
 import { exportToJSON } from "./state";
 import { useInstantsState, useManualServers, useSelectedServer } from "./storage";
 import PresenceDialog from "./components/PresenceDialog";
-import { usePanelShortcut, usePanelShortcutSettings } from "./hooks/usePanelShortcut";
+import { useQuickAccessShortcut, useQuickAccessShortcutSettings } from "./hooks/useQuickAccessShortcut";
 import useBotStatus from "./useBotStatus";
 import { usePresenceSettings, useReportPlaying, useReportPresenceSettings } from "./hooks/usePresence";
 import useProviders from "./useProviders";
@@ -146,7 +146,7 @@ export default function App() {
   const explorePlayback = exploreNow?.mode ?? null;
   const focusedCard = useFocusedCard();
 
-  // Each panel says what plays; the tray, its menus and the panel's strip
+  // Each tab says what plays; the tray, its menus and quick access's strip
   // show whichever started last, so main is told with the clip's name.
   const reportFavorites = useCallback(
     (mode: "local" | "discord" | null, name: string | null) =>
@@ -176,7 +176,7 @@ export default function App() {
   );
   const presenceSettings = usePresenceSettings();
   useReportPresenceSettings(presenceSettings.settings);
-  const panelShortcut = usePanelShortcutSettings();
+  const quickAccessShortcut = useQuickAccessShortcutSettings();
   useNativeContextMenu();
 
   const [discovered, setDiscovered] = useState<Server[]>([]);
@@ -365,9 +365,9 @@ export default function App() {
     setToast((current) => ({ ...options, open: true, key: current.key + 1 }));
   }, []);
 
-  // The panel's shortcut is registered only while it is on and the panel is;
+  // Quick access's shortcut is registered only while it is on and quick access is;
   // a combination another app holds snaps the switch back and says so.
-  usePanelShortcut(presenceSettings.effective.panel, () =>
+  useQuickAccessShortcut(presenceSettings.effective.quickAccess, () =>
     showToast({ message: t("menuBar.shortcutTaken") })
   );
 
@@ -975,12 +975,12 @@ export default function App() {
             os={os}
             noTray={os === "linux" && desktop === "gnome"}
             settings={presenceSettings.settings}
-            shortcut={{ enabled: panelShortcut.enabled, modifier: panelShortcut.modifier }}
-            modifiers={panelShortcut.available ? panelShortcut.modifiers : []}
+            shortcut={{ enabled: quickAccessShortcut.enabled, modifier: quickAccessShortcut.modifier }}
+            modifiers={quickAccessShortcut.available ? quickAccessShortcut.modifiers : []}
             onConfirm={(next, key) => {
               const turnedOn = next.tray && !presenceSettings.settings.tray;
               presenceSettings.setSettings(next);
-              panelShortcut.set(key);
+              quickAccessShortcut.set(key);
               setPresenceOpen(false);
               // Windows tucks a new tray icon into the overflow chevron.
               if (turnedOn && os === "win") showToast({ message: t("menuBar.pinHint") });

@@ -45,13 +45,13 @@
       ],
       "desktop": {
         "entry": {
-          "Actions": "OpenPanel;Stop;Refresh;"
+          "Actions": "OpenQuickAccess;Stop;Refresh;"
         },
         "desktopActions": {
-          "OpenPanel": {
-            "Name": "Open Quick Panel",
-            "Name[pt_BR]": "Abrir painel rápido",
-            "Exec": "peace-breaker-bot-desktop --action=open-panel"
+          "OpenQuickAccess": {
+            "Name": "Open Quick Access",
+            "Name[pt_BR]": "Abrir acesso rápido",
+            "Exec": "peace-breaker-bot-desktop --action=open-quick-access"
           },
           "Stop": {
             "Name": "Stop Playback",

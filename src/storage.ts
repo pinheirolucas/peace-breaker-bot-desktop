@@ -3,8 +3,12 @@ import type { Server } from "../electron/discovery";
 import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
 import { createPersistedState } from "./lib/persisted";
+import { migrateQuickAccessStorage } from "./lib/quickAccessCompat";
 import type { Region } from "./regions";
 import type { ColorMode, ThemeId } from "./themes";
+
+// Before any hook below reads its key: settings saved under quick access's old name move over once.
+migrateQuickAccessStorage(window.localStorage);
 
 export interface Instant {
   name: string;
@@ -47,11 +51,11 @@ export interface GlobalShortcutsSetting {
 /** Global keys, which work while another app has focus. */
 export const useGlobalShortcutsState = createPersistedState<GlobalShortcutsSetting>("globalShortcuts");
 
-/** What the tray icon and the quick panel are set to, as one object so it
+/** What the tray icon and the quick access are set to, as one object so it
  *  reaches the main process in one piece. Read it through usePresenceSettings,
  *  which fills in whatever a stored value is missing. */
 export const usePresenceSettingsState = createPersistedState<PresenceSettings>("presence");
 
-/** The quick panel's own global shortcut: a separate switch, off by default,
+/** Quick access's own global shortcut: a separate switch, off by default,
  *  apart from the favourite keys'. */
-export const usePanelShortcutState = createPersistedState<GlobalShortcutsSetting>("panelShortcut");
+export const useQuickAccessShortcutState = createPersistedState<GlobalShortcutsSetting>("quickAccessShortcut");
