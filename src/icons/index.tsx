@@ -216,3 +216,21 @@ export function KeyboardIcon({ size = 16, ...rest }: IconProps) {
     </svg>
   );
 }
+
+export function PinIcon({ size = 15, filled = false, ...rest }: IconProps & { filled?: boolean }) {
+  return (
+    <svg {...base(size)} {...stroke} fill={filled ? "currentColor" : "none"} {...rest}>
+      <path d="M9 4h6l-1 5 3 3v1.5H7V12l3-3z" />
+      <path d="M12 13.5V20" />
+    </svg>
+  );
+}
+
+export function ArrowUpRightIcon({ size = 13, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <path d="M7 17 17 7" />
+      <path d="M8 7h9v9" />
+    </svg>
+  );
+}

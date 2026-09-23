@@ -7,8 +7,8 @@
 export const clipPrepareChannel = "clip:prepare";
 /** renderer -> main: the pointer travelled far enough; start the OS drag. */
 export const clipDragChannel = "clip:drag";
-/** renderer -> main: show the file in the file manager. */
-export const clipRevealChannel = "clip:reveal";
+/** renderer -> main: the pointer is back, so the OS drag is over. The panel may hide again. */
+export const clipDragEndChannel = "clip:drag-end";
 
 export interface ClipRequest {
   name: string;

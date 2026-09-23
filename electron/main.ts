@@ -26,6 +26,7 @@ import {
 } from "./chrome";
 import {
   clipDragChannel,
+  clipDragEndChannel,
   clipPrepareChannel,
   dataUriBytes,
   isClipRequest
@@ -43,6 +44,8 @@ import {
   serverUrl
 } from "./presence";
 import { createPresenceHost } from "./presenceHost";
+import { createPanelWindow } from "./panelWindow";
+import { isPanelAction, isPanelShortcutRequest, panelActionChannel, panelShortcutKey, panelShortcutSetChannel } from "./panel";
 import { actionFromArgv } from "./trayMenu";
 import { isShortcutRequest, shortcutsSetChannel } from "./shortcuts";
 import { createShortcutRegistry, shouldHideOnClose } from "./shortcutRegistry";
@@ -151,6 +154,7 @@ function sendToWindow(channel: string, payload?: unknown): void {
 // Every renderer window: the main one, and the quick panel once it exists.
 function sendToAll(channel: string, payload?: unknown): void {
   sendToWindow(channel, payload);
+  panel.webContents()?.send(channel, payload);
 }
 
 // The Jump List and taskbar grouping key on this; electron-builder's default
@@ -175,9 +179,42 @@ const presence = createPresenceHost({
   iconDir: isDev ? path.join(app.getAppPath(), "public/tray") : path.join(__dirname, "tray"),
   language: () => menuState.language,
   sendAll: sendToAll,
-  openApp: showMainWindow,
+  // A double-click ends with the panel hidden and the window raised, whatever
+  // the two clicks before it did to the panel.
+  openApp: () => {
+    panel.hide();
+    showMainWindow();
+  },
+  togglePanel: (bounds) => panel.toggle(bounds),
+  openPanel: () => panel.show(presence.trayBounds()),
   refreshDiscovery: () => refreshDiscovery(),
-  quit: () => app.quit()
+  quit: () => app.quit(),
+  onSettings: (settings) => {
+    if (settings.panel) {
+      panel.warm();
+    } else {
+      panel.destroy();
+    }
+  }
+});
+
+const panel = createPanelWindow({
+  isDev,
+  onGone: (id) => presence.forget(id),
+  onLoaded: (contents) => {
+    contents.send(presenceSnapshotChannel, presence.snapshot());
+    if (discovered.size > 0) contents.send(discoveryServersChannel, sortedServers());
+  }
+});
+
+// The panel's own global shortcut, apart from the favourite keys': a second
+// registry, so switching one off never releases the other's.
+const panelShortcut = createShortcutRegistry({
+  registry: globalShortcut,
+  send: () => {
+    if (presence.settings().panel) panel.toggle(presence.trayBounds());
+  },
+  wayland
 });
 
 /**
@@ -332,13 +369,12 @@ function localAddresses(): Set<string> {
   return found;
 }
 
+function sortedServers(): Server[] {
+  return sortServers(Array.from(discovered.values()));
+}
+
 function publishServers(): void {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send(
-      discoveryServersChannel,
-      sortServers(Array.from(discovered.values()))
-    );
-  }
+  sendToAll(discoveryServersChannel, sortedServers());
 }
 
 function startDiscovery(): void {
@@ -560,6 +596,17 @@ function fromMainWindow(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEve
   return Boolean(mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents);
 }
 
+function fromPanel(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
+  const contents = panel.webContents();
+  return contents !== null && event.sender === contents;
+}
+
+// The two windows are both this app's own renderers. What each may ask of
+// main is still validated, and what only the window may ask stays with it.
+function fromAppWindow(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
+  return fromMainWindow(event) || fromPanel(event);
+}
+
 // What the menus need to know that only the renderer does. Untrusted: it is
 // validated, and the bar is rebuilt only when something changed.
 ipcMain.on(menuStateChannel, (event, state: unknown) => {
@@ -617,30 +664,30 @@ ipcMain.on(selectionContextChannel, (event) => {
 ipcMain.on(presenceServerChannel, (event, url: unknown) => {
   const server = serverUrl(url);
 
-  if (fromMainWindow(event) && server !== undefined) {
+  if (fromAppWindow(event) && server !== undefined) {
     presence.setServer(server);
   }
 });
 
 ipcMain.on(presencePlayingChannel, (event, report: unknown) => {
-  if (fromMainWindow(event) && isPlayingReport(report)) {
+  if (fromAppWindow(event) && isPlayingReport(report)) {
     presence.setPlaying(event.sender.id, report);
   }
 });
 
 ipcMain.on(presenceStopChannel, (event) => {
-  if (fromMainWindow(event)) presence.stop();
+  if (fromAppWindow(event)) presence.stop();
 });
 
 ipcMain.on(presenceSettingsChannel, (event, settings: unknown) => {
-  if (fromMainWindow(event) && isPresenceSettings(settings)) {
+  if (fromAppWindow(event) && isPresenceSettings(settings)) {
     presence.setSettings(settings);
   }
 });
 
 // Prepared on pointer down, so the drag that may follow finds the file ready.
 ipcMain.handle(clipPrepareChannel, async (event, request: unknown): Promise<ClipPrepareResult> => {
-  if (!fromMainWindow(event) || !isClipRequest(request)) return "failed";
+  if (!fromAppWindow(event) || !isClipRequest(request)) return "failed";
 
   return (await clips.prepare(request)) ? "ready" : "failed";
 });
@@ -648,15 +695,74 @@ ipcMain.handle(clipPrepareChannel, async (event, request: unknown): Promise<Clip
 // The drag itself. startDrag is main's alone: the renderer can only ask for a
 // clip it has just prepared, never name a path.
 ipcMain.handle(clipDragChannel, async (event, request: unknown): Promise<ClipDragResult> => {
-  if (!fromMainWindow(event) || !isClipRequest(request)) return "failed";
+  if (!fromAppWindow(event) || !isClipRequest(request)) return "failed";
+
+  // Starting a native drag can blur the panel; hiding then would take the
+  // source out from under the pointer.
+  const fromThePanel = fromPanel(event);
+  if (fromThePanel) panel.beginDrag();
 
   const file = await clips.ready(request.url);
-  if (!file) return "failed";
+  if (!file) {
+    if (fromThePanel) panel.endDrag();
+    return "failed";
+  }
 
   // The icon is what follows the pointer; a macOS drag needs a non-empty one.
   const icon = nativeImage.createFromPath(path.join(__dirname, "icon.png")).resize({ width: 48 });
   event.sender.startDrag({ file, icon });
   return "started";
+});
+
+ipcMain.on(clipDragEndChannel, (event) => {
+  if (fromPanel(event)) panel.endDrag();
+});
+
+ipcMain.on(panelActionChannel, (event, action: unknown) => {
+  if (!fromPanel(event) || !isPanelAction(action)) return;
+
+  switch (action.type) {
+    case "hide":
+      panel.hide();
+      break;
+    case "open-app":
+      panel.hide();
+      showMainWindow();
+      break;
+    case "refresh":
+      refreshDiscovery();
+      break;
+    case "settings":
+      panel.hide();
+      showMainWindow();
+      sendToWindow(menuCommandChannel, { type: "presence-settings" });
+      break;
+    case "quit":
+      app.quit();
+      break;
+    case "pin":
+      panel.setPinned(action.pinned);
+      break;
+    case "resize":
+      panel.resize(action.height);
+      break;
+  }
+});
+
+// Its own switch, off by default. The renderer asks for it only while the
+// panel is on, and turning it off releases the combination at once.
+ipcMain.handle(panelShortcutSetChannel, (event, request: unknown): ShortcutResult => {
+  const empty: ShortcutResult = { registered: [], failed: [] };
+
+  if (!fromAppWindow(event) || !isPanelShortcutRequest(request, process.platform)) {
+    return empty;
+  }
+
+  return panelShortcut.apply({
+    enabled: request.enabled,
+    modifier: request.modifier,
+    keys: [panelShortcutKey]
+  });
 });
 
 ipcMain.handle(shortcutsSetChannel, (event, request: unknown): ShortcutResult => {
@@ -696,6 +802,7 @@ app.on("before-quit", () => {
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   presence.destroy();
+  panel.destroy();
   // Synchronous on purpose: the process is on its way out.
   rmSync(clipsDir, { recursive: true, force: true });
 });

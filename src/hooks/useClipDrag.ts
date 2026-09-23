@@ -72,6 +72,7 @@ export function useClipDrag(request: ClipRequest, enabled: boolean) {
 
       const clip = latest.current.request;
       const drag = bridge.drag;
+      const dragEnd = bridge.dragEnd;
       const originX = event.clientX;
       const originY = event.clientY;
       let settled = false;
@@ -121,6 +122,7 @@ export function useClipDrag(request: ClipRequest, enabled: boolean) {
               clearTimer();
               cleanup.current = null;
               setState("rest");
+              dragEnd?.();
             };
             window.addEventListener("pointermove", done);
             window.addEventListener("pointerdown", done);

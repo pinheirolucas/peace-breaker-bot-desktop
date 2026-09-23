@@ -5,6 +5,7 @@
 
 import type { MenuItemConstructorOptions } from "electron";
 import type { Translate } from "./menuI18n";
+import { statusLine } from "./presence";
 import type { PresenceSnapshot } from "./presence";
 
 export type TrayAction = "stop" | "open-panel" | "open-app" | "refresh";
@@ -18,19 +19,6 @@ export function actionFromArgv(argv: readonly string[]): TrayAction | null {
     if (match) return match[1] as TrayAction;
   }
   return null;
-}
-
-/** One line for the top of every menu: what the app is doing, in the order that matters. */
-export function statusLine(snapshot: PresenceSnapshot, t: Translate): string {
-  if (snapshot.server === null) return t("server.none");
-  if (snapshot.playing) return t("presence.playing", { name: snapshot.playing.name });
-  if (snapshot.bot === null) return t("presence.checking");
-  if (!snapshot.bot.connected) return t("server.notInVoice");
-
-  const { guildName, channelName } = snapshot.bot;
-  return guildName && channelName
-    ? t("server.inVoice", { guildName, channelName })
-    : t("presence.connected");
 }
 
 export interface TrayMenuOptions {

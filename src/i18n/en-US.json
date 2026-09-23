@@ -379,6 +379,38 @@
     "openApp": "Open Peace Breaker Bot",
     "refresh": "Search for Server Again",
     "quit": "Quit",
-    "someSound": "Sound"
+    "someSound": "Sound",
+    "silent": "Server is not responding"
+  },
+  "panel": {
+    "pin": "Keep panel open",
+    "more": "More",
+    "stop": "Stop",
+    "esc": "esc",
+    "searchLabel": "Search favorites",
+    "hint": "Drag a sound into any app to send it as a file",
+    "count_one": "{{count}} favorite",
+    "count_other": "{{count}} favorites",
+    "openApp": "Open app",
+    "offline": "Clicks still work: one of them finds out when it is back.",
+    "retry": "Search",
+    "emptyTitle": "No favorites yet",
+    "emptyBody": "Add sounds in the app window and they show up here.",
+    "noMatch": "No sound matches “{{query}}”",
+    "noMatchBody": "Clear the search to see all favorites.",
+    "clear": "Clear search",
+    "style": "Panel style",
+    "styleFavorites": "Favorites",
+    "styleConnection": "Connection",
+    "servers": "Servers found",
+    "searchAgain": "Search again",
+    "searching": "Searching…",
+    "inUse": "in use",
+    "noneBody": "Check that the bot is running and that this computer is on the same network as it.",
+    "connectionNote": "Switching applies at once. Servers are found on the local network.",
+    "enter": "Enter"
+  },
+  "menuBar": {
+    "title": "Menu Bar"
   }
 }

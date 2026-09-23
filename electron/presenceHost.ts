@@ -17,11 +17,12 @@ import {
   mergePlaying,
   presenceReduce,
   presenceSnapshotChannel,
+  statusLine,
   trayState,
   trayTitle
 } from "./presence";
 import type { PlayingReport, PresenceAction, PresenceSettings, PresenceSnapshot } from "./presence";
-import { jumpListTasks, statusLine, trayMenu } from "./trayMenu";
+import { jumpListTasks, trayMenu } from "./trayMenu";
 import type { TrayAction } from "./trayMenu";
 
 /** How often the bot's voice-connection status is asked for, once for the whole app. */
@@ -40,6 +41,8 @@ export interface PresenceHostDeps {
   openPanel?: () => void;
   refreshDiscovery: () => void;
   quit: () => void;
+  /** The settings in force changed: the panel window is created or destroyed here. */
+  onSettings?: (settings: PresenceSettings) => void;
 }
 
 export function createPresenceHost(deps: PresenceHostDeps) {
@@ -72,18 +75,26 @@ export function createPresenceHost(deps: PresenceHostDeps) {
     if (!server) return;
 
     let bot = null;
+    let silent = false;
+
     try {
       const response = await net.fetch(`${server}/bot/status`, {
         signal: AbortSignal.timeout(pollTimeoutMs)
       });
-      const body = (await response.json()) as { data?: unknown };
-      bot = botFrom(body.data);
+
+      try {
+        const body = (await response.json()) as { data?: unknown };
+        bot = botFrom(body.data);
+      } catch {
+        // An answer that is not the envelope (an old backend's 404): the server is there, the bot unknown.
+      }
     } catch {
-      // unreachable, or an old backend with no route: unknown, never "not connected"
+      // No response at all is the one thing that makes a server silent.
+      silent = true;
     }
 
     // A server picked meanwhile makes this answer stale.
-    if (generation === pollGeneration) dispatch({ type: "bot", bot });
+    if (generation === pollGeneration) dispatch({ type: "poll", bot, silent });
   }
 
   function restartPolling(): void {
@@ -119,6 +130,7 @@ export function createPresenceHost(deps: PresenceHostDeps) {
   function setSettings(next: PresenceSettings): void {
     settings = next;
     render();
+    deps.onSettings?.(effectiveSettings(settings));
   }
 
   // ---- stop, from any surface ----
@@ -249,6 +261,8 @@ export function createPresenceHost(deps: PresenceHostDeps) {
   return {
     snapshot: () => snapshot,
     settings: () => effectiveSettings(settings),
+    /** Where the tray icon is, or null with no icon (or an OS that cannot say). */
+    trayBounds: () => tray?.getBounds() ?? null,
     setServer,
     setPlaying,
     forget,

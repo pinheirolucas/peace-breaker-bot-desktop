@@ -1,7 +1,9 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { discoveryRefreshChannel, discoveryServersChannel } from "./discovery";
 import type { Server } from "./discovery";
-import { clipDragChannel, clipPrepareChannel } from "./clip";
+import { clipDragChannel, clipDragEndChannel, clipPrepareChannel } from "./clip";
+import { panelActionChannel, panelShortcutSetChannel, panelShownChannel } from "./panel";
+import type { PanelAction, PanelShortcutRequest } from "./panel";
 import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "./clip";
 import {
   isPresenceSnapshot,
@@ -235,7 +237,27 @@ contextBridge.exposeInMainWorld("instantsClip", {
   prepare: (request: ClipRequest): Promise<ClipPrepareResult> =>
     ipcRenderer.invoke(clipPrepareChannel, request),
   drag: (request: ClipRequest): Promise<ClipDragResult> =>
-    ipcRenderer.invoke(clipDragChannel, request)
+    ipcRenderer.invoke(clipDragChannel, request),
+  // The pointer is back: the OS drag is over, and the panel may hide again.
+  dragEnd: () => ipcRenderer.send(clipDragEndChannel)
+});
+
+// The quick panel: what it asks of main, and its own global shortcut. Main
+// checks the sender for every action; the shortcut request is validated too.
+contextBridge.exposeInMainWorld("instantsPanel", {
+  action: (action: PanelAction) => ipcRenderer.send(panelActionChannel, action),
+  setShortcut: (request: PanelShortcutRequest): Promise<ShortcutResult> =>
+    ipcRenderer.invoke(panelShortcutSetChannel, request),
+  onShown: (listener: () => void) => {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+
+    const handler = () => listener();
+
+    ipcRenderer.on(panelShownChannel, handler);
+    return () => ipcRenderer.removeListener(panelShownChannel, handler);
+  }
 });
 
 // What main needs from the renderer to act without a window, and the one

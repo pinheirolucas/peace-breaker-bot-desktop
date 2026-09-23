@@ -379,6 +379,38 @@
     "openApp": "Abrir Peace Breaker Bot",
     "refresh": "Procurar servidor novamente",
     "quit": "Sair",
-    "someSound": "Som"
+    "someSound": "Som",
+    "silent": "Servidor não está respondendo"
+  },
+  "panel": {
+    "pin": "Manter o painel aberto",
+    "more": "Mais",
+    "stop": "Parar",
+    "esc": "esc",
+    "searchLabel": "Buscar nos favoritos",
+    "hint": "Arraste um som para qualquer app para enviá-lo como arquivo",
+    "count_one": "{{count}} favorito",
+    "count_other": "{{count}} favoritos",
+    "openApp": "Abrir app",
+    "offline": "Os cliques continuam funcionando: um deles descobre quando voltar.",
+    "retry": "Procurar",
+    "emptyTitle": "Nenhum favorito ainda",
+    "emptyBody": "Adicione sons na janela do app e eles aparecem aqui.",
+    "noMatch": "Nenhum som para “{{query}}”",
+    "noMatchBody": "Limpe a busca para ver todos os favoritos.",
+    "clear": "Limpar busca",
+    "style": "Estilo do painel",
+    "styleFavorites": "Favoritos",
+    "styleConnection": "Conexão",
+    "servers": "Servidores encontrados",
+    "searchAgain": "Procurar novamente",
+    "searching": "Procurando…",
+    "inUse": "em uso",
+    "noneBody": "Confira se o bot está rodando e se este computador está na mesma rede dele.",
+    "connectionNote": "A troca vale na hora. Os servidores são encontrados na rede local.",
+    "enter": "Enter"
+  },
+  "menuBar": {
+    "title": "Barra de menus"
   }
 }

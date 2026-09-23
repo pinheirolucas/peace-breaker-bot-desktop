@@ -40,13 +40,16 @@ export interface PresenceSnapshot {
   bot: PresenceBot | null;
   playing: Playing | null;
   server: string | null;
+  /** The last poll got no response at all: the server is silent. Any answer at
+   *  all, an error included, clears it — the same passive rule as the window's chip. */
+  silent: boolean;
 }
 
-export const emptyPresence: PresenceSnapshot = { bot: null, playing: null, server: null };
+export const emptyPresence: PresenceSnapshot = { bot: null, playing: null, server: null, silent: false };
 
 export type PresenceAction =
   | { type: "server"; server: string | null }
-  | { type: "bot"; bot: PresenceBot | null }
+  | { type: "poll"; bot: PresenceBot | null; silent: boolean }
   | { type: "playing"; playing: Playing | null };
 
 /**
@@ -57,9 +60,13 @@ export type PresenceAction =
 export function presenceReduce(state: PresenceSnapshot, action: PresenceAction): PresenceSnapshot {
   switch (action.type) {
     case "server":
-      return action.server === state.server ? state : { ...state, server: action.server, bot: null };
-    case "bot":
-      return sameBot(action.bot, state.bot) ? state : { ...state, bot: action.bot };
+      return action.server === state.server
+        ? state
+        : { ...state, server: action.server, bot: null, silent: false };
+    case "poll":
+      return sameBot(action.bot, state.bot) && action.silent === state.silent
+        ? state
+        : { ...state, bot: action.bot, silent: action.silent };
     case "playing":
       return samePlaying(action.playing, state.playing) ? state : { ...state, playing: action.playing };
   }
@@ -110,11 +117,11 @@ export function mergePlaying(
 export type TrayState = "connected" | "playing" | "idle" | "off";
 
 /**
- * Playing beats everything; then what the bot says. An unknown status with a
+ * No server, or one that is silent, is off. Then playing; then what the bot says. An unknown status with a
  * server is "off", never "idle": unknown must not read as "not in a channel".
  */
 export function trayState(snapshot: PresenceSnapshot): TrayState {
-  if (snapshot.server === null) return "off";
+  if (snapshot.server === null || snapshot.silent) return "off";
   if (snapshot.playing) return "playing";
   if (snapshot.bot === null) return "off";
   return snapshot.bot.connected ? "connected" : "idle";
@@ -181,7 +188,7 @@ export function serverUrl(x: unknown): string | null | undefined {
 
 /** A snapshot arriving in a renderer, from main: trusted less than it looks, so shaped before it is used. */
 export function isPresenceSnapshot(x: unknown): x is PresenceSnapshot {
-  if (!isObject(x)) return false;
+  if (!isObject(x) || typeof x.silent !== "boolean") return false;
   if (x.server !== null && serverUrl(x.server) === undefined) return false;
   if (x.bot !== null && botFrom(x.bot) === null) return false;
   if (x.playing !== null) {
@@ -250,4 +257,20 @@ export function trayTitle(snapshot: PresenceSnapshot, settings: PresenceSettings
 
   const { name } = snapshot.playing;
   return name.length > maxTitle ? `${name.slice(0, maxTitle - 1).trimEnd()}…` : name;
+}
+
+type Text = (key: string, options?: Record<string, unknown>) => string;
+
+/** One line for the top of every menu: what the app is doing, in the order that matters. */
+export function statusLine(snapshot: PresenceSnapshot, t: Text): string {
+  if (snapshot.server === null) return t("server.none");
+  if (snapshot.silent) return t("presence.silent");
+  if (snapshot.playing) return t("presence.playing", { name: snapshot.playing.name });
+  if (snapshot.bot === null) return t("presence.checking");
+  if (!snapshot.bot.connected) return t("server.notInVoice");
+
+  const { guildName, channelName } = snapshot.bot;
+  return guildName && channelName
+    ? t("server.inVoice", { guildName, channelName })
+    : t("presence.connected");
 }

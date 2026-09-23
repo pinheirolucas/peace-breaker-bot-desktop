@@ -11,12 +11,13 @@ import {
   isPresenceSnapshot,
   mergePlaying,
   presenceReduce,
+  statusLine,
   serverUrl,
   trayState,
   trayTitle
 } from "../electron/presence";
 import type { PresenceSnapshot } from "../electron/presence";
-import { actionFromArgv, jumpListTasks, statusLine, trayMenu } from "../electron/trayMenu";
+import { actionFromArgv, jumpListTasks, trayMenu } from "../electron/trayMenu";
 import type { TrayHandlers } from "../electron/trayMenu";
 
 const server = "http://192.168.0.5:9001/api/v1";
@@ -33,7 +34,7 @@ describe("presenceReduce", () => {
     const state = snap({ server, bot: inChannel, playing });
 
     expect(presenceReduce(state, { type: "server", server })).toBe(state);
-    expect(presenceReduce(state, { type: "bot", bot: { ...inChannel } })).toBe(state);
+    expect(presenceReduce(state, { type: "poll", bot: { ...inChannel }, silent: false })).toBe(state);
     expect(presenceReduce(state, { type: "playing", playing: { ...playing } })).toBe(state);
   });
 
@@ -45,8 +46,20 @@ describe("presenceReduce", () => {
     expect(next.playing).toEqual(playing);
   });
 
+  it("marks a server silent, and any answer clears it", () => {
+    const silent = presenceReduce(snap({ server }), { type: "poll", bot: null, silent: true });
+    expect(silent.silent).toBe(true);
+    expect(presenceReduce(silent, { type: "poll", bot: null, silent: false }).silent).toBe(false);
+    // A new server starts unknown, not silent.
+    expect(presenceReduce(silent, { type: "server", server: "http://10.0.0.2:9001/api/v1" }).silent).toBe(false);
+  });
+
   it("takes a bot status and a stop", () => {
-    const state = presenceReduce(snap({ server }), { type: "bot", bot: { connected: false } });
+    const state = presenceReduce(snap({ server }), {
+      type: "poll",
+      bot: { connected: false },
+      silent: false
+    });
     expect(state.bot).toEqual({ connected: false });
     expect(presenceReduce(snap({ playing }), { type: "playing", playing: null }).playing).toBeNull();
   });
@@ -97,6 +110,10 @@ describe("trayState", () => {
     expect(trayState(snap({ server, bot: { connected: false } }))).toBe("idle");
   });
 
+  it("is off while the server is silent, even mid-clip", () => {
+    expect(trayState(snap({ server, silent: true, playing }))).toBe("off");
+  });
+
   it("never reads an unknown bot as out of its channel", () => {
     expect(trayState(snap({ server, bot: null }))).toBe("off");
   });
@@ -140,6 +157,7 @@ describe("validators", () => {
     expect(isPresenceSnapshot({ ...emptyPresence, server: "nope" })).toBe(false);
     expect(isPresenceSnapshot({ ...emptyPresence, playing: { mode: "local", name: "A" } })).toBe(false);
     expect(isPresenceSnapshot(null)).toBe(false);
+    expect(isPresenceSnapshot({ bot: null, playing: null, server: null })).toBe(false);
   });
 
   it("isPresenceSettings needs every field", () => {
@@ -232,6 +250,7 @@ describe("tray menu", () => {
     expect(statusLine(snap(), t)).toBe("Nenhum servidor encontrado");
     expect(statusLine(snap({ server, bot: inChannel, playing }), t)).toBe("Tocando: Vine boom");
     expect(statusLine(snap({ server }), t)).toBe("Verificando o servidor…");
+    expect(statusLine(snap({ server, silent: true }), t)).toBe("Servidor não está respondendo");
     expect(statusLine(snap({ server, bot: { connected: false } }), t)).toBe(
       "bot fora de um canal de voz"
     );

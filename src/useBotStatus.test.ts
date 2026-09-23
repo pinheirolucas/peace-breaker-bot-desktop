@@ -133,7 +133,7 @@ describe("useBotStatus under Electron", () => {
     const { result } = renderHook(() => useBotStatus(apiUrl));
 
     expect(result.current).toBeNull();
-    send({ server: apiUrl, bot: { connected: true }, playing: null });
+    send({ server: apiUrl, bot: { connected: true }, playing: null, silent: false });
 
     expect(result.current).toEqual({ connected: true });
     expect(getBotStatus).not.toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe("useBotStatus under Electron", () => {
     const send = bridge();
     const { result } = renderHook(() => useBotStatus(apiUrl));
 
-    send({ server: "http://10.0.0.9:9001/api/v1", bot: { connected: true }, playing: null });
+    send({ server: "http://10.0.0.9:9001/api/v1", bot: { connected: true }, playing: null, silent: false });
 
     expect(result.current).toBeNull();
   });
