@@ -51,3 +51,7 @@ export const useGlobalShortcutsState = createPersistedState<GlobalShortcutsSetti
  *  reaches the main process in one piece. Read it through usePresenceSettings,
  *  which fills in whatever a stored value is missing. */
 export const usePresenceSettingsState = createPersistedState<PresenceSettings>("presence");
+
+/** The quick panel's own global shortcut: a separate switch, off by default,
+ *  apart from the favourite keys'. */
+export const usePanelShortcutState = createPersistedState<GlobalShortcutsSetting>("panelShortcut");

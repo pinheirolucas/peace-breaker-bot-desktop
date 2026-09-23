@@ -411,6 +411,30 @@
     "enter": "Enter"
   },
   "menuBar": {
-    "title": "Barra de menus"
+    "title": "Barra de menus",
+    "done": "Pronto",
+    "tray": "Mostrar na barra de menus",
+    "trayHint": "Ícone com o estado do bot. Clique ou botão direito para ver o menu.",
+    "panel": "Painel rápido",
+    "panelHint": "O clique no ícone abre os favoritos em um painel. O menu continua no botão direito.",
+    "panelNeedsTray": "Ligue o ícone na barra de menus primeiro.",
+    "noTray": "Sem ícone na bandeja neste ambiente. Abra o painel pelo menu do ícone do app no dock, ou ligue o atalho global.",
+    "style": "Estilo do painel",
+    "styleHint": "Favoritos mostra os sons. Conexão mostra só o servidor, para conectar e procurar.",
+    "click": "Clique em um som no painel",
+    "clickHint": "Só no estilo Favoritos. Padrão: ouvir aqui.",
+    "clickLocal": "Ouvir aqui",
+    "clickDiscord": "Enviar ao bot",
+    "shortcut": "Atalho global",
+    "shortcutHint": "Abre o painel mesmo com outro app em foco. Desligado por padrão.",
+    "shortcutNeedsPanel": "Ligue o painel rápido primeiro.",
+    "combo": "Combinação",
+    "comboHint": "Só vale com o atalho ligado.",
+    "shortcutTaken": "Em uso por outro app",
+    "nameBeside": "Mostrar o nome do som ao lado do ícone",
+    "titleHint": "Aparece em compartilhamento de tela. Desligado por padrão.",
+    "background": "Manter em segundo plano ao fechar a janela",
+    "backgroundHint": "No macOS o app já continua aberto.",
+    "pinHint": "Fixe o ícone na barra de tarefas para mantê-lo visível."
   }
 }

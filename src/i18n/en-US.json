@@ -411,6 +411,30 @@
     "enter": "Enter"
   },
   "menuBar": {
-    "title": "Menu Bar"
+    "title": "Menu Bar",
+    "done": "Done",
+    "tray": "Show in the menu bar",
+    "trayHint": "An icon with the bot's state. Click or right-click for the menu.",
+    "panel": "Quick panel",
+    "panelHint": "A click on the icon opens the favorites in a panel. The menu stays on right-click.",
+    "panelNeedsTray": "Turn on the menu bar icon first.",
+    "noTray": "No tray icon in this environment. Open the panel from the app's dock menu, or turn on the global shortcut.",
+    "style": "Panel style",
+    "styleHint": "Favorites shows the sounds. Connection shows only the server, to connect and search.",
+    "click": "Click a sound in the panel",
+    "clickHint": "Favorites style only. Default: listen here.",
+    "clickLocal": "Listen here",
+    "clickDiscord": "Send to the bot",
+    "shortcut": "Global shortcut",
+    "shortcutHint": "Opens the panel even with another app in focus. Off by default.",
+    "shortcutNeedsPanel": "Turn on the quick panel first.",
+    "combo": "Combination",
+    "comboHint": "Only applies with the shortcut on.",
+    "shortcutTaken": "In use by another app",
+    "nameBeside": "Show the sound's name beside the icon",
+    "titleHint": "Shows up when sharing your screen. Off by default.",
+    "background": "Keep running when the window is closed",
+    "backgroundHint": "On macOS the app already keeps running.",
+    "pinHint": "Pin the icon to the taskbar to keep it visible."
   }
 }
