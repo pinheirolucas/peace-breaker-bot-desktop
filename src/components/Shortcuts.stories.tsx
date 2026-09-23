@@ -142,14 +142,44 @@ function withoutBridge() {
   delete window.instantsShortcuts;
 }
 
-function SheetStory({ setup, failed = [] }: { setup: () => void; failed?: string[] }) {
-  setup();
+/** The native menus' bridge. With it the sheet names each command's menu and lists the menu-only keys. */
+function withMenuBar(present: boolean) {
+  if (!present) {
+    delete window.instantsMenu;
+    return;
+  }
+
+  window.instantsMenu = {
+    setState: noop,
+    onCommand: () => noop,
+    cardContext: noop,
+    gridContext: noop,
+    serverContext: noop,
+    serverRowContext: noop,
+    selectionContext: noop
+  };
+}
+
+interface SheetStoryProps {
+  /** Global keys: absent is a browser tab, false is off, true is on. */
+  global?: boolean;
+  menuBar?: boolean;
+  failed?: string[];
+  instants?: Instant[];
+  os?: "mac" | "win" | "linux";
+}
+
+function SheetStory({ global, menuBar = true, failed = [], instants = clips, os = "win" }: SheetStoryProps) {
+  if (global === undefined) withoutBridge();
+  else withBridge(global);
+  withMenuBar(menuBar);
+
   return (
     <ShortcutSheet
       open
       onOpenChange={noop}
-      instants={clips}
-      os="win"
+      instants={instants}
+      os={os}
       status={{
         registered: [],
         failed: failed.map((key) => ({ key, reason: "in-use" as const }))
@@ -161,17 +191,43 @@ function SheetStory({ setup, failed = [] }: { setup: () => void; failed?: string
 
 export const SheetInApp: StoryObj = {
   name: "Sheet · in the app (no bridge)",
-  render: () => <SheetStory setup={withoutBridge} />
+  render: () => <SheetStory menuBar={false} />
 };
 
 export const SheetGlobalOff: StoryObj = {
   name: "Sheet · global keys off",
-  render: () => <SheetStory setup={() => withBridge(false)} />
+  render: () => <SheetStory global={false} />
 };
 
 export const SheetGlobalOn: StoryObj = {
-  name: "Sheet · global keys on, one in use",
-  render: () => <SheetStory setup={() => withBridge(true)} failed={["c"]} />
+  name: "Sheet · global keys on",
+  render: () => <SheetStory global os="mac" />
+};
+
+export const SheetGlobalOnWindows: StoryObj = {
+  name: "Sheet · global keys on (Windows)",
+  render: () => <SheetStory global />
+};
+
+export const SheetConflict: StoryObj = {
+  name: "Sheet · a combo another app holds",
+  render: () => <SheetStory global failed={["c"]} os="mac" />
+};
+
+export const SheetNoKeyedSounds: StoryObj = {
+  name: "Sheet · no sound has a key",
+  render: () => <SheetStory global={false} instants={clips.map(({ key: _key, ...clip }) => clip)} />
+};
+
+export const SheetNoSounds: StoryObj = {
+  name: "Sheet · no sounds at all",
+  render: () => <SheetStory global={false} instants={[]} />
+};
+
+export const SheetNarrow: StoryObj = {
+  name: "Sheet · narrow window (one column, menu names dropped)",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: () => <SheetStory global os="mac" />
 };
 
 export const MenuEntry: StoryObj = {
