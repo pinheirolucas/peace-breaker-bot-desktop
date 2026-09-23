@@ -17,6 +17,10 @@ import {
   trayTitle
 } from "../electron/presence";
 import type { PresenceSnapshot } from "../electron/presence";
+import { dotColors, dotPng } from "../electron/statusDot";
+import { inflateSync } from "node:zlib";
+import { stripTone } from "./components/PresenceStrip";
+import { statusTone } from "../electron/presence";
 import { actionFromArgv, jumpListTasks, trayMenu } from "../electron/trayMenu";
 import type { TrayHandlers } from "../electron/trayMenu";
 
@@ -308,5 +312,65 @@ describe("jump list and launch actions", () => {
     expect(actionFromArgv(["app", "--action=open-panel"])).toBe("open-quick-access");
     expect(actionFromArgv(["app", "--action=rm -rf"])).toBeNull();
     expect(actionFromArgv(["app"])).toBeNull();
+  });
+});
+
+describe("the tray menu's status dot", () => {
+  const t = translatorFor("pt-BR");
+  const on = (): TrayHandlers => ({
+    stop: vi.fn(),
+    "open-quick-access": vi.fn(),
+    "open-app": vi.fn(),
+    refresh: vi.fn(),
+    quit: vi.fn()
+  });
+  const cases: [string, PresenceSnapshot, "ok" | "warn" | "down" | "unknown"][] = [
+    ["server answers and the bot is connected", snap({ server, bot: inChannel }), "ok"],
+    ["server answers, bot out of its channel", snap({ server, bot: { connected: false } }), "warn"],
+    ["server silent", snap({ server, silent: true }), "down"],
+    ["bot status not known yet (null)", snap({ server, bot: null }), "unknown"],
+    ["no active server", snap(), "unknown"],
+    ["silent with no server is still just none", snap({ server: null, silent: true }), "unknown"]
+  ];
+
+  it.each(cases)("draws %s as %s", (_name, state, tone) => {
+    const menu = trayMenu(state, { quickAccess: false, quit: false, dot: (key) => key }, t, on());
+
+    expect(menu[0].icon).toBe(tone);
+    expect(menu[0].enabled).toBe(false);
+  });
+
+  it("is the same decision the quick access strip draws", () => {
+    for (const [, state, tone] of cases) {
+      expect(stripTone(state)).toBe(tone);
+      expect(statusTone(state)).toBe(tone);
+    }
+  });
+
+  it("leaves the text and the rest of the menu alone, and draws no dot without one", () => {
+    const state = snap({ server, bot: inChannel });
+    const plain = trayMenu(state, { quickAccess: true, quit: true }, t, on());
+    const dotted = trayMenu(state, { quickAccess: true, quit: true, dot: () => undefined }, t, on());
+
+    expect("icon" in plain[0]).toBe(false);
+    expect(dotted.map((item) => item.label)).toEqual(plain.map((item) => item.label));
+  });
+
+  it("encodes a round, coloured, transparent-cornered PNG at both scales", () => {
+    for (const scale of [1, 2]) {
+      const png = dotPng(dotColors.warn, scale);
+      const size = 12 * scale;
+
+      expect(png.subarray(1, 4).toString("ascii")).toBe("PNG");
+      expect(png.readUInt32BE(16)).toBe(size);
+      expect(png.readUInt32BE(20)).toBe(size);
+
+      const idat = png.indexOf("IDAT");
+      const data = inflateSync(png.subarray(idat + 4, idat + 4 + png.readUInt32BE(idat - 4)));
+      const pixel = (x: number, y: number) => [...data.subarray(y * (1 + size * 4) + 1 + x * 4).subarray(0, 4)];
+
+      expect(pixel(size / 2, size / 2)).toEqual([0xdc, 0x9e, 0x00, 255]);
+      expect(pixel(0, 0)[3]).toBe(0);
+    }
   });
 });

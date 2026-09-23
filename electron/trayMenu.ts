@@ -5,7 +5,8 @@
 
 import type { MenuItemConstructorOptions } from "electron";
 import type { Translate } from "./menuI18n";
-import { statusLine } from "./presence";
+import { statusLine, statusTone } from "./presence";
+import type { StatusTone } from "./presence";
 import type { PresenceSnapshot } from "./presence";
 
 export type TrayAction = "stop" | "open-quick-access" | "open-app" | "refresh";
@@ -27,6 +28,8 @@ export interface TrayMenuOptions {
   quickAccess: boolean;
   /** The Dock menu already has Quit of its own. */
   quit: boolean;
+  /** The image for a status colour, drawn before the status line. Absent, the line has no dot. */
+  dot?: (tone: StatusTone) => MenuItemConstructorOptions["icon"];
 }
 
 export type TrayHandlers = Record<TrayAction | "quit", () => void>;
@@ -39,7 +42,13 @@ export function trayMenu(
 ): MenuItemConstructorOptions[] {
   // Opening comes first, then what acts on playback and the server.
   const items: MenuItemConstructorOptions[] = [
-    { label: statusLine(snapshot, t), enabled: false },
+    // Kept disabled, not enabled-without-a-click: a disabled row is what says
+    // "this is not a button" in every OS's menu, in the grey text it has always had.
+    {
+      label: statusLine(snapshot, t),
+      enabled: false,
+      ...(options.dot ? { icon: options.dot(statusTone(snapshot)) } : {})
+    },
     { type: "separator" },
     { label: t("presence.openApp"), click: on["open-app"] }
   ];

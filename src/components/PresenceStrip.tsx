@@ -1,22 +1,17 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { statusLine } from "../../electron/presence";
-import type { PresenceSnapshot } from "../../electron/presence";
+import { statusLine, statusTone } from "../../electron/presence";
+import type { PresenceSnapshot, StatusTone } from "../../electron/presence";
 import { MoreIcon, PinIcon, StopIcon } from "../icons";
 import { formatApiUrl } from "../ServerMenu";
 import { IconButton } from "./Button";
 import { Menu } from "./Menu";
 import "./quickAccess.css";
 
-/** Green connected, amber out of channel, red silent, grey unknown: the window's server chip, in quick access. */
-export type StripTone = "ok" | "warn" | "down" | "unknown";
-
-export function stripTone(snapshot: PresenceSnapshot): StripTone {
-  if (snapshot.server === null) return "unknown";
-  if (snapshot.silent) return "down";
-  if (snapshot.bot === null) return "unknown";
-  return snapshot.bot.connected ? "ok" : "warn";
-}
+/** Green connected, amber out of channel, red silent, grey unknown: the window's server chip, in quick access.
+ *  The decision is presence.ts's, so the tray menu's dot cannot drift from this one. */
+export type StripTone = StatusTone;
+export const stripTone = statusTone;
 
 export interface PresenceStripProps {
   snapshot: PresenceSnapshot;

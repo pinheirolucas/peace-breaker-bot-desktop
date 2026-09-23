@@ -262,6 +262,21 @@ export function trayTitle(snapshot: PresenceSnapshot, settings: PresenceSettings
 type Text = (key: string, options?: Record<string, unknown>) => string;
 
 /** One line for the top of every menu: what the app is doing, in the order that matters. */
+/**
+ * The colour of the status dot, shared by every view of presence: the quick
+ * access strip (`stripTone`) and the tray menu's first row. Green connected,
+ * amber the server answers but the bot is out of its channel, red silent, grey
+ * unknown. A null bot status is unknown, never amber or red.
+ */
+export type StatusTone = "ok" | "warn" | "down" | "unknown";
+
+export function statusTone(snapshot: PresenceSnapshot): StatusTone {
+  if (snapshot.server === null) return "unknown";
+  if (snapshot.silent) return "down";
+  if (snapshot.bot === null) return "unknown";
+  return snapshot.bot.connected ? "ok" : "warn";
+}
+
 export function statusLine(snapshot: PresenceSnapshot, t: Text): string {
   if (snapshot.server === null) return t("server.none");
   if (snapshot.silent) return t("presence.silent");

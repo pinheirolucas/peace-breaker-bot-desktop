@@ -21,7 +21,8 @@ import {
   trayState,
   trayTitle
 } from "./presence";
-import type { PlayingReport, PresenceAction, PresenceSettings, PresenceSnapshot } from "./presence";
+import type { PlayingReport, PresenceAction, PresenceSettings, PresenceSnapshot, StatusTone } from "./presence";
+import { dotColors, dotPng } from "./statusDot";
 import { jumpListTasks, trayMenu } from "./trayMenu";
 import type { TrayAction } from "./trayMenu";
 
@@ -156,10 +157,25 @@ export function createPresenceHost(deps: PresenceHostDeps) {
     quit: deps.quit
   });
 
+  // One image per colour, built on first use (nativeImage needs the app ready)
+  // and kept: not a template image, which would lose its colour. The @2x
+  // representation is what a hi-dpi menu draws.
+  const dots = new Map<StatusTone, Electron.NativeImage>();
+  function dot(tone: StatusTone): Electron.NativeImage {
+    let image = dots.get(tone);
+    if (!image) {
+      image = nativeImage.createEmpty();
+      image.addRepresentation({ scaleFactor: 1, buffer: dotPng(dotColors[tone], 1) });
+      image.addRepresentation({ scaleFactor: 2, buffer: dotPng(dotColors[tone], 2) });
+      dots.set(tone, image);
+    }
+    return image;
+  }
+
   function menuFor(quit: boolean): Menu {
     const { quickAccess } = effectiveSettings(settings);
     return Menu.buildFromTemplate(
-      trayMenu(snapshot, { quickAccess: quickAccess && Boolean(deps.openQuickAccess), quit }, translatorFor(deps.language()), handlers())
+      trayMenu(snapshot, { quickAccess: quickAccess && Boolean(deps.openQuickAccess), quit, dot }, translatorFor(deps.language()), handlers())
     );
   }
 
