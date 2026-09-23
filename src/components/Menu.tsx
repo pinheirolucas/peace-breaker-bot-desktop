@@ -48,6 +48,8 @@ export interface MenuItemProps {
   tick?: ReactNode;
   primary: ReactNode;
   secondary?: ReactNode;
+  /** A key shown at the row's right edge, on the same line as the label. */
+  hint?: ReactNode;
   closeOnSelect?: boolean;
   trail?: ReactNode;
   trailLabel?: string;
@@ -60,6 +62,7 @@ export function MenuItem({
   tick,
   primary,
   secondary,
+  hint,
   closeOnSelect = true,
   trail,
   trailLabel,
@@ -81,6 +84,7 @@ export function MenuItem({
         {primary}
         {secondary && <span className="msub">{secondary}</span>}
       </span>
+      {hint && <span className="mhint">{hint}</span>}
       {trail !== undefined && (
         <button
           type="button"

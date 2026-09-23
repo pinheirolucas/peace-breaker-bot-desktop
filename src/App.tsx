@@ -626,7 +626,7 @@ export default function App() {
                       <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
                       <MenuItem
                         primary={t("shortcuts.sheet.title")}
-                        secondary="?"
+                        hint="?"
                         onSelect={() => setSheetOpen(true)}
                       />
                       <MenuSeparator />
