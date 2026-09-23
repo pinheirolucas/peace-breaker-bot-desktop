@@ -3,6 +3,7 @@ import type { ButtonHTMLAttributes, CSSProperties, MouseEvent, ReactNode, Ref } 
 import { useTranslation } from "react-i18next";
 import { GripIcon, KeyboardIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
 import { useClipDrag } from "../hooks/useClipDrag";
+import type { ClipDragState } from "../hooks/useClipDrag";
 import { menuBridge } from "../hooks/useMenuBridge";
 import { overlayOpen } from "../lib/clipKeys";
 import { slotFor } from "../lib/slot";
@@ -80,6 +81,8 @@ export interface InstantCardProps {
   shortcut?: { flash?: "press" | "refuse" };
   /** The quick panel's first search match: Enter plays it. */
   match?: boolean;
+  /** Forces a drag-out state, for stories and tests; the pointer normally drives it. */
+  dragState?: ClipDragState;
 }
 
 /**
@@ -125,7 +128,8 @@ export default function InstantCard({
   organize,
   menu,
   shortcut,
-  match
+  match,
+  dragState
 }: InstantCardProps) {
   const { t } = useTranslation();
   const headingId = useId();
@@ -133,7 +137,8 @@ export default function InstantCard({
   const discordLabel = state.botGated ? t("card.discordUnavailable") : t("card.playOnDiscord");
   const dragging = organize?.drag === "overlay";
   const clipKey = instant.key;
-  const clipDrag = useClipDrag({ name: instant.name, url: instant.url }, !organize);
+  const drag = useClipDrag({ name: instant.name, url: instant.url }, !organize);
+  const clipDrag = { ...drag, state: dragState ?? drag.state };
   // The keycap and the playing chip share a corner.
   const showKeycap = Boolean(clipKey) && !match && (organize ? true : !state.live);
   const showEmptyKeycap = !clipKey && Boolean(organize) && !organize?.drag;
