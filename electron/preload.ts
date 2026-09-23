@@ -242,7 +242,7 @@ contextBridge.exposeInMainWorld("instantsClip", {
   dragEnd: () => ipcRenderer.send(clipDragEndChannel)
 });
 
-// The quick panel: what it asks of main, and its own global shortcut. Main
+// The quick access: what it asks of main, and its own global shortcut. Main
 // checks the sender for every action; the shortcut request is validated too.
 contextBridge.exposeInMainWorld("instantsPanel", {
   action: (action: PanelAction) => ipcRenderer.send(panelActionChannel, action),

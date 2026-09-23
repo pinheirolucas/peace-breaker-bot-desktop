@@ -1,4 +1,4 @@
-// The quick panel's window: a small frameless BrowserWindow that opens under
+// Quick access's window: a small frameless BrowserWindow that opens under
 // the tray icon and hides when it loses focus. The rules (where it opens, when
 // blur hides it) are pure and tested in panel.ts; this is the wiring.
 

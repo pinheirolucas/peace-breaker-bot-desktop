@@ -1,4 +1,4 @@
-/* The quick panel (360 x 520). It is the app's Tight tier with the toolbar
+/* The quick access (360 x 520). It is the app's Tight tier with the toolbar
  * and hero taken away and one new row on top, the presence strip. Every colour
  * is a token; the two status colours that are literals (amber, red) are the
  * same literals the window's server chip uses, so a warning reads as one in

@@ -33,11 +33,11 @@ function open(settings: Partial<PresenceSettings> = {}, os: "mac" | "win" | "lin
 }
 
 describe("PresenceDialog", () => {
-  it("starts with everything off, and the panel disabled with its reason", () => {
+  it("starts with everything off, and quick access disabled with its reason", () => {
     open();
 
     expect(screen.getByRole("switch", { name: "Show in the menu bar" })).not.toBeChecked();
-    expect(screen.getByRole("switch", { name: "Quick panel" })).toBeDisabled();
+    expect(screen.getByRole("switch", { name: "Quick access" })).toBeDisabled();
     expect(screen.getByText("Turn on the menu bar icon first.")).toBeInTheDocument();
   });
 
@@ -54,7 +54,7 @@ describe("PresenceDialog", () => {
     await userEvent.click(screen.getByRole("switch", { name: "Show in the menu bar" }));
     expect(onConfirm).not.toHaveBeenCalled();
 
-    await userEvent.click(screen.getByRole("switch", { name: "Quick panel" }));
+    await userEvent.click(screen.getByRole("switch", { name: "Quick access" }));
     await userEvent.click(screen.getByRole("button", { name: "Done" }));
 
     expect(onConfirm).toHaveBeenCalledWith(
@@ -63,7 +63,7 @@ describe("PresenceDialog", () => {
     );
   });
 
-  it("cannot confirm a panel without the icon", async () => {
+  it("cannot confirm quick access without the icon", async () => {
     const { onConfirm } = open({ tray: false, panel: true });
     await userEvent.click(screen.getByRole("button", { name: "Done" }));
 

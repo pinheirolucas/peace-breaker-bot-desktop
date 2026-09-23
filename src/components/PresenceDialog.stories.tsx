@@ -4,7 +4,7 @@ import type { PresenceSettings } from "../../electron/presence";
 import type { GlobalModifier } from "../../electron/shortcuts";
 import PresenceDialog from "./PresenceDialog";
 
-const meta: Meta = { title: "Panel/Barra de menus dialog" };
+const meta: Meta = { title: "Quick access/Barra de menus dialog" };
 export default meta;
 
 const noop = () => undefined;
@@ -36,11 +36,11 @@ function Dialog({
   );
 }
 
-/** A fresh install: everything off, the panel disabled with its reason under it. */
+/** A fresh install: everything off, quick access disabled with its reason under it. */
 export const Fresh: StoryObj = { render: () => <Dialog /> };
 
-/** Icon and panel on, the global shortcut still off: it is its own opt-in switch. */
-export const PanelOn: StoryObj = { render: () => <Dialog settings={{ tray: true, panel: true }} /> };
+/** Icon and quick access on, the global shortcut still off: it is its own opt-in switch. */
+export const QuickAccessOn: StoryObj = { render: () => <Dialog settings={{ tray: true, panel: true }} /> };
 
 export const ShortcutOn: StoryObj = { render: () => <Dialog settings={{ tray: true, panel: true }} shortcut /> };
 

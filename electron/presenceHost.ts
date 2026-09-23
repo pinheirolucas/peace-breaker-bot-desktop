@@ -36,7 +36,7 @@ export interface PresenceHostDeps {
   /** Sends to every renderer window, the panel included. */
   sendAll: (channel: string, payload?: unknown) => void;
   openApp: () => void;
-  /** Toggles the quick panel, anchored to the tray icon. Absent until the panel exists. */
+  /** Toggles the quick access, anchored to the tray icon. Absent until the panel exists. */
   togglePanel?: (trayBounds: Rectangle) => void;
   openPanel?: () => void;
   refreshDiscovery: () => void;
@@ -150,7 +150,7 @@ export function createPresenceHost(deps: PresenceHostDeps) {
 
   const handlers = (): Record<TrayAction | "quit", () => void> => ({
     stop,
-    "open-panel": () => deps.openPanel?.(),
+    "open-quick-access": () => deps.openPanel?.(),
     "open-app": deps.openApp,
     refresh: deps.refreshDiscovery,
     quit: deps.quit

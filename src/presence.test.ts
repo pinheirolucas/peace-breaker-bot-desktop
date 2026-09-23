@@ -169,7 +169,7 @@ describe("validators", () => {
 });
 
 describe("settings", () => {
-  it("switches the panel and the title off with the icon", () => {
+  it("switches quick access and the title off with the icon", () => {
     const all = { ...defaultPresenceSettings, tray: true, panel: true, title: true };
 
     expect(effectiveSettings(all)).toBe(all);
@@ -191,7 +191,7 @@ describe("tray menu", () => {
   const t = translatorFor("pt-BR");
   const handlers = (): TrayHandlers & Record<string, ReturnType<typeof vi.fn>> => ({
     stop: vi.fn(),
-    "open-panel": vi.fn(),
+    "open-quick-access": vi.fn(),
     "open-app": vi.fn(),
     refresh: vi.fn(),
     quit: vi.fn()
@@ -199,33 +199,57 @@ describe("tray menu", () => {
   const labels = (items: { label?: string; type?: string }[]) =>
     items.map((item) => (item.type === "separator" ? "-" : item.label));
 
-  it("lists status, stop, open, search again and quit", () => {
-    const menu = trayMenu(snap({ server, bot: inChannel }), { panel: false, quit: true }, t, handlers());
+  it("lists status, open, stop, search again and quit, in that order", () => {
+    const menu = trayMenu(snap({ server, bot: inChannel }), { panel: true, quit: true }, t, handlers());
 
     expect(labels(menu)).toEqual([
       "Casa · #geral",
       "-",
-      "Parar reprodução",
       "Abrir Peace Breaker Bot",
+      "Abrir acesso rápido",
+      "-",
+      "Parar reprodução",
       "Procurar servidor novamente",
       "-",
       "Sair"
     ]);
   });
 
-  it("offers the panel only when it is on, and no Quit on the Dock", () => {
-    const menu = trayMenu(snap({ server }), { panel: true, quit: false }, t, handlers());
+  it("leaves out Abrir acesso rápido when it is off, with no doubled or orphan separator", () => {
+    const menu = trayMenu(snap({ server }), { panel: false, quit: true }, t, handlers());
 
-    expect(labels(menu)).toContain("Abrir painel");
-    expect(labels(menu)).not.toContain("Sair");
+    expect(labels(menu)).toEqual([
+      "Verificando o servidor…",
+      "-",
+      "Abrir Peace Breaker Bot",
+      "-",
+      "Parar reprodução",
+      "Procurar servidor novamente",
+      "-",
+      "Sair"
+    ]);
+  });
+
+  it("has no trailing separator on the Dock, which has no Quit, and no Sair", () => {
+    for (const panel of [true, false]) {
+      const menu = trayMenu(snap({ server }), { panel, quit: false }, t, handlers());
+      const shown = labels(menu);
+
+      expect(shown).not.toContain("Sair");
+      expect(shown.at(-1)).toBe("Procurar servidor novamente");
+      expect(shown.some((label, i) => label === "-" && shown[i - 1] === "-")).toBe(false);
+      expect(labels(menu).includes("Abrir acesso rápido")).toBe(panel);
+    }
   });
 
   it("disables Parar reprodução until something plays", () => {
     const idle = trayMenu(snap({ server }), { panel: false, quit: true }, t, handlers());
     const busy = trayMenu(snap({ server, playing }), { panel: false, quit: true }, t, handlers());
 
-    expect(idle[2].enabled).toBe(false);
-    expect(busy[2].enabled).toBe(true);
+    const stop = (items: { label?: string; enabled?: boolean }[]) => items.find((item) => item.label === "Parar reprodução");
+
+    expect(stop(idle)?.enabled).toBe(false);
+    expect(stop(busy)?.enabled).toBe(true);
     expect(idle[0].enabled).toBe(false);
   });
 
@@ -236,12 +260,12 @@ describe("tray menu", () => {
       (menu.find((item) => item.label === label)?.click as unknown as () => void)();
 
     click("Parar reprodução");
-    click("Abrir painel");
+    click("Abrir acesso rápido");
     click("Abrir Peace Breaker Bot");
     click("Procurar servidor novamente");
     click("Sair");
 
-    for (const key of ["stop", "open-panel", "open-app", "refresh", "quit"]) {
+    for (const key of ["stop", "open-quick-access", "open-app", "refresh", "quit"]) {
       expect(on[key]).toHaveBeenCalledTimes(1);
     }
   });
@@ -265,13 +289,13 @@ describe("tray menu", () => {
 describe("jump list and launch actions", () => {
   const t = translatorFor("pt-BR");
 
-  it("carries stop only while something plays, and the panel only when on", () => {
+  it("carries stop only while something plays, and quick access only when on", () => {
     const titles = (state: PresenceSnapshot, panel: boolean) =>
       jumpListTasks(state, panel, t).map((task) => task.title);
 
     expect(titles(snap({ server }), false)).toEqual(["Procurar servidor novamente"]);
     expect(titles(snap({ server, playing }), true)).toEqual([
-      "Abrir painel",
+      "Abrir acesso rápido",
       "Parar reprodução",
       "Procurar servidor novamente"
     ]);
@@ -279,7 +303,9 @@ describe("jump list and launch actions", () => {
 
   it("reads --action= from a launch", () => {
     expect(actionFromArgv(["app", "--action=stop"])).toBe("stop");
-    expect(actionFromArgv(["app", "--action=open-panel"])).toBe("open-panel");
+    expect(actionFromArgv(["app", "--action=open-quick-access"])).toBe("open-quick-access");
+    // a Jump List or desktop entry written before the rename
+    expect(actionFromArgv(["app", "--action=open-panel"])).toBe("open-quick-access");
     expect(actionFromArgv(["app", "--action=rm -rf"])).toBeNull();
     expect(actionFromArgv(["app"])).toBeNull();
   });

@@ -19,7 +19,7 @@ if (!root) {
   throw new Error("index.html has no #root to mount the app into");
 }
 
-// The quick panel is this same bundle at `/?panel=1`, loaded by its own window.
+// The quick access is this same bundle at `/?panel=1`, loaded by its own window.
 // Stamped before React mounts so the frosted ground is right from the first frame.
 const panel = new URLSearchParams(window.location.search).get("panel") === "1";
 

@@ -43,7 +43,7 @@ function hintSeen(): boolean {
 }
 
 /**
- * The quick panel's window content: `/?panel=1`, loaded by the panel's own
+ * Quick access's window content: `/?panel=1`, loaded by the panel's own
  * BrowserWindow. It is a second renderer, so it plays clips itself (hidden, it
  * keeps playing) and reports what it plays to main like the window does; what
  * it shows about the app comes from main's one snapshot.
@@ -293,9 +293,9 @@ export default function QuickPanel() {
       <MenuItem primary={t("presence.openApp")} onSelect={() => action("open-app")} />
       <MenuItem primary={t("presence.refresh")} onSelect={() => { refresh(); action("refresh"); }} />
       <MenuSeparator />
-      <MenuLabel>{t("panel.style")}</MenuLabel>
-      {styleItem("favorites", t("panel.styleFavorites"))}
-      {styleItem("connection", t("panel.styleConnection"))}
+      <MenuLabel>{t("quickAccess.style")}</MenuLabel>
+      {styleItem("favorites", t("quickAccess.styleFavorites"))}
+      {styleItem("connection", t("quickAccess.styleConnection"))}
       <MenuSeparator />
       <MenuItem primary={t("menuBar.title")} onSelect={() => action("settings")} />
       <MenuItem primary={t("presence.quit")} onSelect={() => action("quit")} />

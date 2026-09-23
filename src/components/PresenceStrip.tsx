@@ -49,17 +49,17 @@ export function PresenceStrip({ snapshot, pinned, onStop, onPin, menu }: Presenc
         className="pstop"
         data-active={playing}
         disabled={!playing}
-        aria-label={t("panel.stop")}
+        aria-label={t("quickAccess.stop")}
         onClick={onStop}
       >
         <StopIcon size={13} />
-        <span>{t("panel.stop")}</span>
-        <span className="kbd">{t("panel.esc")}</span>
+        <span>{t("quickAccess.stop")}</span>
+        <span className="kbd">{t("quickAccess.esc")}</span>
       </button>
-      <IconButton label={t("panel.pin")} aria-pressed={pinned} className="ppin" onClick={onPin}>
+      <IconButton label={t("quickAccess.pin")} aria-pressed={pinned} className="ppin" onClick={onPin}>
         <PinIcon filled={pinned} />
       </IconButton>
-      <Menu trigger={<IconButton label={t("panel.more")}><MoreIcon /></IconButton>}>{menu}</Menu>
+      <Menu trigger={<IconButton label={t("quickAccess.more")}><MoreIcon /></IconButton>}>{menu}</Menu>
     </header>
   );
 }

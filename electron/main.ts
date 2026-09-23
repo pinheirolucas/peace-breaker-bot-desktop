@@ -151,7 +151,7 @@ function sendToWindow(channel: string, payload?: unknown): void {
   }
 }
 
-// Every renderer window: the main one, and the quick panel once it exists.
+// Every renderer window: the main one, and the quick access once it exists.
 function sendToAll(channel: string, payload?: unknown): void {
   sendToWindow(channel, payload);
   panel.webContents()?.send(channel, payload);

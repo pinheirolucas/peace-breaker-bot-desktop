@@ -8,7 +8,7 @@ import { useManualServers, useSelectedServer } from "../storage";
  * Which backend a window talks to, resolved the way App resolves it: an
  * explicit pick (re-validated, so a stale one falls through), then the first
  * discovered server — and with neither, nothing, never a default address.
- * The quick panel's copy of that rule; discovery reaches it over the same
+ * Quick access's copy of that rule; discovery reaches it over the same
  * bridge, and the pick is shared with the window through storage.
  */
 export function useServers() {

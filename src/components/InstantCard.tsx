@@ -71,7 +71,7 @@ export interface InstantCardProps {
   onPlayOnDiscord: (instant: Instant) => void;
   onStop: () => void;
   /** The panel's own action: remove in Favoritos, favourite in MyInstants.
-   *  The quick panel has none: editing is window work. */
+   *  The quick access has none: editing is window work. */
   trail?: CardAction;
   /** Set while the panel is in Organizar. */
   organize?: OrganizeProps;
@@ -79,11 +79,11 @@ export interface InstantCardProps {
   menu?: CardMenuInfo;
   /** Favoritos only: the look the card briefly takes when its key is pressed or refused. */
   shortcut?: { flash?: "press" | "refuse" };
-  /** The quick panel's first search match: Enter plays it. */
+  /** Quick access's first search match: Enter plays it. */
   match?: boolean;
   /** Forces a drag-out state, for stories and tests; the pointer normally drives it. */
   dragState?: ClipDragState;
-  /** The quick panel's card: the body is the only control, so there is no
+  /** Quick access's card: the body is the only control, so there is no
    *  footer (send, stop) and the card is shorter. cardState still gates the
    *  body exactly as it does in the window. */
   bare?: boolean;

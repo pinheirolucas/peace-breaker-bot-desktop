@@ -5,7 +5,7 @@ import type { PresenceSnapshot } from "../../electron/presence";
 import { MenuItem, MenuSeparator } from "./Menu";
 import { PresenceStrip } from "./PresenceStrip";
 
-const meta: Meta = { title: "Panel/Presence strip" };
+const meta: Meta = { title: "Quick access/Presence strip" };
 export default meta;
 
 const server = "http://192.168.0.5:9001/api/v1";
@@ -22,7 +22,7 @@ const menu = (
   </>
 );
 
-/** 360px, the panel's own width, so the strip resolves the size it really has. */
+/** 360px, quick access's own width, so the strip resolves the size it really has. */
 function Frame({ snapshot, pinned = false }: { snapshot: PresenceSnapshot; pinned?: boolean }) {
   const [on, setOn] = useState(pinned);
 

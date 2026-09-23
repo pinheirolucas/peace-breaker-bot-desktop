@@ -17,7 +17,7 @@ function OpenApp({ onOpenApp }: { onOpenApp: () => void }) {
 
   return (
     <button type="button" className="popen" onClick={onOpenApp}>
-      {t("panel.openApp")}
+      {t("quickAccess.openApp")}
       <ArrowUpRightIcon />
     </button>
   );
@@ -79,7 +79,7 @@ export function PanelFavorites({
           <SearchField
             ref={searchRef}
             value={query}
-            aria-label={t("panel.searchLabel")}
+            aria-label={t("quickAccess.searchLabel")}
             placeholder={t("app.searchInFavorites", { count: total })}
             onChange={(event) => onQuery(event.target.value)}
           />
@@ -90,10 +90,10 @@ export function PanelFavorites({
         <div className="banner" role="status">
           <span>
             <b>{t("presence.silent")}</b>
-            <span>{t("panel.offline")}</span>
+            <span>{t("quickAccess.offline")}</span>
           </span>
           <button type="button" className="bb" onClick={onRetry}>
-            {t("panel.retry")}
+            {t("quickAccess.retry")}
           </button>
         </div>
       )}
@@ -101,21 +101,21 @@ export function PanelFavorites({
       <div className="scroll">
         {total === 0 ? (
           <EmptyState
-            title={t("panel.emptyTitle")}
-            body={t("panel.emptyBody")}
+            title={t("quickAccess.emptyTitle")}
+            body={t("quickAccess.emptyBody")}
             action={
               <Button variant="secondary" onClick={onOpenApp}>
-                {t("panel.openApp")}
+                {t("quickAccess.openApp")}
               </Button>
             }
           />
         ) : instants.length === 0 ? (
           <EmptyState
-            title={t("panel.noMatch", { query })}
-            body={t("panel.noMatchBody")}
+            title={t("quickAccess.noMatch", { query })}
+            body={t("quickAccess.noMatchBody")}
             action={
               <Button variant="secondary" onClick={() => onQuery("")}>
-                {t("panel.clear")}
+                {t("quickAccess.clear")}
               </Button>
             }
           />
@@ -139,10 +139,10 @@ export function PanelFavorites({
         )}
       </div>
 
-      {hint && total > 0 && <p className="phint">{t("panel.hint")}</p>}
+      {hint && total > 0 && <p className="phint">{t("quickAccess.hint")}</p>}
 
       <footer className="pfooter">
-        <span>{t("panel.count", { count: total })}</span>
+        <span>{t("quickAccess.count", { count: total })}</span>
         <OpenApp onOpenApp={onOpenApp} />
       </footer>
     </div>
@@ -186,7 +186,7 @@ export function ServerRow({ server, active, healthy, onSelect }: ServerRowProps)
       </span>
       {active && (
         <>
-          <span className="ptag">{t("panel.inUse")}</span>
+          <span className="ptag">{t("quickAccess.inUse")}</span>
           <span className="dot" data-healthy={healthy} aria-hidden="true" />
         </>
       )}
@@ -238,7 +238,7 @@ export function PanelConnection({
   const searchButton: ReactNode = (
     <Button variant="secondary" disabled={searching} onClick={onSearch}>
       <RefreshIcon size={14} />
-      {searching ? t("panel.searching") : t("panel.searchAgain")}
+      {searching ? t("quickAccess.searching") : t("quickAccess.searchAgain")}
     </Button>
   );
 
@@ -248,18 +248,18 @@ export function PanelConnection({
         {rows.length === 0 ? (
           <EmptyState
             title={t("server.none")}
-            body={t("panel.noneBody")}
+            body={t("quickAccess.noneBody")}
             action={searchButton}
           />
         ) : (
           <>
             <div className="phead">
               <span>
-                {t("panel.servers")} <b>{rows.length}</b>
+                {t("quickAccess.servers")} <b>{rows.length}</b>
               </span>
               {searchButton}
             </div>
-            <div className="plist" role="radiogroup" aria-label={t("panel.servers")}>
+            <div className="plist" role="radiogroup" aria-label={t("quickAccess.servers")}>
               {rows.map((server) => (
                 <ServerRow
                   key={server.id}
@@ -276,7 +276,7 @@ export function PanelConnection({
       </div>
 
       <footer className="pfooter">
-        <span>{t("panel.connectionNote")}</span>
+        <span>{t("quickAccess.connectionNote")}</span>
         <OpenApp onOpenApp={onOpenApp} />
       </footer>
     </>

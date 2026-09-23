@@ -11,7 +11,7 @@ import { PanelConnection, PanelFavorites } from "./QuickPanelViews";
 import type { PanelFavoritesProps } from "./QuickPanelViews";
 import { ToastProvider } from "./Toast";
 
-const meta: Meta = { title: "Panel/Quick panel" };
+const meta: Meta = { title: "Quick access/Quick access" };
 export default meta;
 
 const noop = () => undefined;

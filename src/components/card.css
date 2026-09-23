@@ -297,7 +297,7 @@
   }
 }
 
-/* The quick panel's card has no footer, so it is the name and the wave and
+/* Quick access's card has no footer, so it is the name and the wave and
  * nothing under them. Declared after the tiers so it wins at every width. */
 .pad[data-bare="true"] {
   height: 108px;

@@ -54,7 +54,7 @@ function Row({
   );
 }
 
-/** Barra de menus: the tray icon, the quick panel, and how they behave. */
+/** Barra de menus: the tray icon, the quick access, and how they behave. */
 export default function PresenceDialog({
   open,
   onOpenChange,
@@ -108,11 +108,11 @@ export default function PresenceDialog({
 
         <Row
           sub
-          title={t("menuBar.panel")}
-          hint={trayOn ? t("menuBar.panelHint") : t("menuBar.panelNeedsTray")}
+          title={t("menuBar.quickAccess")}
+          hint={trayOn ? t("menuBar.quickAccessHint") : t("menuBar.quickAccessNeedsTray")}
           dim={!trayOn}
         >
-          <Switch label="" ariaLabel={t("menuBar.panel")} checked={panelOn} disabled={!trayOn} onCheckedChange={(panel) => patch({ panel })} />
+          <Switch label="" ariaLabel={t("menuBar.quickAccess")} checked={panelOn} disabled={!trayOn} onCheckedChange={(panel) => patch({ panel })} />
         </Row>
         {noTray && <p className="prefnote">{t("menuBar.noTray")}</p>}
 
@@ -122,8 +122,8 @@ export default function PresenceDialog({
             value={draft.panelStyle}
             onChange={(panelStyle) => patch({ panelStyle })}
             options={[
-              { value: "favorites", label: t("panel.styleFavorites") },
-              { value: "connection", label: t("panel.styleConnection") }
+              { value: "favorites", label: t("quickAccess.styleFavorites") },
+              { value: "connection", label: t("quickAccess.styleConnection") }
             ]}
           />
         </Row>
@@ -145,7 +145,7 @@ export default function PresenceDialog({
             <Row
               sub
               title={t("menuBar.shortcut")}
-              hint={panelOn ? t("menuBar.shortcutHint") : t("menuBar.shortcutNeedsPanel")}
+              hint={panelOn ? t("menuBar.shortcutHint") : t("menuBar.shortcutNeedsQuickAccess")}
               dim={!panelOn}
             >
               <Switch

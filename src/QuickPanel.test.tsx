@@ -64,7 +64,7 @@ describe("PresenceStrip", () => {
 
   it("pins with aria-pressed", async () => {
     const { onPin } = strip(snap(), true);
-    const pin = screen.getByRole("button", { name: "Keep panel open" });
+    const pin = screen.getByRole("button", { name: "Keep quick access open" });
 
     expect(pin).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(pin);

@@ -1,4 +1,4 @@
-// The quick panel's pure rules, inlined into the sandboxed preload like
+// Quick access's pure rules, inlined into the sandboxed preload like
 // chrome.ts: where it opens, how it may be resized, and what an untrusted
 // renderer may ask of it. The panel is a second renderer, so main validates
 // everything it sends the way it does the window's.
