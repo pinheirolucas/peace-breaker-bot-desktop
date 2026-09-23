@@ -134,17 +134,24 @@ html[data-quick-access="1"][data-os="linux"] .app.quick-access {
   flex-direction: column;
 }
 
-.psearch { flex: none; padding: 10px 16px 0; }
+/* The gap under the field belongs to this fixed row, not to the scroller's
+ * padding: padding scrolls away with the content, and cards would then clip
+ * flush against the field's border. */
+.psearch { flex: none; padding: 10px 16px 8px; }
 .psearch .search { width: 100%; }
 
-.app.quick-access .banner { margin: 10px 16px 0; }
+.app.quick-access .banner { margin: 10px 16px 8px; }
+/* Under the search row, whose bottom padding is already the gap. */
+.psearch + .banner { margin-top: 0; }
 
-/* Quick access has no toolbar to clear, so the grid starts right under the search. */
+/* Quick access has no toolbar to clear. The top padding is only what the first
+ * row's hover lift (2px) and focus ring (3px + 3px offset) need so this
+ * scroller's own overflow does not clip them; the visible gap is .psearch's. */
 .app.quick-access .scroll {
-  padding-top: 12px;
+  padding-top: 6px;
   padding-bottom: 12px;
 }
-[data-os="mac"] .app.quick-access .scroll { padding-top: 12px; }
+[data-os="mac"] .app.quick-access .scroll { padding-top: 6px; }
 
 .phint {
   flex: none;
