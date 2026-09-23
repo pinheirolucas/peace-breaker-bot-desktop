@@ -11,6 +11,8 @@ export interface DialogProps {
   /** Cancel first, confirm second — always. The platform flips the visual
    *  order in CSS, so the DOM order stays the reading order. */
   footer: ReactNode;
+  /** A wider dialog whose body scrolls between the title and the footer. */
+  wide?: boolean;
 }
 
 export function Dialog({
@@ -19,13 +21,14 @@ export function Dialog({
   title,
   description,
   children,
-  footer
+  footer,
+  wide
 }: DialogProps) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="scrim" />
-        <RadixDialog.Content className="dlg">
+        <RadixDialog.Content className={wide ? "dlg dlg--wide" : "dlg"}>
           <div className="db">
             <RadixDialog.Title asChild>
               <h2>{title}</h2>
