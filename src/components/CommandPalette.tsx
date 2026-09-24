@@ -4,7 +4,7 @@ import { Keys } from "./Key";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { arrange, filterThemes, flatten } from "../lib/palette";
+import { arrange, filterThemes, flatten, normalize, parseQuery } from "../lib/palette";
 import type { PaletteCandidates, PaletteItem, PalettePreview } from "../lib/palette";
 import "./commandPalette.css";
 
@@ -26,14 +26,31 @@ const ICONS: Record<string, string> = {
   reorder: "M4 6h12M4 10h12M4 14h12",
   wave: "M3 10h1M6 7v6M9 4v12M12 7v6M15 9v2M17 10h0",
   moon: "M16 11.5A6.5 6.5 0 0 1 8.5 4a6.5 6.5 0 1 0 7.5 7.5Z",
+  close: "M5 5l10 10M15 5 5 15",
   check: "M4.5 10.5l3.5 3.5 7.5-8"
 };
 
-function Icon({ name }: { name: string }) {
+function Icon({ name, size = 16 }: { name: string; size?: number }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={ICONS[name] ?? ICONS.star} />
     </svg>
+  );
+}
+
+/** The part of a title the query found, drawn in the accent; the rest stays as it is. Nothing to mark for a command-only or empty query. */
+function Title({ text, query, mark }: { text: string; query: string; mark: boolean }) {
+  const at = mark && query ? normalize(text).indexOf(query) : -1;
+
+  // Only when normalising kept every character in place can an index into it be an index into the title.
+  if (at < 0 || normalize(text).length !== text.length) return <>{text}</>;
+
+  return (
+    <>
+      {text.slice(0, at)}
+      <b className="ph">{text.slice(at, at + query.length)}</b>
+      {text.slice(at + query.length)}
+    </>
   );
 }
 
@@ -208,6 +225,7 @@ export default function CommandPalette({
   }
 
   const hasQuery = query.trim() !== "";
+  const needle = view === "root" ? parseQuery(query).query : "";
   const hints: { keys: string[]; text: string; dim?: boolean }[] = [{ keys: ["↑", "↓"], text: t("palette.hintNavigate") }];
 
   if (view === "themes") {
@@ -248,10 +266,17 @@ export default function CommandPalette({
         onClick={() => choose(item, false)}
       >
         <span className={["pic", item.slot && "tile", item.slot].filter(Boolean).join(" ")} aria-hidden="true">
-          {item.swatch ? <span className="sw8" data-theme={item.swatch} data-mode={document.documentElement.dataset.mode} /> : item.glyph ? <b>{item.glyph}</b> : <Icon name={item.kind === "sound" ? "wave" : (item.icon ?? "star")} />}
+          {item.swatch ? <span className="sw8" data-theme={item.swatch} data-mode={document.documentElement.dataset.mode}>
+              <i />
+              <i />
+              <i />
+              <i />
+            </span> : item.glyph ? <b>{item.glyph}</b> : <Icon name={item.kind === "sound" ? "wave" : (item.icon ?? "star")} />}
         </span>
         <span className="ptx">
-          <span className="ptt">{item.title}</span>
+          <span className="ptt">
+            <Title text={item.title} query={needle} mark={item.kind !== "explore"} />
+          </span>
           {item.sub && <span className="psb">{item.sub}</span>}
         </span>
         <span className="prt">
@@ -287,8 +312,22 @@ export default function CommandPalette({
         >
           <RadixDialog.Title className="sr">{t("palette.title")}</RadixDialog.Title>
           <div className="pin">
-            <Icon name="search" />
-            {view === "themes" && <span className="crumb">{t("palette.paletteCrumb")}</span>}
+            <Icon name="search" size={20} />
+            {view === "themes" && (
+              <button
+                type="button"
+                className="crumb"
+                tabIndex={-1}
+                aria-label={t("palette.hintBack")}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={back}
+              >
+                {t("palette.paletteCrumb")}
+                <i aria-hidden="true">
+                  <Icon name="close" size={10} />
+                </i>
+              </button>
+            )}
             <input
               id="palette-input"
               type="text"
@@ -318,7 +357,7 @@ export default function CommandPalette({
                   {t("palette.paletteCrumb")}
                   <span>{t("palette.previewNote")}</span>
                 </div>
-                {themeRows.map(renderRow)}
+                <div className="pgl">{themeRows.map(renderRow)}</div>
                 {themeRows.length === 0 && <NoMatch text={t("palette.noThemes")} />}
               </div>
             ) : (
@@ -328,7 +367,7 @@ export default function CommandPalette({
                     {group.title}
                     {group.note && <span>{group.note}</span>}
                   </div>
-                  {group.items.map(renderRow)}
+                  <div className="pgl">{group.items.map(renderRow)}</div>
                 </div>
               ))
             )}

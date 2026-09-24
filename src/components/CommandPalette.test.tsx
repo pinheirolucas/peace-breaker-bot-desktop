@@ -108,6 +108,16 @@ describe("CommandPalette", () => {
     expect(screen.queryByRole("option")).toBeNull();
   });
 
+  it("marks the part of a title the query found, ignoring case and accents", async () => {
+    const user = userEvent.setup();
+    setup({}, { explore: undefined });
+
+    await user.type(field(), "BO");
+    const marks = document.querySelectorAll(".prow .ph");
+    expect(marks.length).toBeGreaterThan(0);
+    expect(marks[0]).toHaveTextContent(/^bo$/i);
+  });
+
   it("closes first, then runs: Enter is the primary and Shift+Enter the secondary", async () => {
     const user = userEvent.setup();
     const order: string[] = [];
