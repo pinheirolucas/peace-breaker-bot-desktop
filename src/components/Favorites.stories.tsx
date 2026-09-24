@@ -23,6 +23,7 @@ import type { Instant } from "../storage";
 import { Button } from "./Button";
 import InstantCard from "./InstantCard";
 import SortableInstantCard from "./SortableInstantCard";
+import { shortcutLabel } from "../hooks/usePlatform";
 import { TooltipProvider } from "./Tooltip";
 
 const meta: Meta = { title: "Components/Favoritos · Organizar" };
@@ -180,7 +181,7 @@ export const SortableGrid: StoryObj = {
  *  Concluir takes the split button's place while the mode is on. */
 export const AddMenuStory: StoryObj = {
   name: "Toolbar · Adicionar",
-  render: () => (
+  render: (_args, { globals }) => (
     <TooltipProvider>
       <div style={{ display: "grid", gap: 20, justifyItems: "start" }}>
         <div style={row}>
@@ -191,7 +192,7 @@ export const AddMenuStory: StoryObj = {
             onExport={noop}
             canOrganize
             organizeBlockedReason={null}
-            shortcut="⌘N"
+            shortcut={shortcutLabel(globals.os === "win" || globals.os === "linux" ? globals.os : "mac", "n")}
           />
         </div>
         <div style={row}>

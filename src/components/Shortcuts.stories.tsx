@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { MoreIcon, TrashIcon } from "../icons";
+import { MoreIcon, SearchIcon, TrashIcon } from "../icons";
 import type { Instant } from "../storage";
 import InstantCard from "./InstantCard";
 import { Menu, MenuItem } from "./Menu";
+import { Tooltip, TooltipProvider } from "./Tooltip";
 import { IconButton } from "./Button";
+import { Keys } from "./Key";
+import { comboLabel, comboParts, shortcutParts } from "../hooks/usePlatform";
+import type { PlatformId } from "../themes";
 import ShortcutDialog from "./ShortcutDialog";
 import ShortcutSheet from "./ShortcutSheet";
 
@@ -79,7 +83,10 @@ export const CardKeycap: StoryObj = {
   )
 };
 
-function DialogStory({ instant, global }: { instant: Instant; global?: boolean }) {
+const platformOf = (os: unknown): PlatformId => (os === "win" || os === "linux" ? os : "mac");
+const presetOf = (os: PlatformId) => (os === "mac" ? "ctrl-alt" : "ctrl-alt-shift");
+
+function DialogStory({ instant, global, os = "win" }: { instant: Instant; global?: boolean; os?: PlatformId }) {
   return (
     <ShortcutDialog
       instant={instant}
@@ -87,7 +94,7 @@ function DialogStory({ instant, global }: { instant: Instant; global?: boolean }
       global={
         global
           ? {
-              combo: (key) => `Ctrl+Alt+Shift+${key.toUpperCase()}`,
+              combo: (key) => comboLabel(os, presetOf(os), key),
               inUse: (key) => key === "c"
             }
           : undefined
@@ -100,33 +107,33 @@ function DialogStory({ instant, global }: { instant: Instant; global?: boolean }
 
 export const DialogWaiting: StoryObj = {
   name: "Dialog · waiting",
-  render: () => <DialogStory instant={clips[5]} />
+  render: (_args, { globals }) => <DialogStory instant={clips[5]} os={platformOf(globals.os)} />
 };
 
 export const DialogCaptured: StoryObj = {
   name: "Dialog · captured",
-  render: () => <DialogStory instant={clips[0]} />
+  render: (_args, { globals }) => <DialogStory instant={clips[0]} os={platformOf(globals.os)} />
 };
 
 export const DialogTaken: StoryObj = {
   name: "Dialog · key already used by another sound",
-  render: () => <DialogStory instant={{ ...clips[5], key: "b" }} />
+  render: (_args, { globals }) => <DialogStory instant={{ ...clips[5], key: "b" }} os={platformOf(globals.os)} />
 };
 
 /** Press Space or punctuation in the capture box to see the refusal. */
 export const DialogRefusedInteractive: StoryObj = {
   name: "Dialog · refused (press Space)",
-  render: () => <DialogStory instant={clips[5]} />
+  render: (_args, { globals }) => <DialogStory instant={clips[5]} os={platformOf(globals.os)} />
 };
 
 export const DialogGlobal: StoryObj = {
   name: "Dialog · global keys on",
-  render: () => <DialogStory instant={clips[0]} global />
+  render: (_args, { globals }) => <DialogStory instant={clips[0]} global os={platformOf(globals.os)} />
 };
 
 export const DialogGlobalInUse: StoryObj = {
   name: "Dialog · global combo in use",
-  render: () => <DialogStory instant={clips[3]} global />
+  render: (_args, { globals }) => <DialogStory instant={clips[3]} global os={platformOf(globals.os)} />
 };
 
 function withBridge(enabled: boolean) {
@@ -191,12 +198,12 @@ function SheetStory({ global, menuBar = true, failed = [], instants = clips, os 
 
 export const SheetInApp: StoryObj = {
   name: "Sheet · in the app (no bridge)",
-  render: () => <SheetStory menuBar={false} />
+  render: (_args, { globals }) => <SheetStory menuBar={false} os={platformOf(globals.os)} />
 };
 
 export const SheetGlobalOff: StoryObj = {
   name: "Sheet · global keys off",
-  render: () => <SheetStory global={false} />
+  render: (_args, { globals }) => <SheetStory global={false} os={platformOf(globals.os)} />
 };
 
 export const SheetGlobalOn: StoryObj = {
@@ -211,17 +218,17 @@ export const SheetGlobalOnWindows: StoryObj = {
 
 export const SheetConflict: StoryObj = {
   name: "Sheet · a combo another app holds",
-  render: () => <SheetStory global failed={["c"]} os="mac" />
+  render: (_args, { globals }) => <SheetStory global failed={["c"]} os={platformOf(globals.os)} />
 };
 
 export const SheetNoKeyedSounds: StoryObj = {
   name: "Sheet · no sound has a key",
-  render: () => <SheetStory global={false} instants={clips.map(({ key: _key, ...clip }) => clip)} />
+  render: (_args, { globals }) => <SheetStory global={false} os={platformOf(globals.os)} instants={clips.map(({ key: _key, ...clip }) => clip)} />
 };
 
 export const SheetNoSounds: StoryObj = {
   name: "Sheet · no sounds at all",
-  render: () => <SheetStory global={false} instants={[]} />
+  render: (_args, { globals }) => <SheetStory global={false} os={platformOf(globals.os)} instants={[]} />
 };
 
 export const SheetNarrow: StoryObj = {
@@ -232,7 +239,7 @@ export const SheetNarrow: StoryObj = {
 
 export const MenuEntry: StoryObj = {
   name: "Menu · item with its key",
-  render: () => (
+  render: (_args, { globals }) => (
     <Menu
       open
       trigger={
@@ -242,7 +249,37 @@ export const MenuEntry: StoryObj = {
       }
     >
       <MenuItem primary="Aparência" />
-      <MenuItem primary="Atalhos do teclado" hint="?" />
+      <MenuItem primary="Configurações…" hint={shortcutParts(platformOf(globals.os), ",")} />
+      <MenuItem primary="Atalhos do teclado" hint={["?"]} />
     </Menu>
+  )
+};
+
+/** A tooltip names its key on the inverted ground. */
+export const TooltipWithKeys: StoryObj = {
+  name: "Tooltip · with its key",
+  render: (_args, { globals }) => (
+    <TooltipProvider>
+      <Tooltip label="Buscar" keys={shortcutParts(platformOf(globals.os), "F")}>
+        <IconButton label="Buscar">
+          <SearchIcon />
+        </IconButton>
+      </Tooltip>
+    </TooltipProvider>
+  )
+};
+
+/** What a combo looks like held by each system's own modifiers. */
+export const CombosBySystem: StoryObj = {
+  name: "Keys · the global combo on each system",
+  render: () => (
+    <div style={{ display: "grid", gap: 10, justifyItems: "start" }}>
+      {(["mac", "win", "linux"] as const).map((os) => (
+        <div key={os} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <span style={{ width: 70, fontSize: 12, color: "var(--muted)" }}>{os}</span>
+          <Keys quiet parts={comboParts(os, presetOf(os), "v")} />
+        </div>
+      ))}
+    </div>
   )
 };

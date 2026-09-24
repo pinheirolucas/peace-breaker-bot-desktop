@@ -74,6 +74,16 @@ export const initialGlobals = { theme: "esmalte", mode: "dark", os: "mac", deskt
 // useEffect: the portal mounts in the same commit and must not paint once
 // unthemed.
 const withTokens: Decorator = (Story, { globals }) => {
+  // Components that ask usePlatform() (the palette's footer, a Keys hint)
+  // read the preload bridge before the user agent, so the Sistema toolbar
+  // has to be the bridge too, or a key hint would follow the machine that
+  // runs Storybook and not the toolbar. Set in render, before the story reads it.
+  window.instantsPlatform = {
+    ...window.instantsPlatform,
+    os: globals.os,
+    desktop: globals.os === "linux" ? globals.desktop : undefined
+  };
+
   useLayoutEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = globals.theme;
