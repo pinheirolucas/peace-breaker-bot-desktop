@@ -7,8 +7,8 @@ import { describe, expect, it } from "vitest";
  *
  *   text 4.5   fg and muted on the ground, muted on a panel, --ok as text,
  *              --onAccent on --accent, a card's --ink on its --fill
- *   UI 3.0     --accent on the ground (focus ring, selection), and --edge, the
- *              boundary of a field, secondary button, search, chip or switch
+ *   text 4.5   --accent on the ground too: ghost buttons and links set it as text
+ *   UI 3.0     --edge, the boundary of a field, secondary button, search, chip or switch
  *
  * --line is deliberately not here: it draws decorative hairlines, and a control
  * whose border is its only boundary uses --edge instead.
@@ -87,9 +87,9 @@ describe.each(themes)("%s", (theme) => {
       expect(ratio(c("--onAccent"), c("--accent"))).toBeGreaterThanOrEqual(4.5);
     });
 
-    it("keeps the accent and control edges visible as UI", () => {
-      expect(ratio(c("--accent"), c("--bg"))).toBeGreaterThanOrEqual(3);
-      expect(ratio(c("--edge"), c("--bg"))).toBeGreaterThanOrEqual(3);
+    it("keeps the accent legible as text and control edges visible as UI", () => {
+      expect(ratio(c("--accent"), c("--bg"))).toBeGreaterThanOrEqual(4.5);
+            expect(ratio(c("--edge"), c("--bg"))).toBeGreaterThanOrEqual(3);
       expect(ratio(c("--edge"), c("--panel"))).toBeGreaterThanOrEqual(3);
     });
 
