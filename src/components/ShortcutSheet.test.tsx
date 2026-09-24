@@ -177,7 +177,7 @@ describe("ShortcutSheet", () => {
     expect(screen.queryByRole("switch")).toBeNull();
     expect(screen.queryByRole("radio")).toBeNull();
 
-    const combo = await screen.findByLabelText("Ctrl+Alt+Shift+V");
+    const combo = await screen.findByLabelText("Ctrl + Alt + Shift + V");
     expect([...combo.querySelectorAll("kbd")].map((k) => k.textContent)).toEqual([
       "Ctrl",
       "Alt",

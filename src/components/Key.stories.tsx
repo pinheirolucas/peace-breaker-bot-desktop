@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { CSSProperties, ReactNode } from "react";
-import { Key } from "./Key";
+import { Key, Keys } from "./Key";
 
 const meta: Meta<typeof Key> = { title: "Components/Tecla", component: Key };
 export default meta;
@@ -30,12 +30,23 @@ export const Variantes: Story = {
         <Key rec>V</Key>
         <Key disabled>V</Key>
       </Ground>
+      <Ground>
+        <Keys parts={["⌘", "K"]} />
+        <Keys quiet parts={["⌃", "⌥", "⇧", "V"]} />
+        <Keys quiet parts={["Ctrl", "Alt", "Shift", "V"]} />
+        <Keys quiet parts={["Shift", ","]} />
+        <span style={{ display: "inline-flex", gap: 3, alignItems: "center" }}>
+          <Key>A</Key>
+          <span style={{ color: "var(--muted)" }}>…</span>
+          <Key>Z</Key>
+        </span>
+      </Ground>
       <Ground style={{ background: "var(--accent)", color: "var(--onAccent)" }}>
-        <Key onAccent>↵</Key>
-        <Key quiet onAccent>esc</Key>
+        <Keys onAccent parts={["↵"]} />
+        <Keys quiet onAccent parts={["⇧", "↵"]} />
       </Ground>
       <Ground style={{ background: "var(--fg)", color: "var(--bg)" }}>
-        Buscar <Key inv>⌘F</Key>
+        Buscar <Keys inv parts={["⌘", "F"]} />
       </Ground>
       <Ground className="p0" style={{ background: "var(--fill)", color: "var(--ink)" }}>
         <Key card>A</Key>

@@ -19,8 +19,20 @@ export interface KeyProps extends HTMLAttributes<HTMLElement> {
   disabled?: boolean;
 }
 
+/** One Key is one physical key: a space, a "+" or a comma-joined combo in it is a bug, not a style. */
+function assertOneKey(children: KeyProps["children"]) {
+  if (typeof children !== "string" || !import.meta.env.DEV) {
+    return;
+  }
+
+  if (/[\s+]/.test(children) || (children.length > 1 && children.includes(","))) {
+    throw new Error(`<Key> holds one physical key; got "${children}". Use <Keys parts={[...]}> for a combo.`);
+  }
+}
+
 /** The one key hint. Every surface that names a key draws it through here. */
 export function Key({ quiet, card, onAccent, inv, empty, pressed, rec, disabled, className, ...rest }: KeyProps) {
+  assertOneKey(rest.children);
   const classes = [
     "k",
     quiet && "k--quiet",
@@ -37,6 +49,38 @@ export function Key({ quiet, card, onAccent, inv, empty, pressed, rec, disabled,
     .join(" ");
 
   return <kbd {...rest} className={classes} />;
+}
+
+/** What a screen reader says for a part: the glyphs have names, the rest read as they are. */
+const spoken: Record<string, string> = {
+  "⌘": "Command",
+  "⌥": "Option",
+  "⇧": "Shift",
+  "⌃": "Control",
+  "↵": "Enter",
+  "⌫": "Backspace",
+  "↑": "Up",
+  "↓": "Down"
+};
+
+export interface KeysProps extends Omit<KeyProps, "children"> {
+  /** One entry per physical key, modifiers first. */
+  parts: string[];
+  /** What a screen reader says for the whole combo; the parts joined with " + " by default. */
+  label?: string;
+}
+
+/** A combo: one <Key> per physical key, the gap between them doing the separating. One spoken label on the wrapper, the caps hidden. */
+export function Keys({ parts, label, className, ...variant }: KeysProps) {
+  return (
+    <span className={["ks", className].filter(Boolean).join(" ")} role="group" aria-label={label ?? parts.map((part) => spoken[part] ?? part).join(" + ")}>
+      {parts.map((part, index) => (
+        <Key key={`${part}-${index}`} {...variant} aria-hidden="true">
+          {part}
+        </Key>
+      ))}
+    </span>
+  );
 }
 
 export default Key;

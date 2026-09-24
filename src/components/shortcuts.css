@@ -83,11 +83,6 @@
   font: inherit;
   font-size: 13px;
 }
-.ksheet__keys {
-  flex: none;
-  display: inline-flex;
-  gap: 3px;
-}
 .ksheet__legend {
   list-style: none;
   margin: 0;

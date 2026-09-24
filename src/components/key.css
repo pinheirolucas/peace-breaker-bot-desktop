@@ -68,3 +68,11 @@
 .k.k--dis {
   opacity: 0.4;
 }
+
+/* A combo: the gap separates the keys. */
+.ks {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}

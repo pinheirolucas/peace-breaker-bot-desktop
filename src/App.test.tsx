@@ -1137,7 +1137,7 @@ describe("Configurações doors", () => {
 
     expect(menu.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
       "Aparência",
-      "Configurações…Ctrl+,",
+      "Configurações…Ctrl,",
       "Atalhos do teclado?"
     ]);
   });

@@ -8,7 +8,7 @@ import { useColorMode } from "./hooks/useColorMode";
 import { useCompact } from "./hooks/useCompact";
 import { useLanguage } from "./hooks/useLanguage";
 import { useNativeChrome } from "./hooks/useNativeChrome";
-import { findShortcutLabel, useChromeKind, useDesktop, usePlatform } from "./hooks/usePlatform";
+import { shortcutParts, useChromeKind, useDesktop, usePlatform } from "./hooks/usePlatform";
 import { useStamp } from "./hooks/useStamp";
 import { useTheme } from "./hooks/useTheme";
 import {
@@ -33,6 +33,7 @@ import ExploreSection from "./settings/ExploreSection";
 import GeneralSection from "./settings/GeneralSection";
 import KeysSection from "./settings/KeysSection";
 import PresenceSection from "./settings/PresenceSection";
+import { Keys } from "./components/Key";
 import ServerSection from "./settings/ServerSection";
 import { matchEntries, searchEntries, sectionLabel } from "./settings/search";
 import "./settings/settings.css";
@@ -121,7 +122,7 @@ export function SettingsShell({
           <CloseIcon size={13} />
         </button>
       ) : (
-        !compact && <span className="kb">{findShortcutLabel(os)}</span>
+        !compact && <Keys quiet parts={shortcutParts(os, "F")} />
       )}
     </label>
   );

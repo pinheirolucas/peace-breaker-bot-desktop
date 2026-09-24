@@ -81,7 +81,6 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
 }
-.sfield .kb { font-size: 10.5px; font-weight: 700; color: var(--muted); }
 .sfield button { border: 0; background: transparent; color: var(--muted); display: inline-flex; padding: 0; cursor: pointer; }
 
 .nav {

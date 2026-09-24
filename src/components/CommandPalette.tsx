@@ -1,5 +1,6 @@
 import * as RadixDialog from "@radix-ui/react-dialog";
-import { Key } from "./Key";
+import { shiftPart, usePlatform } from "../hooks/usePlatform";
+import { Keys } from "./Key";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -80,6 +81,7 @@ export default function CommandPalette({
   container
 }: CommandPaletteProps) {
   const { t } = useTranslation();
+  const os = usePlatform();
   const [query, setQuery] = useState(initialQuery);
   const [view, setView] = useState<View>(initialView);
   const [selected, setSelected] = useState(0);
@@ -206,23 +208,23 @@ export default function CommandPalette({
   }
 
   const hasQuery = query.trim() !== "";
-  const hints: { keys: string; text: string; dim?: boolean }[] = [{ keys: "↑↓", text: t("palette.hintNavigate") }];
+  const hints: { keys: string[]; text: string; dim?: boolean }[] = [{ keys: ["↑", "↓"], text: t("palette.hintNavigate") }];
 
   if (view === "themes") {
-    hints.push({ keys: "↵", text: t("palette.hintUse") }, { keys: "⌫", text: t("palette.hintBack") }, { keys: "esc", text: t("palette.hintCancel") });
+    hints.push({ keys: ["↵"], text: t("palette.hintUse") }, { keys: ["⌫"], text: t("palette.hintBack") }, { keys: ["esc"], text: t("palette.hintCancel") });
   } else {
     if (active?.kind === "sound") {
-      hints.push({ keys: "↵", text: t("palette.hintDiscord"), dim: active.refused }, { keys: "⇧↵", text: t("palette.hintLocal") });
+      hints.push({ keys: ["↵"], text: t("palette.hintDiscord"), dim: active.refused }, { keys: [shiftPart(os), "↵"], text: t("palette.hintLocal") });
     } else if (active?.kind === "explore") {
-      hints.push({ keys: "↵", text: t("palette.hintExplore") });
+      hints.push({ keys: ["↵"], text: t("palette.hintExplore") });
     } else if (active?.kind === "stop") {
-      hints.push({ keys: "↵", text: t("palette.hintStop") });
+      hints.push({ keys: ["↵"], text: t("palette.hintStop") });
     } else if (active?.kind === "drill") {
-      hints.push({ keys: "↵", text: t("palette.hintOpenList") });
+      hints.push({ keys: ["↵"], text: t("palette.hintOpenList") });
     } else if (active) {
-      hints.push({ keys: "↵", text: active.kind === "setting" ? t("palette.hintApply") : t("palette.hintRun") });
+      hints.push({ keys: ["↵"], text: active.kind === "setting" ? t("palette.hintApply") : t("palette.hintRun") });
     }
-    hints.push({ keys: "esc", text: hasQuery ? t("palette.hintClear") : t("palette.hintClose") });
+    hints.push({ keys: ["esc"], text: hasQuery ? t("palette.hintClear") : t("palette.hintClose") });
   }
 
   let index = -1;
@@ -254,11 +256,7 @@ export default function CommandPalette({
         </span>
         <span className="prt">
           {tag && <span className={["ptg", item.tagTone].filter(Boolean).join(" ")}>{tag}</span>}
-          {item.keys?.map((key) => (
-            <Key quiet key={key}>
-              {key}
-            </Key>
-          ))}
+          {item.keys && <Keys quiet parts={item.keys} />}
         </span>
       </div>
     );
@@ -310,7 +308,7 @@ export default function CommandPalette({
               }}
               onKeyDown={onKeyDown}
             />
-            <Key quiet>esc</Key>
+            <Keys quiet parts={["esc"]} />
           </div>
 
           <div className="pbd" id="palette-list" role="listbox" aria-label={t("palette.title")} ref={list}>
@@ -346,8 +344,8 @@ export default function CommandPalette({
             </span>
             <span className="phs">
               {hints.map((hint) => (
-                <span key={hint.keys} data-dim={hint.dim || undefined}>
-                  <Key quiet>{hint.keys}</Key>
+                <span key={hint.keys.join("+")} data-dim={hint.dim || undefined}>
+                  <Keys quiet parts={hint.keys} />
                   {hint.text}
                 </span>
               ))}

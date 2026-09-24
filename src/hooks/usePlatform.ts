@@ -172,27 +172,32 @@ export function shortcutLabel(os: PlatformId, key: string): string {
   return os === "mac" ? `⌘${key.toUpperCase()}` : `Ctrl+${key.toUpperCase()}`;
 }
 
-const macGlyphs = { ctrl: "⌃", alt: "⌥", shift: "⇧", cmd: "⌘", super: "" } as const;
-
-/** "⌃⌥V" on macOS, "Ctrl+Alt+Shift+V" elsewhere. */
-export function comboLabel(os: PlatformId, modifier: GlobalModifier, key: string): string {
-  const parts = modifier.split("-") as (keyof typeof macGlyphs)[];
-  const upper = key.toUpperCase();
-
-  if (os === "mac") {
-    return parts.map((part) => macGlyphs[part]).join("") + upper;
-  }
-
-  const names = { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Cmd", super: "Super" } as const;
-  return [...parts.map((part) => names[part]), upper].join("+");
+/** Cmd/Ctrl + key as one part per physical key: ["⌘", "1"] on macOS, ["Ctrl", "1"] elsewhere. */
+export function shortcutParts(os: PlatformId, key: string): string[] {
+  return [os === "mac" ? "⌘" : "Ctrl", key.toUpperCase()];
 }
 
-/** A combo as separate keycaps: ["⌃", "⌥", "V"] on macOS, ["Ctrl", "Alt", "Shift", "V"] elsewhere. */
+/** Shift on its own: the glyph on macOS, the word elsewhere. */
+export function shiftPart(os: PlatformId): string {
+  return os === "mac" ? "⇧" : "Shift";
+}
+
+const macGlyphs = { ctrl: "⌃", alt: "⌥", shift: "⇧", cmd: "⌘", super: "" } as const;
+const modifierNames = { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Cmd", super: "Super" } as const;
+/** Modifiers read in this order everywhere: ⌃ ⌥ ⇧ ⌘ on macOS, Ctrl Alt Shift elsewhere (Super last, like ⌘). */
+const modifierOrder = ["ctrl", "alt", "shift", "cmd", "super"] as const;
+
+/** A combo as one part per physical key: ["⌃", "⌥", "V"] on macOS, ["Ctrl", "Alt", "Shift", "V"] elsewhere. */
 export function comboParts(os: PlatformId, modifier: GlobalModifier, key: string): string[] {
-  const parts = modifier.split("-") as (keyof typeof macGlyphs)[];
-  const names = { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Cmd", super: "Super" } as const;
-  const labels = os === "mac" ? parts.map((part) => macGlyphs[part]).filter(Boolean) : parts.map((part) => names[part]);
+  const present = modifier.split("-") as (typeof modifierOrder)[number][];
+  const ordered = modifierOrder.filter((part) => present.includes(part));
+  const labels = os === "mac" ? ordered.map((part) => macGlyphs[part]).filter(Boolean) : ordered.map((part) => modifierNames[part]);
   return [...labels, key.toUpperCase()];
+}
+
+/** "⌃⌥V" on macOS, "Ctrl+Alt+Shift+V" elsewhere: the same parts as comboParts, as one string of text. */
+export function comboLabel(os: PlatformId, modifier: GlobalModifier, key: string): string {
+  return comboParts(os, modifier, key).join(os === "mac" ? "" : "+");
 }
 
 /** Cmd + key on macOS, Ctrl + key elsewhere — with no Alt or Shift, so it
