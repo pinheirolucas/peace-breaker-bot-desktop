@@ -1,3 +1,4 @@
+import { Key } from "./Key";
 import * as RadixMenu from "@radix-ui/react-dropdown-menu";
 import type { MouseEvent, ReactNode } from "react";
 import "./overlays.css";
@@ -87,7 +88,7 @@ export function MenuItem({
         {primary}
         {secondary && <span className="msub">{secondary}</span>}
       </span>
-      {hint && <span className="mhint">{hint}</span>}
+      {hint && <span className="mhint"><Key quiet>{hint}</Key></span>}
       {trail !== undefined && (
         <button
           type="button"

@@ -1,0 +1,88 @@
+/* One key hint, everywhere: a physical keycap. Face, 1px outline and a
+ * heavier bottom edge. Modifiers change the ground it sits on, never the shape. */
+.k {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-bottom: 2px solid color-mix(in oklch, var(--fg) 26%, var(--line));
+}
+/* Inside a line of text or a control: smaller, no face. */
+.k--quiet {
+  height: 20px;
+  min-width: 20px;
+  padding: 0 5px;
+  font-size: 10.5px;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  border-bottom-width: 2px;
+}
+/* On a sound's own colour. */
+.k--card {
+  min-width: 28px;
+  height: 28px;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--fill) 80%, var(--ink) 20%);
+  color: var(--ink);
+  border-color: color-mix(in oklch, var(--ink) 30%, transparent);
+  border-bottom-color: color-mix(in oklch, var(--ink) 55%, transparent);
+}
+/* On an accent ground: a selected row, the stop button. */
+.k--on-accent,
+.k--quiet.k--on-accent {
+  background: color-mix(in oklch, var(--onAccent) 16%, transparent);
+  color: var(--onAccent);
+  border-color: color-mix(in oklch, var(--onAccent) 38%, transparent);
+  border-bottom-color: color-mix(in oklch, var(--onAccent) 60%, transparent);
+}
+/* On an inverted ground: a tooltip. */
+.k--inv {
+  background: color-mix(in oklch, var(--bg) 12%, transparent);
+  color: var(--bg);
+  border-color: color-mix(in oklch, var(--bg) 32%, transparent);
+  border-bottom-color: color-mix(in oklch, var(--bg) 55%, transparent);
+}
+/* An empty slot. */
+.k.k--empty {
+  background: transparent;
+  color: var(--muted);
+  border: 1.5px dashed color-mix(in oklch, currentColor 55%, transparent);
+}
+.k--card.k--empty { color: var(--ink); }
+/* Key down. */
+.k.k--pressed {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+  border-bottom-width: 1px;
+  transform: translateY(1px);
+}
+.k--card.k--pressed {
+  background: var(--ink);
+  color: var(--fill);
+  border-color: var(--ink);
+}
+/* Waiting for a key. */
+.k.k--rec {
+  background: color-mix(in oklch, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
+}
+.k.k--dis { opacity: 0.4; }

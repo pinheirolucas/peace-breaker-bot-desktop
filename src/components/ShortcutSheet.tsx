@@ -1,5 +1,5 @@
+import { Key } from "./Key";
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ShortcutResult } from "../../electron/shortcuts";
 import { Button } from "./Button";
@@ -34,14 +34,6 @@ interface AppKey {
   menu: string;
   /** Only exists with the menu bar, so it is left out of a plain browser tab. */
   needsMenuBar?: boolean;
-}
-
-function Key({ children, slot }: { children: ReactNode; slot?: string }) {
-  return (
-    <kbd className={["ksheet__key", slot].filter(Boolean).join(" ")} data-slot={slot ? "" : undefined}>
-      {children}
-    </kbd>
-  );
 }
 
 function Keys({ parts }: { parts: string[] }) {
@@ -239,9 +231,9 @@ export default function ShortcutSheet({
                   const reason = showCombo ? failure(instant.key) : undefined;
                   return (
                     <li key={instant.url} className="ksheet__row">
-                      <span className={`ksheet__cap ${slotFor(instant.url)}`}>
+                      <Key card className={slotFor(instant.url)}>
                         {instant.key.toUpperCase()}
-                      </span>
+                      </Key>
                       <span className="ksheet__name" title={instant.name}>
                         {instant.name}
                       </span>

@@ -1,3 +1,4 @@
+import { Key } from "./Key";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { statusLine, statusTone } from "../../electron/presence";
@@ -49,7 +50,7 @@ export function PresenceStrip({ snapshot, pinned, onStop, onPin, menu }: Presenc
       >
         <StopIcon size={13} />
         <span>{t("quickAccess.stop")}</span>
-        <span className="kbd">{t("quickAccess.esc")}</span>
+        <Key quiet onAccent dis={!playing}>{t("quickAccess.esc")}</Key>
       </button>
       <IconButton label={t("quickAccess.pin")} aria-pressed={pinned} className="ppin" onClick={onPin}>
         <PinIcon filled={pinned} />

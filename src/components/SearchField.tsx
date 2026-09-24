@@ -1,3 +1,4 @@
+import { Key } from "./Key";
 import { forwardRef } from "react";
 import type { InputHTMLAttributes } from "react";
 import { SearchIcon } from "../icons";
@@ -20,7 +21,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(
       >
         <SearchIcon style={{ flex: "none" }} />
         <input ref={ref} type="search" {...rest} />
-        {shortcut && <span className="kbd">{shortcut}</span>}
+        {shortcut && <Key quiet>{shortcut}</Key>}
       </label>
     );
   }

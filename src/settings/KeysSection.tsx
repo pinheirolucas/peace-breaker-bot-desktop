@@ -1,3 +1,4 @@
+import { Key } from "../components/Key";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { quickAccessShortcutKey } from "../../electron/quickAccess";
@@ -25,7 +26,7 @@ export interface KeysPaneProps {
 }
 
 function Kbd({ children }: { children: string }) {
-  return <span className="kbd">{children}</span>;
+  return <Key>{children}</Key>;
 }
 
 export function KeysPane({ os, globalKeys, quickAccess, quickAccessOn, conflict, onClearConflict }: KeysPaneProps) {
