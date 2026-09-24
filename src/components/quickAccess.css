@@ -96,7 +96,6 @@ html[data-quick-access="1"][data-os="linux"] .app.quick-access {
   border-color: var(--accent);
   color: var(--onAccent);
 }
-.pstop .kbd { font-size: 10px; opacity: 0.8; }
 .pstop:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .ppin[aria-pressed="true"] { color: var(--accent); }

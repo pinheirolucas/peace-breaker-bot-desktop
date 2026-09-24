@@ -1,0 +1,78 @@
+/* One key hint for every surface. Option A: a tinted chip, no border.
+ * Every colour is a token; modifiers only pick which one. */
+.k {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: color-mix(in oklch, var(--fg) 9%, transparent);
+  color: var(--fg);
+}
+.k--quiet {
+  height: 20px;
+  min-width: 20px;
+  padding: 0 5px;
+  font-size: 11px;
+  background: color-mix(in oklch, var(--fg) 6%, transparent);
+  color: var(--muted);
+}
+.k--card {
+  min-width: 26px;
+  height: 26px;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: var(--rbtn);
+  background: color-mix(in oklch, var(--ink) 14%, transparent);
+  color: var(--ink);
+}
+.k--on-accent,
+.k--quiet.k--on-accent {
+  background: color-mix(in oklch, var(--onAccent) 22%, transparent);
+  color: var(--onAccent);
+}
+.k--inv {
+  background: color-mix(in oklch, var(--bg) 20%, transparent);
+  color: var(--bg);
+}
+.k.k--empty {
+  background: transparent;
+  color: var(--muted);
+  outline: 1.5px dashed color-mix(in oklch, currentColor 55%, transparent);
+  outline-offset: -1.5px;
+}
+.k--card.k--empty {
+  color: var(--ink);
+}
+.k.k--pressed {
+  background: var(--fg);
+  color: var(--bg);
+}
+.k--card.k--pressed {
+  background: var(--ink);
+  color: var(--fill);
+}
+.k.k--rec {
+  background: color-mix(in oklch, var(--accent) 16%, transparent);
+  color: var(--accent);
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1.5px;
+}
+.k.k--dis {
+  opacity: 0.4;
+}
+.ks {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}

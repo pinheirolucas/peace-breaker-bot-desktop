@@ -187,7 +187,7 @@ describe("clip keys in Favoritos", () => {
     renderPanel({ organizing: true });
 
     const article = screen.getByRole("article", { name: "Sem tecla" });
-    expect(article.querySelector(".kc[data-empty]")).not.toBeNull();
+    expect(article.querySelector(".kc.k--empty")).not.toBeNull();
     expect(within(article).getByRole("button", { name: "Definir atalho para Sem tecla" })).toBeVisible();
   });
 

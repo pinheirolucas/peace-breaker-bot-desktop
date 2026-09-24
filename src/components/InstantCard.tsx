@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { Key } from "./Key";
 import type { ButtonHTMLAttributes, CSSProperties, MouseEvent, ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { GripIcon, KeyboardIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
@@ -237,14 +238,14 @@ export default function InstantCard({
         </span>
       )}
       {match && (
-        <span className="kc kc--enter" aria-hidden="true">
+        <Key card className="kc kc--enter" aria-hidden="true">
           ↵
-        </span>
+        </Key>
       )}
       {(showKeycap || showEmptyKeycap) && !dragging && (
-        <span className="kc" data-empty={!clipKey || undefined} aria-hidden="true">
+        <Key card empty={!clipKey} className="kc" aria-hidden="true">
           {clipKey ? clipKey.toUpperCase() : ""}
-        </span>
+        </Key>
       )}
       {organize && !organize.drag && (
         <span className="pgrip" aria-hidden="true">

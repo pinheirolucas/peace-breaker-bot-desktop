@@ -391,7 +391,7 @@
   .capsule {
     --capw: 240px;
   }
-  .toolbar .kbd,
+  .toolbar .search__key,
   .toolbar .addr,
   .toolbar__hint,
   .toolbar .btn.done .lbl {
