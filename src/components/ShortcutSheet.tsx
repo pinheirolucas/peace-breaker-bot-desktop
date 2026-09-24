@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ShortcutResult } from "../../electron/shortcuts";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
+import { Key } from "./Key";
 import { comboLabel, comboParts } from "../hooks/usePlatform";
 import { useGlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
 import { menuBridge } from "../hooks/useMenuBridge";
@@ -36,19 +36,11 @@ interface AppKey {
   needsMenuBar?: boolean;
 }
 
-function Key({ children, slot }: { children: ReactNode; slot?: string }) {
-  return (
-    <kbd className={["ksheet__key", slot].filter(Boolean).join(" ")} data-slot={slot ? "" : undefined}>
-      {children}
-    </kbd>
-  );
-}
-
 function Keys({ parts }: { parts: string[] }) {
   return (
     <span className="ksheet__keys">
       {parts.map((part, index) => (
-        <Key key={`${part}-${index}`}>{part}</Key>
+        <Key key={`${part}-${index}`} quiet>{part}</Key>
       ))}
     </span>
   );
@@ -239,9 +231,9 @@ export default function ShortcutSheet({
                   const reason = showCombo ? failure(instant.key) : undefined;
                   return (
                     <li key={instant.url} className="ksheet__row">
-                      <span className={`ksheet__cap ${slotFor(instant.url)}`}>
+                      <Key card className={`ksheet__cap ${slotFor(instant.url)}`}>
                         {instant.key.toUpperCase()}
-                      </span>
+                      </Key>
                       <span className="ksheet__name" title={instant.name}>
                         {instant.name}
                       </span>

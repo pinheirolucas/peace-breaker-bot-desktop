@@ -152,43 +152,22 @@
   pointer-events: none;
 }
 
-/* Keycap. Shares a corner with the chip and the grip. */
-.kc {
+/* Keycap position. Shares a corner with the chip and the grip; the look is <Key card>. */
+.pkey {
   position: absolute;
   z-index: 1;
   top: 12px;
   right: 12px;
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1;
-  border-radius: var(--rbtn);
-  background: color-mix(in oklch, var(--ink) 14%, transparent);
-  color: var(--ink);
   pointer-events: none;
 }
-.pad[data-organize="true"] .kc {
+.pad[data-organize="true"] .pkey {
   right: 40px;
-}
-/* Empty slot in Organizar. An outline, since an inset shadow can't dash. */
-.kc[data-empty] {
-  background: transparent;
-  outline: 1.5px dashed color-mix(in oklch, var(--ink) 45%, transparent);
-  outline-offset: -1.5px;
 }
 /* Key down: the pressed look a click gives. */
 .pad[data-flash="press"] {
   filter: brightness(0.93);
   transform: translateY(1px) scale(0.985);
   box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--ink) 48%, transparent);
-}
-.pad[data-flash="press"] .kc {
-  background: var(--ink);
-  color: var(--fill);
 }
 /* Key refused. */
 .pad[data-flash="refuse"] {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { quickAccessShortcutKey } from "../../electron/quickAccess";
 import type { GlobalModifier } from "../../electron/shortcuts";
+import { Key } from "../components/Key";
 import { SegmentedChoice } from "../components/Segmented";
 import { Switch } from "../components/Switch";
 import { useGlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
@@ -25,7 +26,7 @@ export interface KeysPaneProps {
 }
 
 function Kbd({ children }: { children: string }) {
-  return <span className="kbd">{children}</span>;
+  return <Key>{children}</Key>;
 }
 
 export function KeysPane({ os, globalKeys, quickAccess, quickAccessOn, conflict, onClearConflict }: KeysPaneProps) {

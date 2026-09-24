@@ -10,6 +10,7 @@ import { slotFor } from "../lib/slot";
 import { wavePath } from "../lib/wave";
 import type { BotStatus } from "../service";
 import type { Instant } from "../storage";
+import { Key } from "./Key";
 import "./card.css";
 
 /** What this card is doing right now. */
@@ -237,14 +238,14 @@ export default function InstantCard({
         </span>
       )}
       {match && (
-        <span className="kc kc--enter" aria-hidden="true">
+        <Key card className="pkey" aria-hidden="true">
           ↵
-        </span>
+        </Key>
       )}
       {(showKeycap || showEmptyKeycap) && !dragging && (
-        <span className="kc" data-empty={!clipKey || undefined} aria-hidden="true">
+        <Key card className="pkey" empty={!clipKey} pressed={shortcut?.flash === "press" && Boolean(clipKey)} aria-hidden="true">
           {clipKey ? clipKey.toUpperCase() : ""}
-        </span>
+        </Key>
       )}
       {organize && !organize.drag && (
         <span className="pgrip" aria-hidden="true">

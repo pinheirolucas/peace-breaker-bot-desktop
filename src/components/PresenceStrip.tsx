@@ -5,6 +5,7 @@ import type { PresenceSnapshot, StatusTone } from "../../electron/presence";
 import { MoreIcon, PinIcon, StopIcon } from "../icons";
 import { formatApiUrl } from "../ServerMenu";
 import { IconButton } from "./Button";
+import { Key } from "./Key";
 import { Menu } from "./Menu";
 import "./quickAccess.css";
 
@@ -49,7 +50,7 @@ export function PresenceStrip({ snapshot, pinned, onStop, onPin, menu }: Presenc
       >
         <StopIcon size={13} />
         <span>{t("quickAccess.stop")}</span>
-        <span className="kbd">{t("quickAccess.esc")}</span>
+        <Key quiet onAccent={playing}>{t("quickAccess.esc")}</Key>
       </button>
       <IconButton label={t("quickAccess.pin")} aria-pressed={pinned} className="ppin" onClick={onPin}>
         <PinIcon filled={pinned} />

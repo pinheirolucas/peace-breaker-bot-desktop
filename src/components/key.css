@@ -1,0 +1,70 @@
+/* The key hint: a 1px hairline, no fill. One sheet for every surface; a modifier
+   says what it sits on. Colours are tokens only — the card's --fill/--ink included. */
+.k {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid color-mix(in oklch, var(--fg) 30%, transparent);
+}
+.k--quiet {
+  color: var(--muted);
+  border-color: var(--line);
+}
+.k--card {
+  min-width: 24px;
+  height: 24px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  color: var(--ink);
+  border-color: color-mix(in oklch, var(--ink) 50%, transparent);
+}
+.k--on-accent,
+.k--quiet.k--on-accent {
+  color: var(--onAccent);
+  border-color: color-mix(in oklch, var(--onAccent) 55%, transparent);
+}
+.k--inv {
+  color: var(--bg);
+  border-color: color-mix(in oklch, var(--bg) 45%, transparent);
+}
+.k.k--empty {
+  color: var(--muted);
+  border-style: dashed;
+  border-color: color-mix(in oklch, currentColor 55%, transparent);
+}
+.k--card.k--empty {
+  color: var(--ink);
+}
+.k.k--pressed {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+.k--card.k--pressed {
+  background: var(--ink);
+  color: var(--fill);
+  border-color: var(--ink);
+}
+.k.k--rec {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
+}
+.k.k--dis {
+  opacity: 0.4;
+}

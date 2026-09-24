@@ -179,15 +179,15 @@ describe("clip keys in Favoritos", () => {
       "aria-keyshortcuts",
       "V Shift+V"
     );
-    expect(article.querySelector(".kc")).toHaveTextContent("V");
-    expect(screen.getByRole("article", { name: "Sem tecla" }).querySelector(".kc")).toBeNull();
+    expect(article.querySelector(".k--card")).toHaveTextContent("V");
+    expect(screen.getByRole("article", { name: "Sem tecla" }).querySelector(".k--card")).toBeNull();
   });
 
   it("shows a dashed empty keycap and the keyboard button in Organizar", () => {
     renderPanel({ organizing: true });
 
     const article = screen.getByRole("article", { name: "Sem tecla" });
-    expect(article.querySelector(".kc[data-empty]")).not.toBeNull();
+    expect(article.querySelector(".k--empty")).not.toBeNull();
     expect(within(article).getByRole("button", { name: "Definir atalho para Sem tecla" })).toBeVisible();
   });
 

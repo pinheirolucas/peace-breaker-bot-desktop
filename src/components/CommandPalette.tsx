@@ -1,4 +1,5 @@
 import * as RadixDialog from "@radix-ui/react-dialog";
+import { Key } from "./Key";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -254,9 +255,9 @@ export default function CommandPalette({
         <span className="prt">
           {tag && <span className={["ptg", item.tagTone].filter(Boolean).join(" ")}>{tag}</span>}
           {item.keys?.map((key) => (
-            <span className="pcp" key={key}>
+            <Key quiet key={key}>
               {key}
-            </span>
+            </Key>
           ))}
         </span>
       </div>
@@ -309,7 +310,7 @@ export default function CommandPalette({
               }}
               onKeyDown={onKeyDown}
             />
-            <span className="pcp">esc</span>
+            <Key quiet>esc</Key>
           </div>
 
           <div className="pbd" id="palette-list" role="listbox" aria-label={t("palette.title")} ref={list}>
@@ -346,7 +347,7 @@ export default function CommandPalette({
             <span className="phs">
               {hints.map((hint) => (
                 <span key={hint.keys} data-dim={hint.dim || undefined}>
-                  <span className="pcp">{hint.keys}</span>
+                  <Key quiet>{hint.keys}</Key>
                   {hint.text}
                 </span>
               ))}
