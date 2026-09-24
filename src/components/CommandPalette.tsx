@@ -4,7 +4,7 @@ import { Keys } from "./Key";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { arrange, filterThemes, flatten } from "../lib/palette";
+import { arrange, filterThemes, flatten, normalize, parseQuery } from "../lib/palette";
 import type { PaletteCandidates, PaletteItem, PalettePreview } from "../lib/palette";
 import "./commandPalette.css";
 
@@ -208,6 +208,7 @@ export default function CommandPalette({
   }
 
   const hasQuery = query.trim() !== "";
+  const needle = parseQuery(query).query;
   const hints: { keys: string[]; text: string; dim?: boolean }[] = [{ keys: ["↑", "↓"], text: t("palette.hintNavigate") }];
 
   if (view === "themes") {
@@ -241,17 +242,24 @@ export default function CommandPalette({
         role="option"
         aria-selected={isSelected}
         aria-disabled={item.refused || undefined}
-        className="prow"
+        className="pitem"
         data-selected={isSelected || undefined}
         data-dim={item.dim || undefined}
         onMouseMove={() => selected !== position && setSelected(position)}
         onClick={() => choose(item, false)}
       >
         <span className={["pic", item.slot && "tile", item.slot].filter(Boolean).join(" ")} aria-hidden="true">
-          {item.swatch ? <span className="sw8" data-theme={item.swatch} data-mode={document.documentElement.dataset.mode} /> : item.glyph ? <b>{item.glyph}</b> : <Icon name={item.kind === "sound" ? "wave" : (item.icon ?? "star")} />}
+          {item.swatch ? (
+            <span className="sw8" data-theme={item.swatch} data-mode={document.documentElement.dataset.mode}>
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+          ) : item.glyph ? <b>{item.glyph}</b> : <Icon name={item.kind === "sound" ? "wave" : (item.icon ?? "star")} />}
         </span>
         <span className="ptx">
-          <span className="ptt">{item.title}</span>
+          <span className="ptt">{highlight(item.title, needle)}</span>
           {item.sub && <span className="psb">{item.sub}</span>}
         </span>
         <span className="prt">
@@ -318,7 +326,7 @@ export default function CommandPalette({
                   {t("palette.paletteCrumb")}
                   <span>{t("palette.previewNote")}</span>
                 </div>
-                {themeRows.map(renderRow)}
+                <div className="pls">{themeRows.map(renderRow)}</div>
                 {themeRows.length === 0 && <NoMatch text={t("palette.noThemes")} />}
               </div>
             ) : (
@@ -328,7 +336,7 @@ export default function CommandPalette({
                     {group.title}
                     {group.note && <span>{group.note}</span>}
                   </div>
-                  {group.items.map(renderRow)}
+                  <div className="pls">{group.items.map(renderRow)}</div>
                 </div>
               ))
             )}
@@ -354,6 +362,19 @@ export default function CommandPalette({
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>
+  );
+}
+
+/** The title with the first place the query matches picked out, the way the design draws it. */
+function highlight(title: string, needle: string) {
+  const at = needle ? normalize(title).indexOf(needle) : -1;
+  if (at < 0) return title;
+  return (
+    <>
+      {title.slice(0, at)}
+      <b className="h">{title.slice(at, at + needle.length)}</b>
+      {title.slice(at + needle.length)}
+    </>
   );
 }
 

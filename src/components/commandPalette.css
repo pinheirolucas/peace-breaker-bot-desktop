@@ -1,7 +1,15 @@
-/* The command palette. Tokens only; the platform layer (--rpad --rctl --rbtn) does
- * the corner radii, and the selected row follows each system's own dialect: a filled
+/* The command palette. Tokens only. Its corner radii are the design's own three steps
+ * (panel, row, icon tile: 18/10/8 on macOS, 8/4/4 on Windows), set per OS below rather
+ * than read from --rctl, which is a full pill on macOS and would round every row off.
+ * The row is `.pitem`, not `.prow`: quickAccess.css owns `.prow` and its border, padding
+ * and pointer cursor bled into the palette. The selected row follows each system's own dialect: a filled
  * pill on macOS, a soft ground with a 3px accent bar on Windows and KDE, the soft
  * ground alone on GNOME. */
+
+/* The design's three radii: panel, row, icon tile. Linux follows its own platform layer. */
+.pal { --pr-pal: 18px; --pr-row: 10px; --pr-ic: 8px; --pr-key: 6px; }
+[data-os="win"] .pal { --pr-pal: 8px; --pr-row: 4px; --pr-ic: 4px; --pr-key: 4px; }
+[data-os="linux"] .pal { --pr-pal: var(--rpad); --pr-row: var(--rctl); --pr-ic: var(--rbtn); --pr-key: var(--rbtn); }
 
 .pscrim {
   position: fixed;
@@ -25,7 +33,7 @@
   background: var(--panel);
   color: var(--fg);
   border: 1px solid var(--line);
-  border-radius: var(--rpad);
+  border-radius: var(--pr-pal);
   /* The palette is the container: a narrow window, or a framed story, answers to its own width. */
   container: pal / inline-size;
   box-shadow: 0 30px 80px color-mix(in oklch, var(--fg) 28%, transparent);
@@ -62,7 +70,7 @@
   align-items: center;
   height: 26px;
   padding: 0 10px;
-  border-radius: var(--rbtn);
+  border-radius: 999px;
   background: color-mix(in oklch, var(--accent) 14%, var(--panel));
   color: var(--accent);
   font-size: 12px;
@@ -83,23 +91,24 @@
 }
 .pgh span { margin-left: auto; letter-spacing: 0; text-transform: none; font-weight: 500; font-size: 11.5px; }
 
-.prow {
+.pls { display: flex; flex-direction: column; gap: 1px; }
+.pitem {
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 44px;
   padding: 0 10px;
-  border-radius: var(--rctl);
+  border-radius: var(--pr-row);
   color: var(--fg);
   cursor: default;
 }
-.prow[data-dim] { opacity: 0.5; }
+.pitem[data-dim] { opacity: 0.5; }
 .pic {
   flex: none;
   width: 28px;
   height: 28px;
-  border-radius: var(--rbtn);
+  border-radius: var(--pr-ic);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -113,11 +122,20 @@
   width: 100%;
   height: 100%;
   border-radius: inherit;
+  overflow: hidden;
+  display: grid;
+  grid-template: 1fr 1fr / 1fr 1fr;
   border: 1px solid var(--line);
-  background: linear-gradient(135deg, var(--bg) 0 50%, var(--accent) 50% 100%);
 }
+.pic .sw8 i { display: block; }
+.pic .sw8 i:nth-child(1) { background: var(--bg); }
+.pic .sw8 i:nth-child(2) { background: var(--panel); }
+.pic .sw8 i:nth-child(3) { background: var(--accent); }
+.pic .sw8 i:nth-child(4) { background: var(--fg); }
 .ptx { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.ptt { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ptt { font-size: 14px; font-weight: 600; letter-spacing: -0.004em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The part of the title the query matched. */
+.ptt .h { color: var(--accent); font-weight: 750; }
 .psb { font-size: 12px; color: var(--muted); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .prt { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
 
@@ -138,30 +156,33 @@
 :root[data-mode="dark"] .ptg.warn { color: oklch(0.82 0.14 78); }
 
 /* the selected row: macOS */
-.prow[data-selected] { background: var(--accent); color: var(--onAccent); }
-.prow[data-selected] .psb,
-.prow[data-selected] .prt { color: color-mix(in oklch, var(--onAccent) 84%, transparent); }
-.prow[data-selected] .pic { background: color-mix(in oklch, var(--onAccent) 20%, transparent); color: var(--onAccent); }
-.prow[data-selected] .pic.tile { background: var(--fill); color: var(--ink); box-shadow: 0 0 0 2px color-mix(in oklch, var(--onAccent) 88%, transparent); }
-.prow[data-selected] .k { color: var(--onAccent); border-color: color-mix(in oklch, var(--onAccent) 55%, transparent); }
-.prow[data-selected] .ptg { border-color: color-mix(in oklch, var(--onAccent) 45%, transparent); color: inherit; }
+.pitem[data-selected] .ptt .h { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.pitem[data-selected] { background: var(--accent); color: var(--onAccent); }
+.pitem[data-selected] .psb,
+.pitem[data-selected] .prt { color: color-mix(in oklch, var(--onAccent) 84%, transparent); }
+.pitem[data-selected] .pic { background: color-mix(in oklch, var(--onAccent) 20%, transparent); color: var(--onAccent); }
+.pitem[data-selected] .pic.tile { background: var(--fill); color: var(--ink); box-shadow: 0 0 0 2px color-mix(in oklch, var(--onAccent) 88%, transparent); }
+.pitem[data-selected] .k { color: var(--onAccent); border-color: color-mix(in oklch, var(--onAccent) 55%, transparent); }
+.pitem[data-selected] .ptg { border-color: color-mix(in oklch, var(--onAccent) 45%, transparent); color: inherit; }
 
 /* Windows, KDE and the rest: a soft ground with the 3px bar, and GNOME the ground alone. */
-[data-os="win"] .prow[data-selected],
-[data-os="linux"] .prow[data-selected] { background: color-mix(in oklch, var(--fg) 8%, transparent); color: var(--fg); }
-[data-os="win"] .prow[data-selected] .psb,
-[data-os="win"] .prow[data-selected] .prt,
-[data-os="linux"] .prow[data-selected] .psb,
-[data-os="linux"] .prow[data-selected] .prt { color: var(--muted); }
-[data-os="win"] .prow[data-selected] .pic:not(.tile),
-[data-os="linux"] .prow[data-selected] .pic:not(.tile) { background: color-mix(in oklch, var(--fg) 7%, transparent); color: var(--fg); }
-[data-os="win"] .prow[data-selected] .k,
-[data-os="linux"] .prow[data-selected] .k { color: var(--fg); border-color: color-mix(in oklch, var(--fg) 30%, transparent); }
-[data-os="win"] .prow[data-selected] .ptg,
-[data-os="linux"] .prow[data-selected] .ptg { border-color: var(--line); color: var(--muted); }
-[data-os="win"] .prow[data-selected]::before,
-[data-desktop="kde"] .prow[data-selected]::before,
-[data-desktop="other"] .prow[data-selected]::before {
+[data-os="win"] .pitem[data-selected],
+[data-os="linux"] .pitem[data-selected] { background: color-mix(in oklch, var(--fg) 8%, transparent); color: var(--fg); }
+[data-os="win"] .pitem[data-selected] .psb,
+[data-os="win"] .pitem[data-selected] .prt,
+[data-os="linux"] .pitem[data-selected] .psb,
+[data-os="linux"] .pitem[data-selected] .prt { color: var(--muted); }
+[data-os="win"] .pitem[data-selected] .pic:not(.tile),
+[data-os="linux"] .pitem[data-selected] .pic:not(.tile) { background: color-mix(in oklch, var(--fg) 7%, transparent); color: var(--fg); }
+[data-os="win"] .pitem[data-selected] .ptt .h,
+[data-os="linux"] .pitem[data-selected] .ptt .h { color: var(--accent); text-decoration: none; }
+[data-os="win"] .pitem[data-selected] .k,
+[data-os="linux"] .pitem[data-selected] .k { color: var(--fg); border-color: color-mix(in oklch, var(--fg) 30%, transparent); }
+[data-os="win"] .pitem[data-selected] .ptg,
+[data-os="linux"] .pitem[data-selected] .ptg { border-color: var(--line); color: var(--muted); }
+[data-os="win"] .pitem[data-selected]::before,
+[data-desktop="kde"] .pitem[data-selected]::before,
+[data-desktop="other"] .pitem[data-selected]::before {
   content: "";
   position: absolute;
   left: 0;
