@@ -66,7 +66,7 @@
   padding: 0 12px;
   border-radius: var(--rctl);
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
   color: var(--muted);
 }
 .ksheet__filter:focus-within {

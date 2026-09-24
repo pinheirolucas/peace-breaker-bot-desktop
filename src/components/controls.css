@@ -24,7 +24,7 @@
 .btn:active:not(:disabled):not([aria-disabled="true"]) { filter: brightness(0.94); }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.4; cursor: default; }
 
-.btn--secondary { background: var(--panel); color: var(--fg); border-color: var(--line); }
+.btn--secondary { background: var(--panel); color: var(--fg); border-color: var(--edge); }
 .btn--ghost { background: transparent; color: var(--accent); }
 
 /* Destructive stays theme-independent on purpose: "this deletes something"
@@ -45,7 +45,7 @@
   padding: 3px;
   border-radius: var(--rctl);
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
 }
 .seg button {
   border: 0;
@@ -70,7 +70,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
   background: var(--panel);
   color: var(--muted);
   border-radius: var(--rctl);
@@ -92,7 +92,7 @@
   height: var(--hctl);
   padding: 0 13px;
   border-radius: var(--rctl);
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
   background: var(--panel);
   font: inherit;
   font-size: 13.5px;
@@ -121,7 +121,7 @@
   padding: 0 14px;
   border-radius: var(--rctl);
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
   color: var(--muted);
 }
 .search:focus-within { border-color: var(--accent); }
@@ -148,7 +148,7 @@
   padding: 0 14px;
   border-radius: var(--rctl);
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
   font: inherit;
   font-size: 12.5px;
   font-weight: 600;
@@ -169,7 +169,7 @@
   width: 40px;
   height: 23px;
   border-radius: 999px;
-  background: var(--line);
+  background: var(--edge);
   position: relative;
   border: 0;
   flex: none;

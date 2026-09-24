@@ -236,7 +236,7 @@
   align-items: center;
   width: min(var(--capw), 100%);
   height: var(--tch);
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
   border-radius: var(--rctl);
   background: color-mix(in oklch, var(--panel) 82%, transparent);
 }
@@ -463,7 +463,7 @@
     box-shadow: none;
   }
   .capsule .filter {
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--rctl);
     background: color-mix(in oklch, var(--panel) 82%, transparent);
   }
@@ -474,7 +474,7 @@
     padding: 0;
     justify-content: center;
     gap: 0;
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--rctl);
     background: color-mix(in oklch, var(--panel) 82%, transparent);
   }
