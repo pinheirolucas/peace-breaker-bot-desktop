@@ -90,7 +90,7 @@
 
 /* --- drop zone ----------------------------------------------------------- */
 .drop {
-  border: 1.5px dashed var(--line);
+  border: 1.5px dashed var(--edge);
   border-radius: 14px;
   background: var(--panel);
   padding: 24px 20px;

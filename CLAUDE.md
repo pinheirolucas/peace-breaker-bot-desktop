@@ -174,6 +174,14 @@ browser does **as long as nothing sets `nativeTheme.themeSource` away from `"sys
 does, and nothing should — forcing it there takes `auto` away and restyles every native dialog
 the app opens. jsdom ships no `matchMedia`, so `src/setupTests.ts` stubs it.
 
+Two colour tokens guard contrast. `--line` is for decorative hairlines only; a control whose border is
+its only boundary (field, secondary button, icon button, search, server chip, segmented track, switch's
+off track, drop zone) uses `--edge`, which is held at 3:1 against `--bg` and `--panel` in every palette
+(`--edge` is `var(--line)` in Alto contraste, which already clears it). `src/tokens.contrast.test.ts`
+reads `tokens.css` and enforces 4.5:1 for text (`--fg`, `--muted`, `--ok`, `--onAccent` on `--accent`, each
+card's `--ink` on its `--fill`) and 3:1 for `--accent` and `--edge`. Change a palette value and it fails
+before a person has to squint.
+
 The palette is picked in the Aparência shell (⋯ › Aparência), alongside the colour mode, and
 defaults to `esmalte` until someone picks another.
 
