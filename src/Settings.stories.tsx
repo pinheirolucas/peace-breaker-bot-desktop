@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import type { Server } from "../electron/discovery";
 import { defaultPresenceSettings } from "../electron/presence";
-import type { PresenceSettings } from "../electron/presence";
+import type { PresenceSettings, TrayState } from "../electron/presence";
 import { modifiersFor } from "../electron/shortcuts";
 import type { GlobalModifier } from "../electron/shortcuts";
 import type { SettingsPane } from "../electron/settings";
@@ -66,6 +66,8 @@ type Scenario = {
   presence?: Partial<PresenceSettings>;
   quickAccessShortcut?: boolean;
   confirming?: boolean;
+  /** Which tray glyph the preview shows. */
+  glyph?: TrayState;
   onOpenAppearance?: () => void;
 };
 
@@ -180,6 +182,7 @@ function Window({ os, desktop, section: initial, query: initialQuery = "", compa
         desktop={desktop}
         available
         settings={presence}
+        glyph={scenario.glyph}
         onChange={setPresence}
         onOpenKeys={() => setSection("keys")}
       />
@@ -285,6 +288,12 @@ export const KeysConflict = story(
   "Atalhos · combinação em uso",
   { section: "keys", scenario: { quickAccessShortcut: false, conflict: true } },
   "Another app already holds the quick access combination: the message stays under it until it is changed."
+);
+
+export const PresenceGlyphs = story(
+  "Barra de menus · ícone tocando",
+  { section: "presence", scenario: { glyph: "playing" } },
+  "The preview draws the tray glyph the real icon has: connected, playing, idle (bot out of its channel) or off (no answer)."
 );
 
 export const PresenceOff = story(

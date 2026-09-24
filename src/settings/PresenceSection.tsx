@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { effectiveSettings } from "../../electron/presence";
-import type { PresenceSettings } from "../../electron/presence";
+import { effectiveSettings, trayState } from "../../electron/presence";
+import type { PresenceSettings, TrayState } from "../../electron/presence";
 import { Button } from "../components/Button";
 import { SegmentedChoice } from "../components/Segmented";
 import { Switch } from "../components/Switch";
 import { useDesktop, usePlatform } from "../hooks/usePlatform";
 import type { DesktopId } from "../hooks/usePlatform";
-import { usePresenceSettings } from "../hooks/usePresence";
-import { AppMarkIcon } from "../icons";
+import { usePresenceSettings, usePresenceSnapshot } from "../hooks/usePresence";
+import { TrayGlyphIcon } from "../icons";
 import type { PlatformId } from "../themes";
 import { Group, GroupLabel, PageTitle, PrefRow } from "./Pref";
 
@@ -17,13 +17,15 @@ export interface PresencePaneProps {
   /** False without the Electron bridge (a browser tab): there is no tray to set. */
   available: boolean;
   settings: PresenceSettings;
+  /** Which of the four tray glyphs is showing: the one the real icon has right now. */
+  glyph?: TrayState;
   onChange: (settings: PresenceSettings) => void;
   /** Jumps to Atalhos, where quick access's global shortcut lives. */
   onOpenKeys: () => void;
 }
 
 /** Barra de menus on macOS, Bandeja everywhere else: the tray icon, quick access, and how they behave. */
-export function PresencePane({ os, desktop, available, settings, onChange, onOpenKeys }: PresencePaneProps) {
+export function PresencePane({ os, desktop, available, settings, glyph = "connected", onChange, onOpenKeys }: PresencePaneProps) {
   const { t } = useTranslation();
   const mac = os === "mac";
   const effective = effectiveSettings(settings);
@@ -42,7 +44,7 @@ export function PresencePane({ os, desktop, available, settings, onChange, onOpe
         <span className="tray">
           {mac && effective.title && <span>{t("presence.someSound")}</span>}
           <span style={{ opacity: trayOn ? 1 : 0.3, display: "inline-flex" }}>
-            <AppMarkIcon size={16} />
+            <TrayGlyphIcon state={glyph} size={16} />
           </span>
         </span>
       </div>
@@ -158,6 +160,7 @@ export interface PresenceSectionProps {
 /** Writes the stored settings; the main window is the one that reports them to the main process. */
 export default function PresenceSection({ onOpenKeys }: PresenceSectionProps) {
   const presence = usePresenceSettings();
+  const snapshot = usePresenceSnapshot();
 
   return (
     <PresencePane
@@ -165,6 +168,8 @@ export default function PresenceSection({ onOpenKeys }: PresenceSectionProps) {
       desktop={useDesktop()}
       available={presence.available}
       settings={presence.settings}
+      // Main's own answer, so the preview is the icon that is really in the bar; nothing reported yet is "off".
+      glyph={snapshot ? trayState(snapshot) : "off"}
       onChange={presence.setSettings}
       onOpenKeys={onOpenKeys}
     />

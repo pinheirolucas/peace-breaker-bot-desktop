@@ -552,6 +552,29 @@ describe("Barra de menus e Bandeja", () => {
     expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ quickAccessClick: "discord" }));
   });
 
+  it("previews the real tray glyph for the state it is in, not the app mark", () => {
+    const { container, unmount } = render(<div />);
+    unmount();
+    pane("mac", { tray: true }, { glyph: "playing" });
+
+    const glyph = document.querySelector(".mbar .tray svg")!;
+    // The playing cut is one evenodd path; the connected one is a body and two solid reels.
+    expect(glyph.querySelector("path[fill-rule='evenodd']")).not.toBeNull();
+    expect(container).toBeDefined();
+  });
+
+  it.each([
+    ["connected", 2],
+    ["idle", 2],
+    ["off", 2]
+  ] as const)("draws the %s glyph", (state, circles) => {
+    pane("mac", { tray: true }, { glyph: state });
+
+    expect(document.querySelectorAll(".mbar .tray svg circle")).toHaveLength(circles);
+    expect(!!document.querySelector(".mbar .tray svg mask")).toBe(state === "off");
+    expect(!!document.querySelector(".mbar .tray svg circle[r='8.5']")).toBe(state !== "connected");
+  });
+
   it("says a new icon may need pinning on Windows", () => {
     pane("win", { tray: true });
 

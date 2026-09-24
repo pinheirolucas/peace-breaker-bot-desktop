@@ -171,6 +171,56 @@ export function AppMarkIcon({ size = 15, ...rest }: IconProps) {
   );
 }
 
+/**
+ * The tray glyph as the tray draws it, in one ink, from assets/icon/fita-tray-*.svg
+ * (the masters public/tray is rendered from): connected, playing, idle and off.
+ */
+export function TrayGlyphIcon({ state, size = 16, ...rest }: IconProps & { state: "connected" | "playing" | "idle" | "off" }) {
+  const id = `tray-halo-${size}`;
+
+  return (
+    <svg width={size} height={size} viewBox="16 16 96 96" aria-hidden="true" focusable={false} {...rest}>
+      {state === "connected" && (
+        <>
+          <rect x="24" y="38" width="80" height="52" rx="12" fill="none" stroke="currentColor" strokeWidth="7" />
+          <circle cx="50" cy="64" r="11" fill="currentColor" />
+          <circle cx="78" cy="64" r="11" fill="currentColor" />
+        </>
+      )}
+      {state === "idle" && (
+        <>
+          <rect x="24" y="38" width="80" height="52" rx="12" fill="none" stroke="currentColor" strokeWidth="7" />
+          <circle cx="50" cy="64" r="11" fill="currentColor" />
+          <circle cx="78" cy="64" r="8.5" fill="none" stroke="currentColor" strokeWidth="5" />
+        </>
+      )}
+      {state === "playing" && (
+        <path
+          fill="currentColor"
+          fillRule="evenodd"
+          d="M36 38h56a12 12 0 0 1 12 12v28a12 12 0 0 1-12 12H36a12 12 0 0 1-12-12V50a12 12 0 0 1 12-12zM50 52a12 12 0 1 0 0 24a12 12 0 1 0 0-24zM78 52a12 12 0 1 0 0 24a12 12 0 1 0 0-24z"
+        />
+      )}
+      {state === "off" && (
+        <>
+          <defs>
+            <mask id={id} maskUnits="userSpaceOnUse" x="16" y="16" width="96" height="96">
+              <rect x="16" y="16" width="96" height="96" fill="#fff" />
+              <line x1="30" y1="98" x2="98" y2="30" stroke="#000" strokeWidth="15" strokeLinecap="round" />
+            </mask>
+          </defs>
+          <g mask={`url(#${id})`}>
+            <rect x="24" y="38" width="80" height="52" rx="12" fill="none" stroke="currentColor" strokeWidth="7" strokeDasharray="11 8" />
+            <circle cx="50" cy="64" r="8.5" fill="none" stroke="currentColor" strokeWidth="5" />
+            <circle cx="78" cy="64" r="8.5" fill="none" stroke="currentColor" strokeWidth="5" />
+          </g>
+          <line x1="30" y1="98" x2="98" y2="30" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function PencilIcon({ size = 15, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...stroke} {...rest}>
