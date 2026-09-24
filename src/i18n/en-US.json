@@ -31,15 +31,12 @@
     "import": "Import",
     "export": "Export",
     "appearance": "Appearance",
-    "checkForUpdates": "Check for Updates",
-    "language": "Language",
-    "languagePtBR": "Português",
-    "languageEnUS": "English",
     "connectionError": "Couldn't connect to {{address}}",
     "addMore": "More add actions",
     "searchInFavorites_one": "Search {{count}} favorite",
     "searchInFavorites_other": "Search {{count}} favorites",
-    "searchInProvider": "Search {{provider}}"
+    "searchInProvider": "Search {{provider}}",
+    "settings": "Settings…"
   },
   "server": {
     "connectedTo": "Connected to",
@@ -68,7 +65,8 @@
     "testSuccess": "Connected",
     "testUnreachable": "Couldn't connect",
     "remove": "Remove {{address}}",
-    "notResponding": "isn't responding"
+    "notResponding": "isn't responding",
+    "settings": "Server settings…"
   },
   "save": {
     "title": "Add an instant",
@@ -207,7 +205,8 @@
   },
   "filters": {
     "label": "Filter by site and region",
-    "reset": "Restore defaults"
+    "reset": "Restore defaults",
+    "more": "More in Settings…"
   },
   "shortcuts": {
     "title": "Shortcut for “{{name}}”",
@@ -251,16 +250,14 @@
       "groupAdd": "Add",
       "groupApp": "The app",
       "reload": "Reload the listing",
-      "appearance": "Appearance",
       "noMatches": "No shortcut matches “{{filter}}”",
       "menuApp": "Peace Breaker Bot",
-      "legend": "Legend"
+      "legend": "Legend",
+      "settings": "Open Settings",
+      "globalSettings": "Global shortcuts in Settings…"
     },
     "global": {
       "lede": "With the app focused, the key alone plays the sound. Outside it, use the key with the modifier.",
-      "switch": "Work outside the app",
-      "switchHint": "While Discord or a game has focus, as long as the app is open.",
-      "modifier": "Modifier",
       "inUse": "In use by another app",
       "inUseNote": "“In use” means another app already registered that combination. The key alone keeps working with the app focused.",
       "unsupported": "Your desktop doesn't allow shortcuts outside the app",
@@ -276,12 +273,12 @@
       "about": "About {{name}}",
       "checkForUpdates": "Check for Updates…",
       "appearance": "Appearance…",
-      "language": "Language",
       "services": "Services",
       "hide": "Hide {{name}}",
       "hideOthers": "Hide Others",
       "showAll": "Show All",
-      "quit": "Quit {{name}}"
+      "quit": "Quit {{name}}",
+      "settings": "Settings…"
     },
     "file": {
       "title": "File",
@@ -318,7 +315,7 @@
       "playFocused": "Play Focused Card",
       "sendFocused": "Send Focused Card to Discord",
       "globalKeys": "Global Keys",
-      "globalModifier": "Modifier"
+      "globalShortcuts": "Global Shortcuts…"
     },
     "server": {
       "title": "Server",
@@ -380,7 +377,8 @@
     "refresh": "Search for Server Again",
     "quit": "Quit",
     "someSound": "Sound",
-    "silent": "Server is not responding"
+    "silent": "Server is not responding",
+    "openSettings": "Settings…"
   },
   "quickAccess": {
     "pin": "Keep quick access open",
@@ -410,31 +408,334 @@
     "connectionNote": "Switching applies at once. Servers are found on the local network.",
     "enter": "Enter"
   },
-  "menuBar": {
-    "title": "Menu Bar",
-    "done": "Done",
-    "tray": "Show in the menu bar",
-    "trayHint": "An icon with the bot's state. Click or right-click for the menu.",
-    "quickAccess": "Quick access",
-    "quickAccessHint": "A click on the icon opens the favorites in quick access. The menu stays on right-click.",
-    "quickAccessNeedsTray": "Turn on the menu bar icon first.",
-    "noTray": "No tray icon in this environment. Open quick access from the app's dock menu, or turn on the global shortcut.",
-    "style": "Quick access style",
-    "styleHint": "Favorites shows the sounds. Connection shows only the server, to connect and search.",
-    "click": "Click a sound in quick access",
-    "clickHint": "Favorites style only. Default: listen here.",
-    "clickLocal": "Listen here",
-    "clickDiscord": "Send to the bot",
-    "shortcut": "Global shortcut",
-    "shortcutHint": "Opens quick access even with another app in focus. Off by default.",
-    "shortcutNeedsQuickAccess": "Turn on quick access first.",
-    "combo": "Combination",
-    "comboHint": "Only applies with the shortcut on.",
-    "shortcutTaken": "In use by another app",
-    "nameBeside": "Show the sound's name beside the icon",
-    "titleHint": "Shows up when sharing your screen. Off by default.",
-    "background": "Keep running when the window is closed",
-    "backgroundHint": "On macOS the app already keeps running.",
-    "pinHint": "Pin the icon to the taskbar to keep it visible."
+  "settings": {
+    "title": "Settings",
+    "searchLabel": "Search settings",
+    "searchPlaceholder": "Search",
+    "clearSearch": "Clear search",
+    "sidebarLabel": "Settings sections",
+    "appearanceLauncher": "Appearance, opens in the main window",
+    "appearanceTitle": "Appearance · opens in the main window",
+    "footerName": "Peace Breaker Bot",
+    "footerVersion": "Version {{version}}",
+    "footerApplied": "Changes apply right away.",
+    "results": "Results",
+    "resultCount_one": "{{count}} result for “{{query}}”",
+    "resultCount_other": "{{count}} results for “{{query}}”",
+    "noResults": "No settings found",
+    "noResultsHint": "Try “server”, “shortcut” or “theme”.",
+    "sections": {
+      "general": "General",
+      "appearance": "Appearance",
+      "server": "Server",
+      "explore": "Explore",
+      "keys": "Shortcuts",
+      "menuBar": "Menu Bar",
+      "tray": "Tray",
+      "data": "Data and backup"
+    },
+    "general": {
+      "lede": "The app's language and updates.",
+      "language": "Language",
+      "languageTitle": "Interface language",
+      "languageHint": "Automatic follows the system language.",
+      "langAuto": "Automatic",
+      "langPt": "Português (Brasil)",
+      "langEn": "English",
+      "updates": "Updates",
+      "version": "Version {{version}}",
+      "hourly": "We check every hour, in the background.",
+      "noUpdater": "Updates only work in the installed app.",
+      "upToDate": "You're on the latest version.",
+      "available": "Version {{version}} is available.",
+      "failed": "Couldn't check for updates.",
+      "checkNow": "Check now",
+      "checking": "Checking…"
+    },
+    "server": {
+      "lede": "The bot that receives the sounds. The app finds it on the network by itself; you can pick another or enter an address.",
+      "connection": "Connection",
+      "noneBody": "The app isn't talking to anything. Pick one from the list or search again.",
+      "downBody": "The play buttons stay active: a click finds out when it's back.",
+      "okBody": "The server is responding.",
+      "found": "Servers found",
+      "active": "Active server",
+      "manual": "Added by hand",
+      "noneList": "Check that the bot is running and that this computer is on the same network. You can also enter an address below.",
+      "background": "Searches again every 30 s, in the background.",
+      "scanning": "Searching…",
+      "addByAddress": "Add by address",
+      "addressTitle": "Server address",
+      "addressHint": "For a bot outside the local network, or where discovery is blocked.",
+      "test": "Test"
+    },
+    "explore": {
+      "lede": "Where the sounds on the Explore tab come from. On the tab, the filter button still switches this on the spot.",
+      "site": "Site",
+      "siteLabel": "Catalogue site",
+      "chipSearch": "search",
+      "chipRegion": "country",
+      "noProviders": "Connect to a server to see the available sites.",
+      "country": "Country",
+      "countryTitle": "Catalogue country",
+      "countryHint": "Changes which sounds show up when there is no search.",
+      "countryOff": "This site has no catalogue by country."
+    },
+    "keys": {
+      "lede": "Each favorite's key is set in Organize. Here you choose where it works and how to open quick access.",
+      "unavailable": "Only works in the installed app.",
+      "favorites": "Favorites' keys",
+      "globalTitle": "Global keys",
+      "globalHint": "A favorite's key, with the combination below, plays the sound even with another app in focus. Off by default.",
+      "combo": "Combination",
+      "comboGlobalHint": "Only applies with global keys on.",
+      "comboGlobalLabel": "Global keys combination",
+      "quickAccess": "Quick access",
+      "quickAccessTitle": "Quick access global shortcut",
+      "quickAccessHint": "Opens quick access even with another app in focus. Off by default.",
+      "needsQuickAccess": "Turn on quick access first.",
+      "comboQuickHint": "Only applies with the shortcut on.",
+      "comboQuickLabel": "Quick access combination",
+      "conflict": "In use by another app. Pick another combination.",
+      "taken": "In use by another app",
+      "inApp": "Inside the app",
+      "keyWord": "key",
+      "playDiscord": "Plays the favorite on Discord",
+      "playLocal": "Plays here, on your computer",
+      "stop": "Stops the sound",
+      "find": "Search",
+      "tabs": "Favorites and Explore",
+      "add": "Add",
+      "openSettings": "Open these settings",
+      "sheet": "Shortcut sheet"
+    },
+    "presence": {
+      "lede": "The icon with the bot's state and quick access, to play without opening the window.",
+      "icon": "Icon",
+      "menuBarTitle": "Show in the menu bar",
+      "trayTitle": "Show in the tray",
+      "trayHint": "An icon with the bot's state. Click or right-click for the menu.",
+      "pinHint": "Pin the icon to the taskbar to keep it visible.",
+      "unavailable": "Only works in the installed app.",
+      "noTray": "No tray icon in this environment. Open quick access from the app's dock menu, or turn on the global shortcut.",
+      "nameBeside": "Show the sound's name beside the icon",
+      "nameBesideHint": "Shows up when sharing your screen. Off by default.",
+      "needsTray": "Turn on the menu bar icon first.",
+      "background": "Keep running when the window is closed",
+      "backgroundHint": "Closing the window leaves the app in the tray. Without it, closing quits the app.",
+      "quickAccess": "Quick access",
+      "quickAccessTitle": "Quick access",
+      "quickAccessHint": "A click on the icon opens the favorites. The menu stays on right-click.",
+      "needsIcon": {
+        "menuBar": "Turn on the menu bar icon first.",
+        "tray": "Turn on the tray icon first."
+      },
+      "style": "Style",
+      "styleLabel": "Quick access style",
+      "styleHint": "Favorites shows the sounds. Connection shows only the server, to connect and search.",
+      "click": "When clicking a sound",
+      "clickHint": "Favorites style only. Default: listen here.",
+      "clickLocal": "Listen here",
+      "clickDiscord": "Send to the bot",
+      "shortcutElsewhere": "The global shortcut that opens quick access is in"
+    },
+    "data": {
+      "lede": "Everything stays on this computer. Exporting and importing is the only way to take your favorites to another.",
+      "favorites": "Favorites",
+      "exportHint": "Saves a JSON file with your favorites, keys and settings.",
+      "exportAction": "Export…",
+      "importHint": "You choose between merging with the current ones or replacing them.",
+      "importAction": "Import…",
+      "restore": "Restore",
+      "resetTitle": "Restore settings",
+      "resetHint": "Puts everything on these pages back to its default. Favorites and their keys are not deleted.",
+      "resetAction": "Restore…",
+      "confirmLabel": "Confirm restore",
+      "confirmTitle": "Put everything back to default?",
+      "confirmBody": "Language, palette, server, catalogue, shortcuts and icon. Favorites stay as they are.",
+      "confirmAction": "Restore",
+      "restored": "Settings restored"
+    },
+    "search": {
+      "language": {
+        "title": "Interface language",
+        "hint": "Automatic, Portuguese or English"
+      },
+      "updates": {
+        "title": "Updates",
+        "hint": "Check whether there is a new version"
+      },
+      "palette": {
+        "title": "Palette",
+        "hint": "Esmalte, Frevo, Cerrado, Brasa, Fliperama, Discord, High contrast, OLED"
+      },
+      "mode": {
+        "title": "Light or dark mode",
+        "hint": "Automatic follows the system"
+      },
+      "server": {
+        "title": "Active server",
+        "hint": "Choose the bot that receives the sounds"
+      },
+      "rescan": {
+        "title": "Search for a server again",
+        "hint": "Discovery on the local network"
+      },
+      "addServer": {
+        "title": "Add a server by address",
+        "hint": "Test it and add it by hand"
+      },
+      "site": {
+        "title": "Catalogue site",
+        "hint": "MyInstants, Instants.meme and others"
+      },
+      "country": {
+        "title": "Catalogue country",
+        "hint": "Only on sites that have a catalogue by country"
+      },
+      "globalKeys": {
+        "title": "Global keys",
+        "hint": "Play a favorite with another app in focus"
+      },
+      "globalCombo": {
+        "title": "Global keys combination",
+        "hint": "The shortcut's modifiers"
+      },
+      "quickShortcut": {
+        "title": "Quick access global shortcut",
+        "hint": "Open quick access from any app"
+      },
+      "inAppKeys": {
+        "title": "Shortcuts inside the app",
+        "hint": "Search, switch tabs, stop the sound"
+      },
+      "trayMac": {
+        "title": "Menu bar icon",
+        "hint": "The bot's state always in view"
+      },
+      "trayOther": {
+        "title": "Tray icon",
+        "hint": "The bot's state always in view"
+      },
+      "quickAccess": {
+        "title": "Quick access",
+        "hint": "Style and what a click on a sound does"
+      },
+      "nameBeside": {
+        "title": "Sound's name beside the icon",
+        "hint": "Shows up when sharing your screen"
+      },
+      "background": {
+        "title": "Keep running when the window is closed",
+        "hint": "Stays in the tray"
+      },
+      "export": {
+        "title": "Export favorites",
+        "hint": "A JSON backup file"
+      },
+      "import": {
+        "title": "Import favorites",
+        "hint": "Merge or replace"
+      },
+      "reset": {
+        "title": "Restore settings",
+        "hint": "Put everything back to default"
+      }
+    }
+  },
+  "palette": {
+    "title": "Command palette",
+    "inputLabel": "Search sounds and actions",
+    "placeholder": "Search sounds and actions…",
+    "themePlaceholder": "Filter palettes…",
+    "recents": "Recent",
+    "recentsNote": "newest first",
+    "playing": "Playing now",
+    "sounds": "Sounds",
+    "soundsNote": "{{shown}} of {{total}}",
+    "exploreGroup": "Explore",
+    "actions": "Actions",
+    "settings": "Settings",
+    "servers": "Server",
+    "current": "current",
+    "botAway": "The bot isn't in a channel. ⇧ Enter plays only here.",
+    "onlyHere": "only here",
+    "noKey": "no key",
+    "paletteCrumb": "Palette",
+    "previewNote": "Live preview · nothing is saved until ↵",
+    "noThemes": "No palette by that name",
+    "noMatch": "Nothing for “{{query}}”",
+    "noMatchHint": "No favorite, action or setting matches. Try another word, or search the catalogue.",
+    "hintNavigate": "navigate",
+    "hintUse": "use",
+    "hintBack": "back",
+    "hintCancel": "cancel",
+    "hintDiscord": "play on Discord",
+    "hintLocal": "play here",
+    "hintExplore": "open in Explore",
+    "hintStop": "stop",
+    "hintOpenList": "choose",
+    "hintApply": "apply",
+    "hintRun": "run",
+    "hintClear": "clear",
+    "hintClose": "close",
+    "exploreRow": "Search “{{query}}” in {{site}}",
+    "exploreSub": "Explore · carries the text over",
+    "stop": "Stop the sound",
+    "stopSub": "Playing: {{name}}",
+    "playingTag": "Playing",
+    "add": "Add a sound",
+    "organizeSub": "Drag to reorder",
+    "organizeDone": "Finish Organize",
+    "organizeDoneSub": "Sounds stay out until then",
+    "goFavorites": "Go to Favorites",
+    "goExplore": "Go to Explore",
+    "tab": "Tab",
+    "openSettings": "Open Settings",
+    "openSettingsSub": "The last section opened",
+    "find": "Focus the search",
+    "findSub": "View",
+    "settingsTo": "Settings › {{section}}",
+    "sections": {
+      "general": "Language and updates",
+      "appearance": "Palette and light or dark mode",
+      "server": "Active server, search again, address",
+      "explore": "Catalogue site and country",
+      "keys": "Global keys, quick access, shortcut list",
+      "presence": "Icon, quick access, keep running",
+      "data": "Export, import, restore"
+    },
+    "sectionWords": {
+      "general": "general language updates",
+      "appearance": "appearance palette theme mode",
+      "server": "server bot address search",
+      "explore": "explore site country catalogue region",
+      "keys": "shortcuts keys global quick access",
+      "presence": "menu bar tray icon quick access background",
+      "data": "data backup export import restore"
+    },
+    "paletteRow": "Palette",
+    "paletteSub": "Appearance · live preview",
+    "modes": {
+      "auto": "Automatic",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "modeTitle": "Mode: {{mode}}",
+    "languageTitle": "Language: {{language}}",
+    "siteTitle": "Explore site: {{site}}",
+    "globalOn": "Turn on global keys",
+    "globalOff": "Turn off global keys",
+    "serverTitle": "Server: {{address}}",
+    "onNetwork": "on the network",
+    "rescan": "Search for servers again",
+    "serverOk": "Server responding",
+    "appliedTheme": "{{name}} palette applied",
+    "appliedMode": "{{mode}} mode applied",
+    "appliedLanguage": "Language: {{language}}",
+    "appliedSite": "Explore now uses {{site}}",
+    "globalOnToast": "Global keys on",
+    "globalOffToast": "Global keys off",
+    "appliedServer": "Connected to {{address}}"
   }
 }

@@ -197,6 +197,7 @@ describe("tray menu", () => {
     stop: vi.fn(),
     "open-quick-access": vi.fn(),
     "open-app": vi.fn(),
+    "open-settings": vi.fn(),
     refresh: vi.fn(),
     quit: vi.fn()
   });
@@ -210,6 +211,7 @@ describe("tray menu", () => {
       "Casa · #geral",
       "-",
       "Abrir Peace Breaker Bot",
+      "Configurações…",
       "Abrir acesso rápido",
       "-",
       "Parar reprodução",
@@ -226,6 +228,7 @@ describe("tray menu", () => {
       "Verificando o servidor…",
       "-",
       "Abrir Peace Breaker Bot",
+      "Configurações…",
       "-",
       "Parar reprodução",
       "Procurar servidor novamente",
@@ -266,10 +269,11 @@ describe("tray menu", () => {
     click("Parar reprodução");
     click("Abrir acesso rápido");
     click("Abrir Peace Breaker Bot");
+    click("Configurações…");
     click("Procurar servidor novamente");
     click("Sair");
 
-    for (const key of ["stop", "open-quick-access", "open-app", "refresh", "quit"]) {
+    for (const key of ["stop", "open-quick-access", "open-app", "open-settings", "refresh", "quit"]) {
       expect(on[key]).toHaveBeenCalledTimes(1);
     }
   });
@@ -321,6 +325,7 @@ describe("the tray menu's status dot", () => {
     stop: vi.fn(),
     "open-quick-access": vi.fn(),
     "open-app": vi.fn(),
+    "open-settings": vi.fn(),
     refresh: vi.fn(),
     quit: vi.fn()
   });

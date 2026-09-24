@@ -271,8 +271,6 @@ export type MenuCommand =
   | { type: "send-focused" }
   | { type: "appearance" }
   | { type: "shortcuts" }
-  | { type: "presence-settings" }
-  | { type: "language"; language: MenuLanguage }
   | { type: "provider"; key: string }
   | { type: "region"; region: string }
   | { type: "reset-filters" }
@@ -282,7 +280,6 @@ export type MenuCommand =
   | { type: "server-remove"; id: string }
   | { type: "server-refresh" }
   | { type: "global-enabled"; enabled: boolean }
-  | { type: "global-modifier"; modifier: GlobalModifier }
   | { type: "card"; surface: Surface; action: CardAction; url: string; width: number };
 
 const simpleCommands: readonly string[] = [
@@ -298,7 +295,6 @@ const simpleCommands: readonly string[] = [
   "send-focused",
   "appearance",
   "shortcuts",
-  "presence-settings",
   "reset-filters",
   "clear-search",
   "server-refresh"
@@ -312,8 +308,6 @@ export function isMenuCommand(x: unknown): x is MenuCommand {
   switch (x.type) {
     case "tab":
       return x.tab === "favorites" || x.tab === "explore";
-    case "language":
-      return isLanguage(x.language);
     case "provider":
       return isText(x.key, 64);
     case "region":
@@ -324,8 +318,6 @@ export function isMenuCommand(x: unknown): x is MenuCommand {
       return isText(x.id, 2048);
     case "global-enabled":
       return isBoolean(x.enabled);
-    case "global-modifier":
-      return typeof x.modifier === "string";
     case "card":
       return (
         (x.surface === "favorites" || x.surface === "explore") &&

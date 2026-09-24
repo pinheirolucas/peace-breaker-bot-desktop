@@ -3,6 +3,7 @@ import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "../../el
 import type { QuickAccessAction, QuickAccessShortcutRequest } from "../../electron/quickAccess";
 import type { CardContext, MenuCommand, MenuState } from "../../electron/menuState";
 import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
+import type { SettingsConflict, SettingsSection } from "../../electron/settings";
 import { isPlatformId } from "../themes";
 import type { PlatformId } from "../themes";
 
@@ -62,6 +63,13 @@ declare global {
       stop: () => void;
       onSnapshot: (listener: (snapshot: PresenceSnapshot) => void) => () => void;
     };
+    instantsSettings?: {
+      open: (section?: SettingsSection) => void;
+      openAppearance: () => void;
+      appearanceDone: () => void;
+      onSection: (listener: (section: SettingsSection) => void) => () => void;
+      onConflict: (listener: (conflict: SettingsConflict) => void) => () => void;
+    };
     instantsUpdates?: {
       onAvailable: (listener: (version: string) => void) => () => void;
       onDownloaded: (listener: (info: { version: string; path: string }) => void) => () => void;
@@ -74,7 +82,7 @@ declare global {
       openReleasePage: () => void;
       openUpdate: (path: string) => void;
       restart: () => void;
-      // Windows/Linux: the overflow menu's "Check for Updates" item.
+      // Configurações › Geral's "Verificar agora", and the macOS app menu's item.
       checkNow: () => void;
     };
   }

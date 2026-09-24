@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import FavoritesPanel from "./FavoritesPanel";
+import type { FavoritesControls } from "./FavoritesPanel";
 import SnackbarContext from "./SnackbarContext";
 import { getContent, playOnDiscord, stopPlayingOnDiscord } from "./service";
 import type { BotStatus } from "./service";
@@ -218,5 +219,98 @@ describe("clip keys in Favoritos", () => {
 
     expect(screen.getByText("Não dá para usar esta tecla")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
+  });
+});
+
+
+describe("controls for the command palette", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal("Audio", FakeAudio);
+    vi.mocked(getContent).mockReset().mockResolvedValue({ exists: true, content: "data:audio/mp3;x" });
+    vi.mocked(playOnDiscord).mockReset().mockResolvedValue("end");
+    vi.mocked(stopPlayingOnDiscord).mockReset().mockResolvedValue({} as Response);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  function renderWithControls(botStatus: BotStatus | null = null, organizing = false) {
+    localStorage.setItem("instants", JSON.stringify(seeded));
+    const controlsRef: { current: FavoritesControls | null } = { current: null };
+    render(
+      <SnackbarContext.Provider value={{ openSnackbar: vi.fn(), closeSnackbar: vi.fn() }}>
+        <FavoritesPanel
+          search=""
+          healthy
+          botStatus={botStatus}
+          serverAddress="localhost:9001"
+          onSwitchServer={vi.fn()}
+          onSummary={vi.fn()}
+          addOpen={false}
+          onAddOpenChange={vi.fn()}
+          onSearchCatalog={vi.fn()}
+          organizing={organizing}
+          onOrganizingChange={vi.fn()}
+          onPlayingChange={vi.fn()}
+          controlsRef={controlsRef}
+        />
+      </SnackbarContext.Provider>
+    );
+    return controlsRef;
+  }
+
+  it("plays a favourite by url, on Discord or here, the way a key does — one with no key included", async () => {
+    const controls = renderWithControls();
+
+    expect(controls.current!.play(seeded[2].url, "discord")).toBe("played");
+    await waitFor(() => expect(playOnDiscord).toHaveBeenCalledWith(seeded[2].url));
+  });
+
+  it("refuses where the card would: a bot known to be away takes no Discord play, but plays here", async () => {
+    const controls = renderWithControls({ connected: false });
+
+    expect(controls.current!.play(seeded[0].url, "discord")).toBe("bot-away");
+    expect(playOnDiscord).not.toHaveBeenCalled();
+    expect(controls.current!.play(seeded[0].url, "local")).toBe("played");
+    await waitFor(() => expect(getContent).toHaveBeenCalled());
+  });
+
+  it("does not treat an unknown bot status as away", () => {
+    const controls = renderWithControls(null);
+
+    expect(controls.current!.play(seeded[0].url, "discord")).toBe("played");
+  });
+
+  it("refuses a second sound while one plays", async () => {
+    vi.mocked(playOnDiscord).mockImplementation(() => new Promise(() => {}));
+    const controls = renderWithControls();
+
+    controls.current!.play(seeded[0].url, "discord");
+    await waitFor(() => expect(playOnDiscord).toHaveBeenCalled());
+
+    expect(controls.current!.play(seeded[1].url, "discord")).toBe("busy");
+  });
+
+  it("knows no clip that is not a favourite, and plays nothing in Organizar", () => {
+    expect(renderWithControls().current!.play("https://x/none/", "discord")).toBe("none");
+  });
+
+  it("plays nothing in Organizar, where the keys are off", () => {
+    const controls = renderWithControls(null, true);
+
+    expect(controls.current!.play(seeded[0].url, "discord")).toBe("none");
+    expect(playOnDiscord).not.toHaveBeenCalled();
+  });
+
+  it("stops what plays, and says when nothing did", async () => {
+    vi.mocked(playOnDiscord).mockImplementation(() => new Promise(() => {}));
+    const controls = renderWithControls();
+
+    expect(controls.current!.stop()).toBe(false);
+    controls.current!.play(seeded[0].url, "discord");
+    await waitFor(() => expect(playOnDiscord).toHaveBeenCalled());
+    await waitFor(() => expect(controls.current!.stop()).toBe(true));
   });
 });

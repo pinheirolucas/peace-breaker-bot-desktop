@@ -1103,6 +1103,163 @@ describe("Adicionar menu", () => {
   });
 });
 
+describe("Configurações doors", () => {
+  let settings: NonNullable<Window["instantsSettings"]>;
+
+  function bridge() {
+    settings = { open: vi.fn(), openAppearance: vi.fn(), appearanceDone: vi.fn(), onSection: () => () => undefined, onConflict: () => () => undefined };
+    window.instantsSettings = settings;
+  }
+
+  beforeEach(() => {
+    reset();
+    window.instantsPlatform = { os: "win", chrome: "custom", setChrome: vi.fn() };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete window.instantsSettings;
+    delete window.instantsPlatform;
+    delete window.instantsShortcuts;
+  });
+
+  async function openMore(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: "Mais opções" }));
+    return within(await screen.findByRole("menu"));
+  }
+
+  it("ends the overflow menu with Aparência, Configurações… and Atalhos do teclado, and nothing else", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+
+    const menu = await openMore(user);
+
+    expect(menu.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      "Aparência",
+      "Configurações…Ctrl+,",
+      "Atalhos do teclado?"
+    ]);
+  });
+
+  it("has no language, menu bar or update items any more: they live in Configurações", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+
+    const menu = await openMore(user);
+
+    for (const name of [/Barra de menus/, "Português", "English", /Verificar atualizações/, /Check for Updates/]) {
+      expect(menu.queryByRole("menuitem", { name })).toBeNull();
+    }
+  });
+
+  it("shows ⌘, on macOS", async () => {
+    window.instantsPlatform = { os: "mac", chrome: "custom", setChrome: vi.fn() };
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect((await openMore(user)).getByRole("menuitem", { name: /Configurações…/ })).toHaveTextContent("⌘,");
+  });
+
+  it("opens Configurações from the overflow menu, on no section in particular", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: /Configurações…/ }));
+
+    expect(settings.open).toHaveBeenCalledTimes(1);
+    expect(settings.open).toHaveBeenCalledWith(undefined);
+  });
+
+  it("keeps Aparência a direct door to the stage", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: "Aparência" }));
+
+    expect(await screen.findByRole("dialog", { name: "Aparência" })).toBeInTheDocument();
+    expect(settings.open).not.toHaveBeenCalled();
+  });
+
+  it("tells main when the Aparência stage closes, on Pronto and on Cancelar, so focus can go back to Configurações", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+    expect(settings.appearanceDone).not.toHaveBeenCalled();
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: "Aparência" }));
+    await screen.findByRole("dialog", { name: "Aparência" });
+    expect(settings.appearanceDone).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Pronto" }));
+    expect(settings.appearanceDone).toHaveBeenCalledTimes(1);
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: "Aparência" }));
+    await user.click(await screen.findByRole("button", { name: "Cancelar" }));
+    expect(settings.appearanceDone).toHaveBeenCalledTimes(2);
+  });
+
+  it("opens the same page in a tab where there is no main process to ask", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: /Configurações…/ }));
+
+    expect(open).toHaveBeenCalledWith(expect.stringMatching(/#\/settings$/), "_blank");
+  });
+
+  it("opens the server picker's footer on Servidor", async () => {
+    bridge();
+    installBridge().push([macbook]);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openServerMenu();
+    await user.click(await screen.findByRole("menuitem", { name: "Configurações do servidor…" }));
+
+    expect(settings.open).toHaveBeenCalledWith("server");
+  });
+
+  it("opens the Explorar filter's footer on Explorar", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: /Explorar/ }));
+
+    await user.click(await screen.findByRole("button", { name: FILTER }));
+    await user.click(await screen.findByRole("menuitem", { name: "Mais em Configurações…" }));
+
+    expect(settings.open).toHaveBeenCalledWith("explore");
+  });
+
+  it("opens the shortcut sheet's pointer on Atalhos, where the global keys are", async () => {
+    bridge();
+    window.instantsShortcuts = { modifiers: ["ctrl-alt-shift"], setGlobal: vi.fn().mockResolvedValue({ registered: [], failed: [] }), onFired: () => () => undefined };
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: /Atalhos do teclado/ }));
+    await user.click(await screen.findByRole("button", { name: "Atalhos globais em Configurações…" }));
+
+    expect(settings.open).toHaveBeenCalledWith("keys");
+  });
+
+  it("keeps Adicionar ▾ exactly as it was: Organizar, Importar and Exportar", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Mais ações de adição" }));
+
+    expect(screen.getByRole("menuitem", { name: "Importar" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Exportar" })).toBeInTheDocument();
+  });
+});
+
 describe("Tight window", () => {
   const original = Element.prototype.getBoundingClientRect;
 

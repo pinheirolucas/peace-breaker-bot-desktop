@@ -20,8 +20,9 @@ function deps(platform = "darwin", language: "pt-BR" | "en-US" = "pt-BR") {
   const copy = vi.fn();
   const openExternal = vi.fn();
   const reveal = vi.fn();
-  const value: MenuDeps = { t: translatorFor(language), platform, send, copy, openExternal, reveal };
-  return { ...value, send, copy, openExternal, reveal };
+  const openSettings = vi.fn();
+  const value: MenuDeps = { t: translatorFor(language), platform, send, copy, openExternal, reveal, openSettings };
+  return { ...value, send, copy, openExternal, reveal, openSettings };
 }
 
 function card(
@@ -428,18 +429,45 @@ describe("menu bar", () => {
     expect(labels(top("linux"))).not.toContain("Peace Breaker Bot");
   });
 
-  it("puts Sobre, updates, Aparência and Idioma in the app menu on macOS, and moves them elsewhere otherwise", () => {
+  it("puts Sobre, updates, Aparência and Configurações in the app menu on macOS, and moves them elsewhere otherwise", () => {
     const app = sub(top("darwin"), "Peace Breaker Bot");
-    expect(labels(app).slice(0, 5)).toEqual(["Sobre o Peace Breaker Bot", "Verificar atualizações…", "-", "Aparência…", "Idioma"]);
-    expect(find(app, "Aparência…").accelerator).toBe("CmdOrCtrl+,");
+    expect(labels(app).slice(0, 5)).toEqual(["Sobre o Peace Breaker Bot", "Verificar atualizações…", "-", "Aparência…", "Configurações…"]);
 
     const win = top("win32");
-    expect(labels(sub(win, "Arquivo"))).toContain("Aparência…");
-    expect(labels(sub(win, "Arquivo"))).toContain("Sair");
-    expect(labels(sub(win, "Visualizar"))).toContain("Idioma");
+    expect(labels(sub(win, "Arquivo"))).toEqual(expect.arrayContaining(["Aparência…", "Configurações…", "Sair"]));
     expect(labels(sub(win, "Ajuda"))).toEqual(
       expect.arrayContaining(["Sobre o Peace Breaker Bot", "Verificar atualizações…"])
     );
+  });
+
+  it("gives Cmd/Ctrl+, to Configurações alone, and Aparência… is a plain item", () => {
+    for (const platform of ["darwin", "win32", "linux"]) {
+      const d = deps(platform);
+      const bar = menuBar(state(), d, env);
+      const home = sub(bar, platform === "darwin" ? "Peace Breaker Bot" : "Arquivo");
+
+      expect(find(home, "Configurações…").accelerator).toBe("CmdOrCtrl+,");
+      expect(find(home, "Aparência…").accelerator).toBeUndefined();
+
+      (find(home, "Configurações…").click as () => void)();
+      expect(d.openSettings).toHaveBeenCalledWith();
+      (find(home, "Aparência…").click as () => void)();
+      expect(d.send).toHaveBeenCalledWith({ type: "appearance" });
+    }
+  });
+
+  it("has no Idioma submenu anywhere: the language is chosen in Configurações", () => {
+    for (const platform of ["darwin", "win32", "linux"]) {
+      const all: string[] = [];
+      const walk = (items: Item[]) =>
+        items.forEach((item) => {
+          all.push(String(item.label));
+          if (Array.isArray(item.submenu)) walk(item.submenu);
+        });
+      walk(top(platform));
+      expect(all).not.toContain("Idioma");
+      expect(all).not.toContain("Português");
+    }
   });
 
   it("registers only Cmd/Ctrl + key accelerators, never with Alt or Shift", () => {
@@ -485,7 +513,7 @@ describe("menu bar", () => {
     expect(find(items({ focusedCard: true }), "Tocar no cartão em foco").registerAccelerator).toBe(false);
   });
 
-  it("mirrors the global keys switch and offers the OS's own modifier presets", () => {
+  it("mirrors the global keys switch, and Atalhos globais… opens Configurações on Atalhos", () => {
     const d = deps("win32");
     const bar = menuBar(state({ globalKeys: { available: true, enabled: true, modifier: "ctrl-shift" } }), d, env);
     const playback = sub(bar, "Reprodução");
@@ -494,17 +522,14 @@ describe("menu bar", () => {
     (find(playback, "Teclas globais").click as () => void)();
     expect(d.send).toHaveBeenCalledWith({ type: "global-enabled", enabled: false });
 
-    const presets = sub(playback, "Modificador");
-    expect(presets.map((p) => [p.label, p.checked])).toEqual([
-      ["Ctrl+Alt+Shift", false],
-      ["Ctrl+Shift", true],
-      ["Ctrl+Alt", false]
-    ]);
-    (presets[0].click as () => void)();
-    expect(d.send).toHaveBeenCalledWith({ type: "global-modifier", modifier: "ctrl-alt-shift" });
+    // The combination is no longer a submenu here: it is chosen in Configurações › Atalhos.
+    expect(labels(playback)).not.toContain("Modificador");
+    (find(playback, "Atalhos globais…").click as () => void)();
+    expect(d.openSettings).toHaveBeenCalledWith("keys");
 
     const off = sub(top("win32"), "Reprodução");
     expect(find(off, "Teclas globais").enabled).toBe(false);
+    expect(find(off, "Atalhos globais…").enabled).toBe(false);
   });
 
   it("Visualizar: the tabs are checks, and reload is Explorar's", () => {

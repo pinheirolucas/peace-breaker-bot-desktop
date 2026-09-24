@@ -2,7 +2,7 @@ import type { PresenceSettings } from "../electron/presence";
 import type { Server } from "../electron/discovery";
 import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
-import { createPersistedState } from "./lib/persisted";
+import { clearPersisted, createPersistedState } from "./lib/persisted";
 import { migrateQuickAccessStorage } from "./lib/quickAccessCompat";
 import type { Region } from "./regions";
 import type { ColorMode, ThemeId } from "./themes";
@@ -42,6 +42,11 @@ export const useProviderState = createPersistedState<string>("provider");
 
 export const useLanguageState = createPersistedState<LanguageId>("language");
 
+/** The same key as the choice Configurações offers: "auto" is a key that was
+ *  never written, so picking it clears the key instead of storing the word. */
+export type LanguageChoice = "auto" | LanguageId;
+export const useLanguageChoiceState = createPersistedState<LanguageChoice>("language");
+
 export interface GlobalShortcutsSetting {
   enabled: boolean;
   /** Null means the OS default. */
@@ -59,3 +64,32 @@ export const usePresenceSettingsState = createPersistedState<PresenceSettings>("
 /** Quick access's own global shortcut: a separate switch, off by default,
  *  apart from the favourite keys'. */
 export const useQuickAccessShortcutState = createPersistedState<GlobalShortcutsSetting>("quickAccessShortcut");
+
+/**
+ * Every key Configurações › Dados › Restaurar configurações puts back to its
+ * default. Deliberately not here: `instants`, the favourites and their keys —
+ * nothing in Configurações may ever touch those — and the one-time
+ * "quickAccessHintSeen" note.
+ */
+export const settingsKeys = [
+  "theme",
+  "colorMode",
+  "language",
+  "selectedServer",
+  "manualServers",
+  "region",
+  "provider",
+  "globalShortcuts",
+  "quickAccessShortcut",
+  "presence"
+] as const;
+
+/** Puts every setting back to its default, in this window and in the others. */
+export function resetSettings(): void {
+  clearPersisted(settingsKeys);
+}
+
+export { clearPersisted };
+
+/** The last three clips played, newest first, by url: the command palette's "Recentes". Not a setting: Restaurar configurações leaves it. */
+export const useRecentClipsState = createPersistedState<string[]>("recentClips");

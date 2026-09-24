@@ -229,14 +229,3 @@
   font-size: 12px;
   color: var(--muted);
 }
-.ksheet__global {
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
-.ksheet__field {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12.5px;
-}

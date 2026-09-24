@@ -24,6 +24,7 @@ function renderMenu(props: Partial<React.ComponentProps<typeof ServerMenu>> = {}
   const onRefresh = vi.fn();
   const onAddServer = vi.fn();
   const onRemoveServer = vi.fn();
+  const onOpenSettings = vi.fn();
 
   render(
     <ServerMenu
@@ -41,7 +42,7 @@ function renderMenu(props: Partial<React.ComponentProps<typeof ServerMenu>> = {}
     />
   );
 
-  return { onOpenChange, onSelect, onRefresh, onAddServer, onRemoveServer };
+  return { onOpenChange, onSelect, onRefresh, onAddServer, onRemoveServer, onOpenSettings: props.onOpenSettings ?? onOpenSettings };
 }
 
 describe("formatApiUrl", () => {
@@ -328,6 +329,33 @@ describe("ServerMenu", () => {
 
       const header = screen.getByText("Conectado a").closest(".mhead")! as HTMLElement;
       expect(within(header).queryByText(/canal de voz|·/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("footer", () => {
+    it("ends with a way into Configurações › Servidor, after Procurar novamente", async () => {
+      const { onOpenSettings } = renderMenu({ onOpenSettings: vi.fn() });
+
+      const items = screen.getAllByRole("menuitem").map((item) => item.textContent);
+      expect(items.at(-2)).toBe("Procurar novamente");
+      expect(items.at(-1)).toBe("Configurações do servidor…");
+
+      await userEvent.click(screen.getByRole("menuitem", { name: "Configurações do servidor…" }));
+      expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    });
+
+    it("has no such row where nothing can open it", () => {
+      renderMenu();
+
+      expect(screen.queryByRole("menuitem", { name: "Configurações do servidor…" })).toBeNull();
+    });
+
+    it("says it in English too", async () => {
+      await i18n.changeLanguage("en-US");
+      renderMenu({ onOpenSettings: vi.fn() });
+
+      expect(screen.getByRole("menuitem", { name: "Server settings…" })).toBeInTheDocument();
+      await i18n.changeLanguage("pt-BR");
     });
   });
 

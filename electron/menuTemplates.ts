@@ -7,7 +7,7 @@
 import type { MenuItemConstructorOptions } from "electron";
 import { httpsUrl } from "./menuState";
 import type { CardContext, MenuCommand, MenuServer, MenuState } from "./menuState";
-import { modifierLabel, modifiersFor } from "./shortcuts";
+import type { SettingsSection } from "./settings";
 import type { Translate } from "./menuI18n";
 
 export type Item = MenuItemConstructorOptions;
@@ -20,6 +20,8 @@ export interface MenuDeps {
   openExternal: (url: string) => void;
   /** Shows the clip's file in the file manager, preparing it first. */
   reveal: (request: { name: string; url: string }) => void;
+  /** Opens Configurações, on a section when one is given. Main's own: no round trip through the renderer. */
+  openSettings: (section?: SettingsSection) => void;
 }
 
 export const repoUrl = "https://github.com/pinheirolucas/peace-breaker-bot-desktop";
@@ -345,13 +347,6 @@ export interface BarEnv {
   checkForUpdates: () => void;
 }
 
-function languageItems(state: MenuState, { t, send }: MenuDeps): Item[] {
-  return [
-    { label: t("app.languagePtBR"), type: "radio", checked: state.language === "pt-BR", click: () => send({ type: "language", language: "pt-BR" }) },
-    { label: t("app.languageEnUS"), type: "radio", checked: state.language === "en-US", click: () => send({ type: "language", language: "en-US" }) }
-  ];
-}
-
 export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
   const { t, send, copy, openExternal, platform } = deps;
   const mac = platform === "darwin";
@@ -359,12 +354,16 @@ export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
 
   const about: Item = { role: "about", label: t("menu.app.about", { name: env.appName }) };
   const updates: Item = { label: t("menu.app.checkForUpdates"), click: env.checkForUpdates };
+  // Configurações owns the key; Aparência stays as a plain door to its stage.
+  const settings: Item = {
+    label: t("menu.app.settings"),
+    accelerator: "CmdOrCtrl+,",
+    click: () => deps.openSettings()
+  };
   const appearance: Item = {
     label: t("menu.app.appearance"),
-    accelerator: "CmdOrCtrl+,",
     click: () => send({ type: "appearance" })
   };
-  const language: Item = { label: t("menu.app.language"), submenu: languageItems(state, deps) };
 
   const appMenu: Item[] = mac
     ? [
@@ -375,7 +374,7 @@ export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
             updates,
             separator,
             appearance,
-            language,
+            settings,
             separator,
             { role: "services", label: t("menu.app.services") },
             separator,
@@ -400,7 +399,7 @@ export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
       separator,
       ...(mac
         ? [{ role: "close" as const, label: t("menu.file.close") }]
-        : [appearance, separator, { role: "quit" as const, label: t("menu.file.quit") }])
+        : [appearance, settings, separator, { role: "quit" as const, label: t("menu.file.quit") }])
     ]
   };
 
@@ -432,7 +431,6 @@ export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
       { label: t("menu.view.reload"), accelerator: "CmdOrCtrl+R", enabled: state.tab === "explore", click: () => send({ type: "reload" }) },
       separator,
       ...filterItems(state, deps),
-      ...(mac ? [] : [separator, { label: t("menu.app.language"), submenu: languageItems(state, deps) }]),
       separator,
       { role: "togglefullscreen", label: t("menu.view.fullscreen") },
       // Dev only, and off the accelerators the app owns (Ctrl+R is Recarregar listagem).
@@ -446,7 +444,6 @@ export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
     ]
   };
 
-  const modifiers = state.globalKeys.available ? modifiersFor(platform) : [];
   const playback: Item = {
     label: t("menu.playback.title"),
     submenu: [
@@ -465,15 +462,11 @@ export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
         enabled: state.globalKeys.available,
         click: () => send({ type: "global-enabled", enabled: !state.globalKeys.enabled })
       },
+      // The combination is chosen in Configurações › Atalhos.
       {
-        label: t("menu.playback.globalModifier"),
+        label: t("menu.playback.globalShortcuts"),
         enabled: state.globalKeys.available,
-        submenu: modifiers.map((modifier) => ({
-          label: modifierLabel(platform, modifier),
-          type: "radio" as const,
-          checked: modifier === state.globalKeys.modifier,
-          click: () => send({ type: "global-modifier", modifier })
-        }))
+        click: () => deps.openSettings("keys")
       }
     ]
   };

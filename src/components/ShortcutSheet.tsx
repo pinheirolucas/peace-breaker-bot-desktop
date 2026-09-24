@@ -4,8 +4,6 @@ import { useTranslation } from "react-i18next";
 import type { ShortcutResult } from "../../electron/shortcuts";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
-import { SegmentedChoice } from "./Segmented";
-import { Switch } from "./Switch";
 import { comboLabel, comboParts } from "../hooks/usePlatform";
 import { useGlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
 import { menuBridge } from "../hooks/useMenuBridge";
@@ -23,6 +21,8 @@ export interface ShortcutSheetProps {
   os: PlatformId;
   status: ShortcutResult;
   onOrganize: () => void;
+  /** The way to where the global keys are set, Configurações › Atalhos. Absent, the footer has only Fechar. */
+  onOpenSettings?: () => void;
 }
 
 interface AppKey {
@@ -69,7 +69,8 @@ export default function ShortcutSheet({
   instants,
   os,
   status,
-  onOrganize
+  onOrganize,
+  onOpenSettings
 }: ShortcutSheetProps) {
   const { t } = useTranslation();
   const global = useGlobalShortcutSettings();
@@ -99,7 +100,7 @@ export default function ShortcutSheet({
     view: t("menu.view.title"),
     file: t("menu.file.title"),
     help: t("menu.help.title"),
-    // On macOS Aparência lives in the app menu; elsewhere there is none.
+    // On macOS Configurações lives in the app menu; elsewhere in Arquivo.
     settings: os === "mac" ? t("shortcuts.sheet.menuApp") : t("menu.file.title")
   };
 
@@ -110,7 +111,7 @@ export default function ShortcutSheet({
     { id: "find", group: "navigate", keys: [mod, "F"], label: t("shortcuts.sheet.find"), menu: menus.view },
     { id: "reload", group: "navigate", keys: [mod, "R"], label: t("shortcuts.sheet.reload"), menu: menus.view, needsMenuBar: true },
     { id: "add", group: "add", keys: [mod, "N"], label: t("shortcuts.sheet.add"), menu: menus.file },
-    { id: "appearance", group: "app", keys: [mod, ","], label: t("shortcuts.sheet.appearance"), menu: menus.settings, needsMenuBar: true },
+    { id: "settings", group: "app", keys: [mod, ","], label: t("shortcuts.sheet.settings"), menu: menus.settings, needsMenuBar: true },
     { id: "list", group: "app", keys: ["?"], label: t("shortcuts.sheet.list"), menu: menus.help }
   ];
 
@@ -158,9 +159,22 @@ export default function ShortcutSheet({
       title={t("shortcuts.sheet.title")}
       description={global.available ? t("shortcuts.global.lede") : t("shortcuts.sheet.lede")}
       footer={
-        <Button variant="secondary" onClick={() => onOpenChange(false)}>
-          {t("shortcuts.sheet.close")}
-        </Button>
+        <>
+          {global.available && onOpenSettings && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                onOpenChange(false);
+                onOpenSettings();
+              }}
+            >
+              {t("shortcuts.sheet.globalSettings")}
+            </Button>
+          )}
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            {t("shortcuts.sheet.close")}
+          </Button>
+        </>
       }
     >
       <div className="ksheet">
@@ -249,32 +263,8 @@ export default function ShortcutSheet({
           </section>
         )}
 
-        {global.available && global.modifier && !query && (
-          <section className="ksheet__section ksheet__global" aria-label={t("shortcuts.global.switch")}>
-            <Switch
-              label={t("shortcuts.global.switch")}
-              checked={global.enabled}
-              onCheckedChange={global.setEnabled}
-            />
-            <p className="ksheet__note">{t("shortcuts.global.switchHint")}</p>
-            {global.enabled && (
-              <div className="ksheet__field">
-                <span>{t("shortcuts.global.modifier")}</span>
-                <SegmentedChoice
-                  aria-label={t("shortcuts.global.modifier")}
-                  value={global.modifier}
-                  onChange={global.setModifier}
-                  options={global.modifiers.map((modifier) => ({
-                    value: modifier,
-                    label: comboLabel(os, modifier, "").replace(/\+$/, "")
-                  }))}
-                />
-              </div>
-            )}
-            {showCombo && <p className="ksheet__note">{t("shortcuts.global.inUseNote")}</p>}
-            {unsupported && <p className="ksheet__note">{t("shortcuts.global.unsupported")}</p>}
-          </section>
-        )}
+        {showCombo && !query && <p className="ksheet__note">{t("shortcuts.global.inUseNote")}</p>}
+        {showCombo && !query && unsupported && <p className="ksheet__note">{t("shortcuts.global.unsupported")}</p>}
 
         {visibleAppKeys.length > 0 && (
           <section className="ksheet__section" aria-label={t("shortcuts.sheet.inApp")}>

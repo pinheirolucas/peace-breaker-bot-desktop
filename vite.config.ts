@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import pkg from "./package.json";
 
 export default defineConfig({
   // The packaged Electron app loads build/index.html over file://, so asset
@@ -18,7 +19,10 @@ export default defineConfig({
   // not, so without this the import dialog dies on open with
   // "ReferenceError: global is not defined" while the rest of the app is fine.
   define: {
-    global: "globalThis"
+    global: "globalThis",
+    // Configurações › Geral names the version. The renderer cannot ask Electron's
+    // app.getVersion() without a bridge for it, and the plain web page has none.
+    __APP_VERSION__: JSON.stringify(pkg.version)
   },
 
   build: {

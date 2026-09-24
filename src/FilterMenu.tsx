@@ -19,6 +19,8 @@ export interface FilterMenuProps {
   regionSupported: boolean;
   region: Region;
   onRegion: (region: Region) => void;
+  /** The way into Configurações › Explorar: the footer of the menu. */
+  onOpenSettings?: () => void;
 }
 
 /** Whether there is anything to filter by: a known site list, or a site with
@@ -40,7 +42,7 @@ function isChanged({ providers, provider, regionSupported, region }: FilterMenuP
  * buttons leave the toolbar no room for another icon.
  */
 export function FilterMenuItems(props: FilterMenuProps) {
-  const { providers, provider, onProvider, regionSupported, region, onRegion } = props;
+  const { providers, provider, onProvider, regionSupported, region, onRegion, onOpenSettings } = props;
   const { t, i18n } = useTranslation();
   const language = isLanguageId(i18n.language) ? i18n.language : "en-US";
 
@@ -98,6 +100,13 @@ export function FilterMenuItems(props: FilterMenuProps) {
         <>
           <MenuSeparator />
           <MenuItem primary={t("filters.reset")} closeOnSelect={false} onSelect={reset} />
+        </>
+      )}
+
+      {onOpenSettings && (
+        <>
+          <MenuSeparator />
+          <MenuItem primary={t("filters.more")} onSelect={onOpenSettings} />
         </>
       )}
     </>

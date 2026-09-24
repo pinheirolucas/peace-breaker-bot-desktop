@@ -90,7 +90,7 @@ describe("isMenuCommand", () => {
     for (const command of [
       { type: "find" },
       { type: "tab", tab: "explore" },
-      { type: "language", language: "en-US" },
+      { type: "appearance" },
       { type: "region", region: "us" },
       { type: "global-enabled", enabled: true },
       { type: "card", surface: "explore", action: "toggle-favorite", url: "u", width: 100 }
@@ -104,6 +104,10 @@ describe("isMenuCommand", () => {
       null,
       "find",
       { type: "eval" },
+      // Chosen in Configurações now, and asked for by main directly rather than through the renderer.
+      { type: "language", language: "en-US" },
+      { type: "global-modifier", modifier: "ctrl-shift" },
+      { type: "presence-settings" },
       { type: "tab", tab: "nope" },
       { type: "region", region: "BR" },
       { type: "card", surface: "favorites", action: "explode", url: "u", width: 1 },

@@ -171,6 +171,56 @@ export function AppMarkIcon({ size = 15, ...rest }: IconProps) {
   );
 }
 
+/**
+ * The tray glyph as the tray draws it, in one ink, from assets/icon/fita-tray-*.svg
+ * (the masters public/tray is rendered from): connected, playing, idle and off.
+ */
+export function TrayGlyphIcon({ state, size = 16, ...rest }: IconProps & { state: "connected" | "playing" | "idle" | "off" }) {
+  const id = `tray-halo-${size}`;
+
+  return (
+    <svg width={size} height={size} viewBox="16 16 96 96" aria-hidden="true" focusable={false} {...rest}>
+      {state === "connected" && (
+        <>
+          <rect x="24" y="38" width="80" height="52" rx="12" fill="none" stroke="currentColor" strokeWidth="7" />
+          <circle cx="50" cy="64" r="11" fill="currentColor" />
+          <circle cx="78" cy="64" r="11" fill="currentColor" />
+        </>
+      )}
+      {state === "idle" && (
+        <>
+          <rect x="24" y="38" width="80" height="52" rx="12" fill="none" stroke="currentColor" strokeWidth="7" />
+          <circle cx="50" cy="64" r="11" fill="currentColor" />
+          <circle cx="78" cy="64" r="8.5" fill="none" stroke="currentColor" strokeWidth="5" />
+        </>
+      )}
+      {state === "playing" && (
+        <path
+          fill="currentColor"
+          fillRule="evenodd"
+          d="M36 38h56a12 12 0 0 1 12 12v28a12 12 0 0 1-12 12H36a12 12 0 0 1-12-12V50a12 12 0 0 1 12-12zM50 52a12 12 0 1 0 0 24a12 12 0 1 0 0-24zM78 52a12 12 0 1 0 0 24a12 12 0 1 0 0-24z"
+        />
+      )}
+      {state === "off" && (
+        <>
+          <defs>
+            <mask id={id} maskUnits="userSpaceOnUse" x="16" y="16" width="96" height="96">
+              <rect x="16" y="16" width="96" height="96" fill="#fff" />
+              <line x1="30" y1="98" x2="98" y2="30" stroke="#000" strokeWidth="15" strokeLinecap="round" />
+            </mask>
+          </defs>
+          <g mask={`url(#${id})`}>
+            <rect x="24" y="38" width="80" height="52" rx="12" fill="none" stroke="currentColor" strokeWidth="7" strokeDasharray="11 8" />
+            <circle cx="50" cy="64" r="8.5" fill="none" stroke="currentColor" strokeWidth="5" />
+            <circle cx="78" cy="64" r="8.5" fill="none" stroke="currentColor" strokeWidth="5" />
+          </g>
+          <line x1="30" y1="98" x2="98" y2="30" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function PencilIcon({ size = 15, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...stroke} {...rest}>
@@ -231,6 +281,68 @@ export function ArrowUpRightIcon({ size = 13, ...rest }: IconProps) {
     <svg {...base(size)} {...stroke} {...rest}>
       <path d="M7 17 17 7" />
       <path d="M8 7h9v9" />
+    </svg>
+  );
+}
+
+// Configurações' sections. Drawn on the design canvas's 20px grid, so they set
+// their own viewBox and a slightly finer stroke than the 24px icons above.
+const grid20 = { viewBox: "0 0 20 20", strokeWidth: 1.7 } as const;
+
+export function SlidersIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <path d="M3 6h9M15 6h2M3 14h2M8 14h9" />
+      <circle cx="13.5" cy="6" r="1.8" />
+      <circle cx="6.5" cy="14" r="1.8" />
+    </svg>
+  );
+}
+
+export function PaletteIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <path d="M10 2.5a7.5 7.5 0 1 0 0 15c1.2 0 1.6-.9 1.2-1.8-.5-1 .1-2.2 1.3-2.2H15a2.5 2.5 0 0 0 2.5-2.5C17.5 7.5 14.2 2.5 10 2.5z" />
+      <circle cx="6.5" cy="9" r=".9" />
+      <circle cx="10" cy="6" r=".9" />
+      <circle cx="13.5" cy="8.5" r=".9" />
+    </svg>
+  );
+}
+
+export function ServerIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <rect x="3" y="4" width="14" height="5" rx="1.6" />
+      <rect x="3" y="11" width="14" height="5" rx="1.6" />
+      <path d="M6 6.5h.01M6 13.5h.01" />
+    </svg>
+  );
+}
+
+export function CompassIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="m12.8 7.2-1.6 4-4 1.6 1.6-4z" />
+    </svg>
+  );
+}
+
+export function WindowBarIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <rect x="2.5" y="3.5" width="15" height="13" rx="2" />
+      <path d="M2.5 7h15M13 5.25h2.5" />
+    </svg>
+  );
+}
+
+export function DatabaseIcon({ size = 18, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...grid20} {...rest}>
+      <ellipse cx="10" cy="5" rx="6.5" ry="2.5" />
+      <path d="M3.5 5v10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5V5M3.5 10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5" />
     </svg>
   );
 }

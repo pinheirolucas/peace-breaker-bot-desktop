@@ -1,0 +1,311 @@
+/* Configurações: a sidebar of sections and one pane. Every colour is a token; the
+ * platform layer (--rctl --hctl --rpad --rbtn --tbh --tch) does the rest, and the
+ * three dialects the design draws are attribute rules at the end: macOS a filled
+ * pill on the active item, Windows and KDE a 3px accent line beside it, GNOME a
+ * grey, raised item. The window is the container; below 720px the sidebar is an
+ * icon rail (the .compact class, set from JS because the search input moves too). */
+
+.settings {
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 13px;
+}
+
+/* ---- sidebar ---- */
+.sside {
+  width: 228px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 12px 12px;
+  border-right: 1px solid var(--line);
+  background: color-mix(in oklch, var(--fg) 3.5%, var(--bg));
+}
+.settings.compact .sside {
+  width: 64px;
+  align-items: center;
+  padding: 0 10px 12px;
+}
+
+/* The top of the sidebar is the title bar's left half: it drags, and on macOS it
+ * is where the traffic lights sit, so it holds nothing there. */
+.stb {
+  height: var(--tbh);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 6px;
+  font-size: 12.5px;
+  font-weight: 650;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+[data-os="mac"] .stb > *,
+[data-desktop="kde"] .stb > *,
+[data-desktop="other"] .stb > *,
+[data-chrome="native"] .stb > * { display: none; }
+.settings.compact .stb { padding: 0; justify-content: center; }
+.settings.compact .stb span { display: none; }
+
+.sfield {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--tch);
+  padding: 0 10px;
+  margin-bottom: 10px;
+  border-radius: var(--rctl);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  flex: none;
+  -webkit-app-region: no-drag;
+}
+.sfield input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg);
+}
+.sfield input::placeholder { color: var(--muted); }
+.sfield:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
+}
+.sfield .kb { font-size: 10.5px; font-weight: 700; color: var(--muted); }
+.sfield button { border: 0; background: transparent; color: var(--muted); display: inline-flex; padding: 0; cursor: pointer; }
+
+.nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--rctl);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+}
+.nav svg { flex: none; color: var(--muted); }
+.nav:hover { background: color-mix(in oklch, var(--fg) 6%, transparent); }
+.nav[aria-current="page"] { font-weight: 650; }
+.nav .ext { margin-left: auto; color: var(--muted); }
+.settings.compact .nav { width: 44px; justify-content: center; padding: 0; }
+.settings.compact .nav .lbl,
+.settings.compact .nav .ext { display: none; }
+.nsp { flex: 1; }
+.sfoot { padding: 10px 8px 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.sfoot b { display: block; color: var(--fg); font-weight: 650; font-size: 12px; }
+.settings.compact .sfoot { display: none; }
+
+/* ---- pane ---- */
+.spane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.phead {
+  height: var(--tbh);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 32px;
+  -webkit-app-region: drag;
+}
+/* Where the OS draws the window controls over the pane, the header stops short of them. */
+[data-chrome="custom"]:not([data-os="mac"]) .phead {
+  padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 20px);
+}
+.settings.compact .phead { padding-left: 20px; }
+.settings.compact .phead .sfield { width: 190px; margin: 0; }
+
+.sscroll { flex: 1; overflow: auto; padding: 0 32px 36px; }
+.settings.compact .sscroll { padding: 0 20px 28px; }
+.sscroll h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -0.022em; line-height: 1.15; }
+.slede { margin: 0 0 6px; max-width: 520px; font-size: 13px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
+.gl { margin: 24px 0 8px 2px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+
+.grp { background: var(--panel); border: 1px solid var(--line); border-radius: var(--rpad); padding: 0 16px; }
+.prefrow { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+.prefrow:first-child { border-top: 0; }
+.prefrow[data-sub] { padding-left: 20px; }
+.prefrow[data-dim] { opacity: 0.5; }
+.prefrow[data-stack] { flex-wrap: wrap; gap: 10px 16px; }
+.prefrow[data-stack] > .preftx { flex-basis: 100%; }
+.preftx { flex: 1; min-width: 0; }
+.preftx b { display: block; font-size: 13.5px; font-weight: 650; }
+.preftx span { display: block; margin-top: 2px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.prefrow > .sw, .prefrow > .btn, .prefrow > .seg { flex: none; }
+.prefrow .msg { flex-basis: 100%; margin: -2px 0 0; font-size: 12px; color: oklch(0.66 0.19 25); }
+:root[data-mode="light"] .prefrow .msg { color: oklch(0.5 0.19 25); }
+.sdf { display: flex; gap: 8px; flex: none; }
+[data-os="win"] .sdf { flex-direction: row-reverse; justify-content: flex-end; }
+
+/* choose-one rows: a radio, the text, the tags */
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pick:first-child { border-top: 0; }
+.pick .tags { display: flex; gap: 6px; flex: none; }
+.pickrow { display: flex; align-items: center; border-top: 1px solid var(--line); }
+.pickrow:first-child { border-top: 0; }
+.pickrow .pick { border-top: 0; flex: 1; min-width: 0; }
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--rpad);
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.stat .dot { margin-top: 5px; }
+.stat b { display: block; font-size: 13.5px; font-weight: 650; }
+.stat span { display: block; margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.stat .btn { margin-left: auto; }
+.dot[data-none] { background: var(--muted); }
+
+.mbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  height: 34px;
+  padding: 0 16px;
+  margin: 14px 0;
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--fg) 9%, var(--bg));
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.mbar .tray { display: flex; align-items: center; gap: 7px; color: var(--fg); }
+.mbar .ph { width: 14px; height: 14px; border-radius: 4px; background: color-mix(in oklch, var(--fg) 24%, transparent); }
+
+.kt { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; align-items: center; padding: 14px 0; font-size: 13px; }
+.kt > span { color: var(--muted); }
+.kt > div { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.hit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hit:first-child { border-top: 0; }
+.sempty { padding: 36px 8px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.sempty b { display: block; color: var(--fg); font-size: 14px; margin-bottom: 4px; }
+.sempty .btn { margin-top: 14px; }
+
+.settings .field { flex: 1; min-width: 0; }
+.settings .field select {
+  width: 100%;
+  height: var(--hctl);
+  padding: 0 34px 0 13px;
+  border-radius: var(--rctl);
+  border: 1px solid var(--line);
+  background-color: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13.5px;
+  outline: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.settings .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent); }
+.settings .field select:disabled { opacity: 0.5; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.row2 { display: flex; gap: 10px; align-items: flex-end; }
+.row2 .btn { flex: none; }
+.settings .btn--ghost { padding: 0 10px; }
+.ibtn--row { width: 28px; height: 28px; margin-right: -6px; }
+
+/* ---- the three dialects ---- */
+[data-os="mac"] .nav[aria-current="page"] { background: var(--accent); color: var(--onAccent); }
+[data-os="mac"] .nav[aria-current="page"] svg { color: var(--onAccent); }
+[data-os="mac"] .nav[aria-current="page"] .ext { color: var(--onAccent); }
+
+/* Windows and KDE: the pivot, turned vertical. A 3px accent line beside the active item. */
+[data-os="win"] .nav,
+[data-desktop="kde"] .nav,
+[data-desktop="other"] .nav { border-radius: 4px; }
+[data-os="win"] .nav[aria-current="page"] svg,
+[data-desktop="kde"] .nav[aria-current="page"] svg,
+[data-desktop="other"] .nav[aria-current="page"] svg { color: var(--accent); }
+[data-os="win"] .nav[aria-current="page"]::before,
+[data-desktop="kde"] .nav[aria-current="page"]::before,
+[data-desktop="other"] .nav[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* GNOME: a grey, raised active item, no accent line. */
+[data-desktop="gnome"] .nav { border-radius: 6px; }
+[data-desktop="gnome"] .nav[aria-current="page"] { background: color-mix(in oklch, var(--fg) 8%, transparent); }
+[data-desktop="gnome"] .settings .btn--secondary { border-color: transparent; background: color-mix(in oklch, var(--fg) 8%, transparent); }
