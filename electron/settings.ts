@@ -35,6 +35,8 @@ export function isSettingsPane(value: unknown): value is SettingsPane {
 export const settingsOpenChannel = "settings:open";
 /** Aparência's launcher: raise the main window and run its Aparência stage. */
 export const settingsOpenAppearanceChannel = "settings:open-appearance";
+/** The main window's Aparência stage has closed (Pronto or Cancelar): if settings launched it, focus goes back there. */
+export const settingsAppearanceDoneChannel = "settings:appearance-done";
 // main -> the settings renderer
 /** Jump to a section: sent when the window is already open. */
 export const settingsSectionChannel = "settings:section";

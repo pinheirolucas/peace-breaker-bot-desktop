@@ -105,6 +105,13 @@ export default function App() {
   const appearance = useAppearance();
   const { theme, resolved, editing } = appearance;
 
+  // When the stage closes, main returns focus to the settings window if that is where it came from.
+  const wasEditing = useRef(false);
+  useEffect(() => {
+    if (wasEditing.current && !editing) window.instantsSettings?.appearanceDone?.();
+    wasEditing.current = editing;
+  }, [editing]);
+
   const { language, setLanguage } = useLanguage();
 
   const os = usePlatform();

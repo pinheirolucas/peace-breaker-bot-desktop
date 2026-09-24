@@ -17,6 +17,7 @@ import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "./presen
 import {
   isSettingsConflict,
   isSettingsSection,
+  settingsAppearanceDoneChannel,
   settingsConflictChannel,
   settingsOpenAppearanceChannel,
   settingsOpenChannel,
@@ -310,6 +311,8 @@ contextBridge.exposeInMainWorld("instantsSettings", {
   open: (section?: SettingsSection) => ipcRenderer.send(settingsOpenChannel, { section }),
   // Aparência is not a pane: main raises the main window and runs its stage.
   openAppearance: () => ipcRenderer.send(settingsOpenAppearanceChannel),
+  // The main window's stage closed: main returns focus to settings if it launched the stage.
+  appearanceDone: () => ipcRenderer.send(settingsAppearanceDoneChannel),
   onSection: (listener: (section: SettingsSection) => void) => {
     if (typeof listener !== "function") {
       return () => {};

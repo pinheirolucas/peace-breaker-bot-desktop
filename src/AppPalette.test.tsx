@@ -55,7 +55,7 @@ const favorites = [
 let settings: NonNullable<Window["instantsSettings"]>;
 
 function bridges() {
-  settings = { open: vi.fn(), openAppearance: vi.fn(), onSection: () => () => undefined, onConflict: () => () => undefined };
+  settings = { open: vi.fn(), openAppearance: vi.fn(), appearanceDone: vi.fn(), onSection: () => () => undefined, onConflict: () => () => undefined };
   window.instantsSettings = settings;
   window.instantsPlatform = { os: "win", chrome: "custom", setChrome: vi.fn() };
   window.instantsDiscovery = { onServers: (listener) => { listener([macbook, raspberry]); return () => undefined; }, refresh: vi.fn() };

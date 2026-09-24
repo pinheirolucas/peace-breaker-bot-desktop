@@ -48,6 +48,7 @@ import { createQuickAccessWindow } from "./quickAccessWindow";
 import { createSettingsWindow } from "./settingsWindow";
 import {
   isSettingsOpenRequest,
+  settingsAppearanceDoneChannel,
   settingsConflictChannel,
   settingsOpenAppearanceChannel,
   settingsOpenChannel
@@ -126,6 +127,9 @@ let manualCheckPending = false;
 let manualCheckOrigin: Electron.WebContents | null = null;
 
 let isQuitting = false;
+
+// The Aparência stage was launched from the settings window, which takes focus back when it closes.
+let appearanceFromSettings = false;
 
 const wayland = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland";
 
@@ -262,7 +266,9 @@ function openSettings(section?: SettingsSection): void {
  * the "only focuses" case. A window that had to be created first is not
  * listening yet, so the command waits for its page.
  */
-function openAppearance(): void {
+function openAppearance(fromSettings = false): void {
+  // Remembered so that closing the stage hands focus back to whoever asked for it.
+  appearanceFromSettings = fromSettings;
   const command = { type: "appearance" } as const;
 
   if (!mainWindow || mainWindow.isDestroyed()) {
@@ -786,7 +792,15 @@ ipcMain.on(settingsOpenChannel, (event, request: unknown) => {
 // Aparência's launcher in the sidebar: settings only ever asks main to raise
 // the stage, and only the settings window may ask.
 ipcMain.on(settingsOpenAppearanceChannel, (event) => {
-  if (fromSettings(event)) openAppearance();
+  if (fromSettings(event)) openAppearance(true);
+});
+
+// Pronto or Cancelar on the stage: back to the settings page that launched it.
+ipcMain.on(settingsAppearanceDoneChannel, (event) => {
+  if (!fromMainWindow(event) || !appearanceFromSettings) return;
+
+  appearanceFromSettings = false;
+  settingsWindow.open();
 });
 
 // Prepared on pointer down, so the drag that may follow finds the file ready.
