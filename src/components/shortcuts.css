@@ -83,26 +83,6 @@
   font: inherit;
   font-size: 13px;
 }
-.ksheet__key {
-  flex: none;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--rbtn);
-  font: inherit;
-  font-size: 11.5px;
-  font-weight: 700;
-  background: color-mix(in oklch, var(--fg) 8%, transparent);
-  color: var(--fg);
-}
-.ksheet__keys {
-  flex: none;
-  display: inline-flex;
-  gap: 3px;
-}
 .ksheet__legend {
   list-style: none;
   margin: 0;
@@ -190,20 +170,6 @@
   font-size: 11.5px;
   color: var(--muted);
 }
-.ksheet__cap {
-  flex: none;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--rbtn);
-  font-size: 12.5px;
-  font-weight: 800;
-  background: var(--fill);
-  color: var(--ink);
-}
 .ksheet__combo {
   margin-left: auto;
   flex: none;
@@ -228,4 +194,8 @@
   margin: 0;
   font-size: 12px;
   color: var(--muted);
+}
+/* The sound's colour names it: the cap keeps the slot's ground under the hairline. */
+.ksheet__cap {
+  background: var(--fill);
 }

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ShortcutResult } from "../../electron/shortcuts";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
-import { comboLabel, comboParts } from "../hooks/usePlatform";
+import { Key, Keys } from "./Key";
+import { comboParts, shiftPart } from "../hooks/usePlatform";
 import { useGlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
 import { menuBridge } from "../hooks/useMenuBridge";
 import { isEditableTarget } from "../lib/clipKeys";
@@ -34,24 +34,6 @@ interface AppKey {
   menu: string;
   /** Only exists with the menu bar, so it is left out of a plain browser tab. */
   needsMenuBar?: boolean;
-}
-
-function Key({ children, slot }: { children: ReactNode; slot?: string }) {
-  return (
-    <kbd className={["ksheet__key", slot].filter(Boolean).join(" ")} data-slot={slot ? "" : undefined}>
-      {children}
-    </kbd>
-  );
-}
-
-function Keys({ parts }: { parts: string[] }) {
-  return (
-    <span className="ksheet__keys">
-      {parts.map((part, index) => (
-        <Key key={`${part}-${index}`}>{part}</Key>
-      ))}
-    </span>
-  );
 }
 
 /**
@@ -189,21 +171,21 @@ export default function ShortcutSheet({
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
           />
-          <Key>/</Key>
+          <Keys parts={["/"]} />
         </label>
 
         {allKeyed.length > 0 && !query && (
           <ul className="ksheet__legend" aria-label={t("shortcuts.sheet.legend")}>
             <li>
-              <Key>A</Key>
+              <Keys parts={["A"]} />
               <span>{t("shortcuts.sheet.legendDiscord")}</span>
             </li>
             <li>
-              <Keys parts={[os === "mac" ? "⇧" : "Shift", "A"]} />
+              <Keys parts={[shiftPart(os), "A"]} />
               <span>{t("shortcuts.sheet.legendLocal")}</span>
             </li>
             <li>
-              <Key>Esc</Key>
+              <Keys parts={["Esc"]} />
               <span>{t("shortcuts.sheet.legendStop")}</span>
             </li>
           </ul>
@@ -239,19 +221,16 @@ export default function ShortcutSheet({
                   const reason = showCombo ? failure(instant.key) : undefined;
                   return (
                     <li key={instant.url} className="ksheet__row">
-                      <span className={`ksheet__cap ${slotFor(instant.url)}`}>
+                      <Key card className={`ksheet__cap ${slotFor(instant.url)}`}>
                         {instant.key.toUpperCase()}
-                      </span>
+                      </Key>
                       <span className="ksheet__name" title={instant.name}>
                         {instant.name}
                       </span>
                       {showCombo && global.modifier && (
-                        <span
-                          className="ksheet__combo"
-                          aria-label={comboLabel(os, global.modifier, instant.key)}
-                        >
+                        <span className="ksheet__combo">
                           <span className="ksheet__dot" data-status={reason ?? "ok"} aria-hidden="true" />
-                          <Keys parts={comboParts(os, global.modifier, instant.key)} />
+                          <Keys quiet parts={comboParts(os, global.modifier, instant.key)} />
                           {reason && <span>· {t("shortcuts.global.inUse")}</span>}
                         </span>
                       )}
@@ -277,7 +256,7 @@ export default function ShortcutSheet({
                   <ul className="ksheet__list">
                     {rows.map((row) => (
                       <li key={row.id} className="ksheet__row">
-                        <Keys parts={row.keys} />
+                        <Keys quiet parts={row.keys} />
                         <span className="ksheet__name">{row.label}</span>
                         {hasMenuBar && <span className="ksheet__menu">{row.menu}</span>}
                       </li>

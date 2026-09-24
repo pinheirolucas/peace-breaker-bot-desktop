@@ -34,11 +34,11 @@ import { useAppearance } from "./hooks/useAppearance";
 import { useLanguage } from "./hooks/useLanguage";
 import { useNativeChrome } from "./hooks/useNativeChrome";
 import {
-  comboLabel,
-  findShortcutLabel,
+  comboParts,
   isFindShortcut,
   isModShortcut,
   shortcutLabel,
+  shortcutParts,
   useChromeKind,
   useDesktop,
   usePlatform
@@ -603,7 +603,7 @@ export default function App() {
       slot: slotFor(clip.url),
       keys:
         globalSettings.enabled && globalSettings.modifier && clip.key
-          ? [comboLabel(os, globalSettings.modifier, clip.key)]
+          ? comboParts(os, globalSettings.modifier, clip.key)
           : undefined,
       tag: away ? t("palette.onlyHere") : undefined,
       tagTone: away ? "warn" : undefined,
@@ -1052,7 +1052,7 @@ export default function App() {
                                 provider: provider?.name ?? DEFAULT_PROVIDER_NAME
                               })
                         }
-                        shortcut={findShortcutLabel(os)}
+                        shortcut={shortcutParts(os, "F")}
                         value={query}
                         onChange={(event) => handleSearchChange(event.target.value)}
                       />
@@ -1125,7 +1125,7 @@ export default function App() {
                         <>
                           <MenuItem
                             primary={t("app.add")}
-                            secondary={shortcutLabel(os, "n")}
+                            hint={shortcutParts(os, "n")}
                             onSelect={() => setAddOpen(true)}
                           />
                           {favorites.length > 0 && (
@@ -1169,12 +1169,12 @@ export default function App() {
                       <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
                       <MenuItem
                         primary={t("app.settings")}
-                        hint={shortcutLabel(os, ",")}
+                        hint={shortcutParts(os, ",")}
                         onSelect={() => openSettings()}
                       />
                       <MenuItem
                         primary={t("shortcuts.sheet.title")}
-                        hint="?"
+                        hint={["?"]}
                         onSelect={() => setSheetOpen(true)}
                       />
                     </Menu>

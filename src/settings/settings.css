@@ -81,7 +81,6 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
 }
-.sfield .kb { font-size: 10.5px; font-weight: 700; color: var(--muted); }
 .sfield button { border: 0; background: transparent; color: var(--muted); display: inline-flex; padding: 0; cursor: pointer; }
 
 .nav {
@@ -221,18 +220,6 @@
 .kt { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; align-items: center; padding: 14px 0; font-size: 13px; }
 .kt > span { color: var(--muted); }
 .kt > div { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-.kbd {
-  display: inline-block;
-  min-width: 22px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  font-size: 11.5px;
-  font-weight: 700;
-  text-align: center;
-  white-space: nowrap;
-}
 
 .hit {
   display: flex;

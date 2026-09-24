@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { quickAccessShortcutKey } from "../../electron/quickAccess";
 import type { GlobalModifier } from "../../electron/shortcuts";
+import { Keys } from "../components/Key";
 import { SegmentedChoice } from "../components/Segmented";
 import { Switch } from "../components/Switch";
 import { useGlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
@@ -9,7 +10,7 @@ import type { GlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
 import { usePresenceSettings } from "../hooks/usePresence";
 import { useQuickAccessShortcutSettings } from "../hooks/useQuickAccessShortcut";
 import type { QuickAccessShortcutSettings } from "../hooks/useQuickAccessShortcut";
-import { comboLabel, shortcutLabel, usePlatform } from "../hooks/usePlatform";
+import { comboLabel, shiftPart, shortcutParts, usePlatform } from "../hooks/usePlatform";
 import type { PlatformId } from "../themes";
 import { Group, GroupLabel, PageTitle, PrefRow } from "./Pref";
 
@@ -24,10 +25,6 @@ export interface KeysPaneProps {
   onClearConflict: () => void;
 }
 
-function Kbd({ children }: { children: string }) {
-  return <span className="kbd">{children}</span>;
-}
-
 export function KeysPane({ os, globalKeys, quickAccess, quickAccessOn, conflict, onClearConflict }: KeysPaneProps) {
   const { t } = useTranslation();
   const comboOptions = (suffix: string) => (modifiers: GlobalModifier[]) =>
@@ -38,7 +35,7 @@ export function KeysPane({ os, globalKeys, quickAccess, quickAccessOn, conflict,
 
   const globalOn = globalKeys.available && globalKeys.enabled;
   const shortcutOn = quickAccess.enabled && quickAccessOn;
-  const mod = (key: string) => shortcutLabel(os, key);
+  const mod = (key: string) => shortcutParts(os, key);
 
   return (
     <>
@@ -118,36 +115,36 @@ export function KeysPane({ os, globalKeys, quickAccess, quickAccessOn, conflict,
       <Group>
         <div className="kt">
           <div>
-            <Kbd>{t("settings.keys.keyWord")}</Kbd>
+            <Keys quiet parts={[t("settings.keys.keyWord")]} />
           </div>
           <span>{t("settings.keys.playDiscord")}</span>
           <div>
-            <Kbd>Shift</Kbd>+<Kbd>{t("settings.keys.keyWord")}</Kbd>
+            <Keys quiet parts={[shiftPart(os), t("settings.keys.keyWord")]} />
           </div>
           <span>{t("settings.keys.playLocal")}</span>
           <div>
-            <Kbd>Esc</Kbd>
+            <Keys quiet parts={["Esc"]} />
           </div>
           <span>{t("settings.keys.stop")}</span>
           <div>
-            <Kbd>{mod("F")}</Kbd>
+            <Keys quiet parts={mod("F")} />
           </div>
           <span>{t("settings.keys.find")}</span>
           <div>
-            <Kbd>{mod("1")}</Kbd>
-            <Kbd>{mod("2")}</Kbd>
+            <Keys quiet parts={mod("1")} />
+            <Keys quiet parts={mod("2")} />
           </div>
           <span>{t("settings.keys.tabs")}</span>
           <div>
-            <Kbd>{mod("N")}</Kbd>
+            <Keys quiet parts={mod("N")} />
           </div>
           <span>{t("settings.keys.add")}</span>
           <div>
-            <Kbd>{mod(",")}</Kbd>
+            <Keys quiet parts={mod(",")} />
           </div>
           <span>{t("settings.keys.openSettings")}</span>
           <div>
-            <Kbd>?</Kbd>
+            <Keys quiet parts={["?"]} />
           </div>
           <span>{t("settings.keys.sheet")}</span>
         </div>

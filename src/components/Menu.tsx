@@ -1,5 +1,6 @@
 import * as RadixMenu from "@radix-ui/react-dropdown-menu";
 import type { MouseEvent, ReactNode } from "react";
+import { Keys } from "./Key";
 import "./overlays.css";
 
 export interface MenuProps {
@@ -48,8 +49,8 @@ export interface MenuItemProps {
   tick?: ReactNode;
   primary: ReactNode;
   secondary?: ReactNode;
-  /** A key shown at the row's right edge. */
-  hint?: ReactNode;
+  /** The row's key at its right edge: one part per physical key, or any node. */
+  hint?: ReactNode | string[];
   closeOnSelect?: boolean;
   trail?: ReactNode;
   trailLabel?: string;
@@ -87,7 +88,7 @@ export function MenuItem({
         {primary}
         {secondary && <span className="msub">{secondary}</span>}
       </span>
-      {hint && <span className="mhint">{hint}</span>}
+      {hint && <span className="mhint">{Array.isArray(hint) ? <Keys quiet parts={hint} /> : hint}</span>}
       {trail !== undefined && (
         <button
           type="button"

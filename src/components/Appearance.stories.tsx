@@ -93,7 +93,7 @@ function DemoApp() {
               <SearchField
                 aria-label="Procurar um som"
                 placeholder={`Buscar em ${DEMO.length} favoritos`}
-                shortcut="⌘F"
+                shortcut={["⌘", "F"]}
               />
             </div>
           </div>

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { findShortcutLabel } from "../hooks/usePlatform";
+import { shortcutParts } from "../hooks/usePlatform";
 import { MoreIcon, PlusIcon } from "../icons";
 import { Button, IconButton } from "./Button";
 import { Field } from "./Field";
@@ -65,7 +65,7 @@ export const Fields: StoryObj = {
         <SearchField
           style={{ width: 260 }}
           placeholder="Procurar um som…"
-          shortcut={findShortcutLabel(globals.os ?? "mac")}
+          shortcut={shortcutParts(globals.os ?? "mac", "F")}
         />
       </Unit>
       <Unit caption="Search · with query">

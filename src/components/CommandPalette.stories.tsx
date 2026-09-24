@@ -1,3 +1,4 @@
+import { Keys } from "./Key";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -198,7 +199,7 @@ function Frame({ width = 900, height = 620, scenario, initialQuery, initialView,
         )}
         {!open && (
           <button type="button" onClick={() => setOpen(true)} style={{ position: "absolute", top: 16, right: 16 }}>
-            Abrir a paleta ({mod(scenario.os)}+K)
+            Abrir a paleta <Keys quiet parts={[mod(scenario.os), "K"]} />
           </button>
         )}
       </div>
@@ -224,7 +225,7 @@ export const Closed: StoryObj = {
       <div style={{ display: "grid", gap: 12 }}>
         <AppBackdrop width={900} height={300} />
         <button type="button" style={{ width: "fit-content" }} onClick={() => setOpen(true)}>
-          Abrir a paleta ({mod(globals.os)}+K)
+          Abrir a paleta <Keys quiet parts={[mod(globals.os), "K"]} />
         </button>
         {open && <Frame height={560} scenario={{ os: globals.os }} caption="Aberta a partir da janela acima." />}
       </div>

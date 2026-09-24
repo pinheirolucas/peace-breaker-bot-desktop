@@ -462,14 +462,14 @@ describe("Atalhos", () => {
     const { unmount } = render(<KeysSection />);
 
     const win = screen.getByRole("heading", { name: "Atalhos" }).parentElement!;
-    expect(within(win).getByText("Ctrl+F")).toBeInTheDocument();
-    expect(within(win).getByText("Ctrl+,")).toBeInTheDocument();
+    expect(within(win).getByRole("group", { name: "Ctrl + F" })).toBeInTheDocument();
+    expect(within(win).getByRole("group", { name: "Ctrl + ," })).toBeInTheDocument();
     unmount();
 
     window.instantsPlatform = { os: "mac", chrome: "custom", setChrome: vi.fn() };
     render(<KeysSection />);
-    expect(screen.getByText("⌘F")).toBeInTheDocument();
-    expect(screen.getByText("⌘,")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Command + F" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Command + ," })).toBeInTheDocument();
     expect(screen.getByText("Abrir estas configurações")).toBeInTheDocument();
   });
 });
