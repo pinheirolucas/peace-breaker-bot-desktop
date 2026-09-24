@@ -324,4 +324,22 @@ describe("CommandPalette", () => {
     expect(screen.getByRole("combobox", { name: "Search sounds and actions" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Recent" })).toBeInTheDocument();
   });
+
+  it("picks the matched part of a title out, ignoring accents", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    await user.type(field(), "configuracoes");
+    expect(screen.getByText("Configurações", { selector: "b.h" })).toBeInTheDocument();
+
+    await user.clear(field());
+    await user.type(field(), "bonk");
+    expect(screen.getByText("Bonk", { selector: "b.h" })).toBeInTheDocument();
+  });
+
+  it("does not use the quick-access row class, whose border and padding would bleed in", () => {
+    setup();
+
+    for (const row of screen.getAllByRole("option")) expect(row).not.toHaveClass("prow");
+  });
 });
