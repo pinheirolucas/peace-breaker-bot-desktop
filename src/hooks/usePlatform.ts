@@ -66,6 +66,7 @@ declare global {
     instantsSettings?: {
       open: (section?: SettingsSection) => void;
       openAppearance: () => void;
+      appearanceDone: () => void;
       onSection: (listener: (section: SettingsSection) => void) => () => void;
       onConflict: (listener: (conflict: SettingsConflict) => void) => () => void;
     };

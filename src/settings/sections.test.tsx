@@ -417,6 +417,7 @@ describe("Atalhos", () => {
     window.instantsSettings = {
       open: vi.fn(),
       openAppearance: vi.fn(),
+      appearanceDone: vi.fn(),
       onSection: () => () => undefined,
       onConflict: (listener) => {
         conflict = listener;

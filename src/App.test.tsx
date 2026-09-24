@@ -1107,7 +1107,7 @@ describe("Configurações doors", () => {
   let settings: NonNullable<Window["instantsSettings"]>;
 
   function bridge() {
-    settings = { open: vi.fn(), openAppearance: vi.fn(), onSection: () => () => undefined, onConflict: () => () => undefined };
+    settings = { open: vi.fn(), openAppearance: vi.fn(), appearanceDone: vi.fn(), onSection: () => () => undefined, onConflict: () => () => undefined };
     window.instantsSettings = settings;
   }
 
@@ -1183,6 +1183,23 @@ describe("Configurações doors", () => {
 
     expect(await screen.findByRole("dialog", { name: "Aparência" })).toBeInTheDocument();
     expect(settings.open).not.toHaveBeenCalled();
+  });
+
+  it("tells main when the Aparência stage closes, on Pronto and on Cancelar, so focus can go back to Configurações", async () => {
+    bridge();
+    const user = userEvent.setup();
+    render(<App />);
+    expect(settings.appearanceDone).not.toHaveBeenCalled();
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: "Aparência" }));
+    await screen.findByRole("dialog", { name: "Aparência" });
+    expect(settings.appearanceDone).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Pronto" }));
+    expect(settings.appearanceDone).toHaveBeenCalledTimes(1);
+
+    await user.click((await openMore(user)).getByRole("menuitem", { name: "Aparência" }));
+    await user.click(await screen.findByRole("button", { name: "Cancelar" }));
+    expect(settings.appearanceDone).toHaveBeenCalledTimes(2);
   });
 
   it("opens the same page in a tab where there is no main process to ask", async () => {
