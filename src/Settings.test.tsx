@@ -223,6 +223,7 @@ describe("Settings, the window", () => {
     bridge = {
       open: vi.fn(),
       openAppearance: vi.fn(),
+      appearanceDone: vi.fn(),
       onSection: vi.fn((listener) => {
         onSection = listener;
         return () => undefined;
