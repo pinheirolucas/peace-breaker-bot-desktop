@@ -188,7 +188,7 @@
 .ksheet__dot[data-status="in-use"],
 .ksheet__dot[data-status="unsupported"] {
   /* Hardcoded like the server chip's amber, so it reads as a warning in every palette. */
-  background: oklch(0.78 0.16 75);
+  background: var(--warn);
 }
 .ksheet__note {
   margin: 0;

@@ -98,10 +98,19 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--accent);
+  /* The accent on the inverted ground is under 3:1 in most palettes, so the dot
+   * leans toward the toast's ink. */
+  background: color-mix(in oklch, var(--accent) 55%, var(--bg));
   flex: none;
 }
 .toast .tm { flex: 1; }
+/* The default ring would be accent on the inverted ground, which does not
+ * clear 3:1; the toast's own ink does. */
+.toast :is(.ta, .tx):focus-visible {
+  outline: 2px solid var(--bg);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .toast .ta {
   font: inherit;
   font-size: 12px;
