@@ -6,7 +6,7 @@ Desktop UI (Vite + React 19 + Electron 44) for Peace Breaker Bot: browse and fav
 
 `pnpm start` (Vite + Electron) · `pnpm react-start` (Vite only, :3000) · `pnpm typecheck` · `pnpm react-test run [file]` · `pnpm electron-compile` · `pnpm react-build` · `pnpm icons` · `pnpm storybook` (:6006, dev-only). Tests sit next to the code as `*.test.ts(x)`.
 
-- Before a PR run `pnpm typecheck`, `pnpm react-test run` and `pnpm electron-compile`. `tsc --noEmit` is the only type check: Vite and tsup strip types through esbuild, so a build passes on code that does not compile.
+- CI runs typecheck, tests and electron-compile on every PR. `tsc --noEmit` is the only type check: Vite and tsup strip types through esbuild, so a build passes on code that does not compile.
 - `pnpm start` shares userData with an installed release: a dev run edits your real favourites and settings.
 
 ## Toolchain
@@ -24,19 +24,23 @@ Desktop UI (Vite + React 19 + Electron 44) for Peace Breaker Bot: browse and fav
 - New backend surface or a big UI choice: publish the design as an artifact first, iterate there, implement after the go-ahead. UI alternatives go in separate PRs or stories; close the ones not picked.
 - Backend changes land first; the desktop PR that uses them follows and references it.
 - Comments only where the code can't say it: a one-line doc on exported members; none in tests; reasoning goes in the PR body.
-- Releases: Actions › Cut Release (patch/minor/major; prerelease gives `vX.Y.Z-rcN`; dry run first), iterating rc → final. Never run `pnpm release`, create tags or trigger workflows unless asked.
+- Releases go through the Cut Release workflow, rc → final, only when the user asks (`/cut-release`). Agents never tag, publish or trigger workflows.
 
 ## Update together
 
-- Stored key ↔ `settingsKeys`, `exportToJSON`/`ImportForm`, `resetSettings` (which never clears `instants`).
-- New bot error label ↔ `api.<label>` in both `src/i18n/en-US.json` and `pt-BR.json`.
-- New IPC channel ↔ a constant in a pure `electron/*.ts` module inlined into the preload, plus a validator the main process runs on every request.
-- Palette or token value ↔ `src/tokens.contrast.test.ts` must still pass.
-- Icon master in `assets/icon/` ↔ rerun `pnpm icons` and commit the output.
+- A new stored key goes in `settingsKeys` or `notSettings` in `src/storage.test.ts`, which fails until you decide whether Restaurar resets it.
+- Bot API changes: run `node scripts/sync-bot-contract.mts`. `src/botContract.test.ts` then fails on untranslated labels and on routes the client calls but the bot doesn't serve (or serves but the client neither calls nor lists in `knownUnused`).
+- A palette or token value must still pass `src/tokens.contrast.test.ts`. An icon master in `assets/icon/` needs `pnpm icons` rerun and its output committed.
+
+## Tooling
+
+- Skills in `.claude/skills/`: `add-api-call`, `add-ipc-channel`, `add-component`, and `cut-release` (user-invoked only).
+- `.claude/settings.json` allows the routine commands and denies force-push, tags, releases and workflow runs. A Stop hook runs `pnpm typecheck` once per turn that changed TypeScript.
+- CI also fails on retired product and provider names (pattern in `.github/workflows/ci.yaml`).
 
 ## Contract with the bot
 
-Source of truth: `../peace-breaker-bot/pkg/server/v1/openapi.yaml` (also served at `GET /api/v1/openapi.yaml`). Read it before touching `src/service.ts`; do not restate routes here. Rules this client owns:
+Source of truth: `../peace-breaker-bot/pkg/server/v1/openapi.yaml` (also served at `GET /api/v1/openapi.yaml`). `src/botContract.json` is its synced snapshot. Do not restate routes here. Rules this client owns:
 
 - Discovery: mDNS `_myinstants._tcp` on `local.`, TXT `path=/api` and `api=1`, instance name `<hostname>-<port>`. The dot in that name makes bonjour-service mis-split the fqdn, so use only `port`, `addresses` and `txt`. The `/v1` suffix is this client's choice (`apiVersionPath` in `electron/discovery.ts`).
 - No default server, never `localhost:9001`. Resolution: the user's pick (persisted, revalidated by `setApiUrl`) → the first discovered server (`sortServers`) → nothing. A server can also be added by address (`src/lib/manualServer.ts`).
