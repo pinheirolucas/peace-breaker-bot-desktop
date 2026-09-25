@@ -1,0 +1,37 @@
+{
+  "labels": [
+    "bad_http_status",
+    "bot_not_connected",
+    "bot_not_ready",
+    "channel_not_found",
+    "http_request",
+    "instant_not_found",
+    "invalid_body",
+    "invalid_region",
+    "invalid_url",
+    "name_link_not_matched",
+    "not_voice_channel",
+    "owner_not_in_voice",
+    "owner_unknown",
+    "provider_not_found",
+    "unknown_error",
+    "unsuported_audio_format",
+    "voice_join_failed"
+  ],
+  "routes": [
+    "GET /bot/status",
+    "GET /instants",
+    "GET /instants/{url}/content",
+    "GET /openapi.yaml",
+    "GET /providers",
+    "POST /bot/join",
+    "POST /bot/leave",
+    "POST /bot/play",
+    "POST /bot/stop"
+  ],
+  "knownUnused": [
+    "POST /bot/join",
+    "POST /bot/leave",
+    "GET /openapi.yaml"
+  ]
+}

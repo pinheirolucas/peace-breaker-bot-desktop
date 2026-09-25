@@ -193,7 +193,6 @@ export const ProviderMenu: StoryObj = {
     <Menu open trigger={<button type="button" className="srv">MyInstants</button>}>
       <MenuLabel>Site</MenuLabel>
       <MenuItem tick={<CheckIcon />} primary="MyInstants" />
-      <MenuItem tick={null} primary="InstantsMeme" />
       <MenuItem tick={null} primary="Sound Buttons" />
       <MenuItem tick={null} primary="SoundboardGuy" />
     </Menu>
