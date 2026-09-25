@@ -51,7 +51,7 @@ export const Modificadores: Story = {
           <Key quiet>esc</Key>
         </Ground>
         <Ground label="empty">
-          <Key empty>+</Key>
+          <Key empty />
           <Key quiet empty>K</Key>
         </Ground>
         <Ground label="pressed">
