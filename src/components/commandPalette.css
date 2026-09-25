@@ -72,7 +72,9 @@
   padding: 0 10px;
   border-radius: 999px;
   background: color-mix(in oklch, var(--accent) 14%, var(--panel));
-  color: var(--accent);
+  /* Accent text on its own 14% tint has less contrast than on the panel, so the
+   * label leans toward --fg. */
+  color: color-mix(in oklch, var(--accent) 55%, var(--fg));
   font-size: 12px;
   font-weight: 700;
 }
@@ -159,7 +161,7 @@
 .pitem[data-selected] .ptt .h { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .pitem[data-selected] { background: var(--accent); color: var(--onAccent); }
 .pitem[data-selected] .psb,
-.pitem[data-selected] .prt { color: color-mix(in oklch, var(--onAccent) 84%, transparent); }
+.pitem[data-selected] .prt { color: var(--onAccent); }
 .pitem[data-selected] .pic { background: color-mix(in oklch, var(--onAccent) 20%, transparent); color: var(--onAccent); }
 .pitem[data-selected] .pic.tile { background: var(--fill); color: var(--ink); box-shadow: 0 0 0 2px color-mix(in oklch, var(--onAccent) 88%, transparent); }
 .pitem[data-selected] .k { color: var(--onAccent); border-color: color-mix(in oklch, var(--onAccent) 55%, transparent); }
@@ -171,15 +173,15 @@
 [data-os="win"] .pitem[data-selected] .psb,
 [data-os="win"] .pitem[data-selected] .prt,
 [data-os="linux"] .pitem[data-selected] .psb,
-[data-os="linux"] .pitem[data-selected] .prt { color: var(--muted); }
+[data-os="linux"] .pitem[data-selected] .prt { color: color-mix(in oklch, var(--muted) 55%, var(--fg)); }
 [data-os="win"] .pitem[data-selected] .pic:not(.tile),
 [data-os="linux"] .pitem[data-selected] .pic:not(.tile) { background: color-mix(in oklch, var(--fg) 7%, transparent); color: var(--fg); }
 [data-os="win"] .pitem[data-selected] .ptt .h,
-[data-os="linux"] .pitem[data-selected] .ptt .h { color: var(--accent); text-decoration: none; }
+[data-os="linux"] .pitem[data-selected] .ptt .h { color: color-mix(in oklch, var(--accent) 65%, var(--fg)); text-decoration: none; }
 [data-os="win"] .pitem[data-selected] .k,
 [data-os="linux"] .pitem[data-selected] .k { color: var(--fg); border-color: color-mix(in oklch, var(--fg) 30%, transparent); }
 [data-os="win"] .pitem[data-selected] .ptg,
-[data-os="linux"] .pitem[data-selected] .ptg { border-color: var(--line); color: var(--muted); }
+[data-os="linux"] .pitem[data-selected] .ptg { border-color: var(--line); color: color-mix(in oklch, var(--muted) 55%, var(--fg)); }
 [data-os="win"] .pitem[data-selected]::before,
 [data-desktop="kde"] .pitem[data-selected]::before,
 [data-desktop="other"] .pitem[data-selected]::before {

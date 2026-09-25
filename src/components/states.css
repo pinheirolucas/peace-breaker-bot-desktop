@@ -67,8 +67,8 @@
   gap: 11px;
   border-radius: 12px;
   padding: 11px 13px;
-  border: 1px solid oklch(0.58 0.19 25);
-  background: color-mix(in oklch, oklch(0.58 0.19 25) 12%, transparent);
+  border: 1px solid var(--danger);
+  background: color-mix(in oklch, var(--danger) 12%, transparent);
   margin-bottom: 16px;
 }
 .banner b { display: block; font-size: 12.5px; font-weight: 700; }
@@ -79,9 +79,9 @@
   height: 28px;
   padding: 0 12px;
   border-radius: var(--rctl);
-  border: 1px solid oklch(0.58 0.19 25);
+  border: 1px solid var(--danger);
   background: transparent;
-  color: oklch(0.66 0.19 25);
+  color: var(--danger);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -105,4 +105,4 @@
 .drop span { font-size: 12px; color: var(--muted); line-height: 1.45; }
 .drop[data-state="over"] { border-style: solid; border-color: var(--accent); }
 .drop[data-state="ok"] { border-style: solid; border-color: var(--ok); }
-.drop[data-state="bad"] { border-style: solid; border-color: oklch(0.58 0.19 25); }
+.drop[data-state="bad"] { border-style: solid; border-color: var(--danger); }

@@ -108,7 +108,12 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--accent);
+  /* On the inverted ground the accent has no contrast to speak of in any
+   * palette, so the action is the ink, told from the message by its weight,
+   * caps and underline. */
+  color: var(--bg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   background: transparent;
   border: 0;
   cursor: pointer;

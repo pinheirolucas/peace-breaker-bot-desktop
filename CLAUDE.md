@@ -174,13 +174,21 @@ browser does **as long as nothing sets `nativeTheme.themeSource` away from `"sys
 does, and nothing should — forcing it there takes `auto` away and restyles every native dialog
 the app opens. jsdom ships no `matchMedia`, so `src/setupTests.ts` stubs it.
 
-Two colour tokens guard contrast. `--line` is for decorative hairlines only; a control whose border is
+Three colour tokens guard contrast. `--line` is for decorative hairlines only; a control whose border is
 its only boundary (field, secondary button, icon button, search, server chip, segmented track, switch's
 off track, drop zone) uses `--edge`, which is held at 3:1 against `--bg` and `--panel` in every palette
-(`--edge` is `var(--line)` in Alto contraste, which already clears it). `src/tokens.contrast.test.ts`
-reads `tokens.css` and enforces 4.5:1 for text (`--fg`, `--muted`, `--ok`, `--onAccent` on `--accent`, each
-card's `--ink` on its `--fill`) and 3:1 for `--accent` and `--edge`. Change a palette value and it fails
-before a person has to squint.
+(`--edge` is `var(--line)` in Alto contraste, which already clears it). `--danger` is the red of error
+*text and borders* (a field's message, the offline banner and its button, `.tstatus.err`): a per-mode
+value, lighter in dark, held at 4.5:1 on `--bg` and `--panel`. The red *fills* (the destructive button, the
+health dot) stay a literal, the same in every palette, so a warning reads as a warning. `--accent` is also
+text (ghost buttons, links, the palette's match highlight), so it must clear 4.5:1 on `--bg` **and**
+`--panel`; a toast action is `--bg` on the inverted `--fg` ground, since no accent clears that. A dark
+palette whose accent must stay light gets a dark `--onAccent` for its filled buttons instead of a darker
+accent. `src/tokens.contrast.test.ts` reads `tokens.css` and enforces 4.5:1 for text (`--fg`, `--muted`, `--ok`,
+`--accent` and `--danger` on both grounds, `--onAccent` on `--accent`, each card's `--ink` on its `--fill`)
+and 3:1 for `--edge`. Change a palette value and it fails before a person has to squint. The test reads
+tokens, not rendered pages: a rule that draws text in a colour mixed at a lower alpha (a secondary line
+on a selected row) bypasses it, so check those in Storybook.
 
 The palette is picked in the Aparência shell (⋯ › Aparência), alongside the colour mode, and
 defaults to `esmalte` until someone picks another.
