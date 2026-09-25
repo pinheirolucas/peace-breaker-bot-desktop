@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
  *
  *   text 4.5   fg and muted on the ground, muted on a panel, --ok as text,
  *              --onAccent on --accent, a card's --ink on its --fill
- *   text 4.5   --accent on the ground too: ghost buttons and links set it as text
+ *   text 4.5   --accent on the ground and on a panel too: ghost buttons, links and the
+ *              palette's match highlight set it as text; --danger, the red of an error
+ *              message, on both
  *   UI 3.0     --edge, the boundary of a field, secondary button, search, chip or switch
  *
  * --line is deliberately not here: it draws decorative hairlines, and a control
@@ -87,9 +89,15 @@ describe.each(themes)("%s", (theme) => {
       expect(ratio(c("--onAccent"), c("--accent"))).toBeGreaterThanOrEqual(4.5);
     });
 
-    it("keeps the accent legible as text and control edges visible as UI", () => {
-      expect(ratio(c("--accent"), c("--bg"))).toBeGreaterThanOrEqual(4.5);
-            expect(ratio(c("--edge"), c("--bg"))).toBeGreaterThanOrEqual(3);
+    it("keeps the accent and the danger text legible on the ground and a panel", () => {
+      for (const token of ["--accent", "--danger"]) {
+        expect(ratio(c(token), c("--bg")), `${token} on --bg`).toBeGreaterThanOrEqual(4.5);
+        expect(ratio(c(token), c("--panel")), `${token} on --panel`).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+
+    it("keeps control edges visible as UI", () => {
+      expect(ratio(c("--edge"), c("--bg"))).toBeGreaterThanOrEqual(3);
       expect(ratio(c("--edge"), c("--panel"))).toBeGreaterThanOrEqual(3);
     });
 

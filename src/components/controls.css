@@ -104,13 +104,13 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
 }
-.field[data-invalid="true"] input { border-color: oklch(0.58 0.19 25); }
-.field .msg { font-size: 11.5px; color: oklch(0.58 0.19 25); margin-top: 6px; }
+.field[data-invalid="true"] input { border-color: var(--danger); }
+.field .msg { font-size: 11.5px; color: var(--danger); margin-top: 6px; }
 
 .testrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tstatus { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .tstatus.ok { color: var(--ok); }
-.tstatus.err { color: oklch(0.58 0.19 25); }
+.tstatus.err { color: var(--danger); }
 
 /* --- search -------------------------------------------------------------- */
 .search {
