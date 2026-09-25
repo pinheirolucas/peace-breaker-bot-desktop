@@ -44,8 +44,8 @@
 [data-theme="esmalte"][data-mode="dark"] {
   --bg: oklch(0.205 0.012 250); --panel: oklch(0.262 0.012 250);
   --line: oklch(0.352 0.014 250); --edge: oklch(0.537 0.014 250); --fg: oklch(0.944 0.008 250);
-  --muted: oklch(0.678 0.014 250); --accent: oklch(0.550 0.150 252);
-  --onAccent: oklch(0.985 0.008 252); --ok: oklch(0.70 0.13 145);
+  --muted: oklch(0.678 0.014 250); --accent: oklch(0.625 0.150 252);
+  --onAccent: oklch(0.190 0.040 252); --ok: oklch(0.70 0.13 145);
 }
 [data-theme="esmalte"][data-mode="light"] {
   --bg: oklch(0.952 0.008 250); --panel: oklch(0.986 0.005 250);
@@ -72,7 +72,7 @@
 [data-theme="frevo"][data-mode="light"] {
   --bg: oklch(0.948 0.012 95); --panel: oklch(0.982 0.007 95);
   --line: oklch(0.830 0.018 95); --edge: oklch(0.620 0.018 95); --fg: oklch(0.238 0.012 60);
-  --muted: oklch(0.482 0.016 60); --accent: oklch(0.570 0.200 8);
+  --muted: oklch(0.482 0.016 60); --accent: oklch(0.550 0.200 8);
   --onAccent: oklch(0.985 0.010 8); --ok: oklch(0.52 0.11 145);
 }
 [data-theme="frevo"] {
@@ -154,8 +154,8 @@
 [data-theme="discord"][data-mode="dark"] {
   --bg: oklch(0.225 0.012 278); --panel: oklch(0.282 0.012 278);
   --line: oklch(0.372 0.014 278); --edge: oklch(0.552 0.014 278); --fg: oklch(0.945 0.008 278);
-  --muted: oklch(0.690 0.014 278); --accent: oklch(0.565 0.190 274);
-  --onAccent: oklch(0.988 0.008 274); --ok: oklch(0.72 0.15 150);
+  --muted: oklch(0.690 0.014 278); --accent: oklch(0.640 0.190 274);
+  --onAccent: oklch(0.190 0.040 274); --ok: oklch(0.72 0.15 150);
 }
 [data-theme="discord"][data-mode="light"] {
   --bg: oklch(0.965 0.005 280); --panel: oklch(0.992 0.003 280);
@@ -208,8 +208,8 @@
 [data-theme="oled"][data-mode="dark"] {
   --bg: oklch(0 0 0); --panel: oklch(0.158 0.006 280);
   --line: oklch(0.302 0.008 280); --edge: oklch(0.487 0.008 280); --fg: oklch(0.985 0.003 280);
-  --muted: oklch(0.702 0.010 280); --accent: oklch(0.590 0.240 352);
-  --onAccent: oklch(0.995 0.005 352); --ok: oklch(0.78 0.17 145);
+  --muted: oklch(0.702 0.010 280); --accent: oklch(0.660 0.240 352);
+  --onAccent: oklch(0.190 0.040 352); --ok: oklch(0.78 0.17 145);
 }
 [data-theme="oled"][data-mode="light"] {
   --bg: oklch(1 0 0); --panel: oklch(0.972 0.003 280);
