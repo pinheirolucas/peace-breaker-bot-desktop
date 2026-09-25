@@ -64,6 +64,8 @@
   padding: 0;
 }
 .pin input::placeholder { color: var(--muted); }
+/* The input itself has no ring, so the bar under it takes the focus. */
+.pin:focus-within { border-bottom-color: var(--accent); }
 .crumb {
   flex: none;
   display: inline-flex;
@@ -210,7 +212,7 @@
 }
 .pst { display: inline-flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pst i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
-.pst i[data-tone="warn"] { background: oklch(0.78 0.16 75); }
+.pst i[data-tone="warn"] { background: var(--warn); }
 .pst i[data-tone="bad"] { background: oklch(0.62 0.2 25); }
 .phs { margin-left: auto; display: inline-flex; align-items: center; gap: 14px; flex: none; }
 .phs > span { display: inline-flex; align-items: center; gap: 6px; }

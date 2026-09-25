@@ -174,13 +174,15 @@ browser does **as long as nothing sets `nativeTheme.themeSource` away from `"sys
 does, and nothing should — forcing it there takes `auto` away and restyles every native dialog
 the app opens. jsdom ships no `matchMedia`, so `src/setupTests.ts` stubs it.
 
-Three colour tokens guard contrast. `--line` is for decorative hairlines only; a control whose border is
+Four colour tokens guard contrast. `--line` is for decorative hairlines only; a control whose border is
 its only boundary (field, secondary button, icon button, search, server chip, segmented track, switch's
 off track, drop zone) uses `--edge`, which is held at 3:1 against `--bg` and `--panel` in every palette
 (`--edge` is `var(--line)` in Alto contraste, which already clears it). `--danger` is the red of error
 *text and borders* (a field's message, the offline banner and its button, `.tstatus.err`): a per-mode
 value, lighter in dark, held at 4.5:1 on `--bg` and `--panel`. The red *fills* (the destructive button, the
-health dot) stay a literal, the same in every palette, so a warning reads as a warning. `--accent` is also
+health dot) stay a literal, the same in every palette, so a warning reads as a warning. `--warn` is the amber of the
+"bot is away" dot (and the quick-access and palette status dots), per mode (darker in light, where the
+old literal was 2:1) and held at 3:1 on `--bg` and `--panel`. `--accent` is also
 text (ghost buttons, links, the palette's match highlight), so it must clear 4.5:1 on `--bg` **and**
 `--panel`; a toast action is `--bg` on the inverted `--fg` ground, since no accent clears that. A dark
 palette whose accent must stay light gets a dark `--onAccent` for its filled buttons instead of a darker

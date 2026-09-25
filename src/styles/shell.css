@@ -538,7 +538,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: oklch(0.74 0.16 82);
+    background: var(--warn);
     box-shadow: 0 0 0 2px var(--bg);
   }
   .toolbar__more .ibtn[data-attention="down"]::after {
