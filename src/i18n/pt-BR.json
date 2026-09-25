@@ -187,7 +187,13 @@
     "bad_http_status": "O site do provedor respondeu com um status de erro",
     "total_pages_count": "Não foi possível recuperar a quantidade de páginas",
     "name_link_not_matched": "Os resultados do provedor não puderam ser lidos — o layout da página pode ter mudado",
-    "unknown_error": "Erro desconhecido, tente novamente mais tarde"
+    "unknown_error": "Erro desconhecido, tente novamente mais tarde",
+    "bot_not_ready": "O bot ainda está iniciando. Tente novamente em instantes",
+    "channel_not_found": "Esse canal de voz não foi encontrado",
+    "owner_not_in_voice": "O dono do bot não está em um canal de voz que o bot consiga ver",
+    "owner_unknown": "O bot ainda não viu o dono. Envie qualquer mensagem para ele no Discord e tente novamente",
+    "not_voice_channel": "Esse canal não é um canal de voz",
+    "voice_join_failed": "O bot não conseguiu se conectar a esse canal de voz"
   },
   "rename": {
     "title": "Renomear som",
