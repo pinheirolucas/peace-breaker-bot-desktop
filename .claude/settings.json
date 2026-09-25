@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm react-test run:*)",
+      "Bash(pnpm electron-compile)",
+      "Bash(pnpm icons)",
+      "Bash(pnpm storybook)",
+      "Bash(pnpm react-build)",
+      "Bash(node scripts/sync-bot-contract.mts:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr checks:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(git tag:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh release:*)",
+      "Bash(pnpm release:*)",
+      "Bash(pnpm exec electron-builder --publish:*)",
+      "Bash(electron-builder --publish:*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/typecheck-on-stop.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
