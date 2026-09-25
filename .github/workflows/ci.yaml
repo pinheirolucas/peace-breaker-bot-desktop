@@ -39,8 +39,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check for stale product names
+        run: |
+          if git grep -niE 'discord[-_]instants|instants[^a-z0-9]{0,2}meme' -- . ':!.github/workflows/ci.yaml'; then
+            echo "::error::Stale product name found; see the matches above."
+            exit 1
+          fi
+
+      # tsc is the only type check: Vite and tsup strip types without checking them.
+      - name: Typecheck
+        run: pnpm typecheck
+
       - name: Test
         run: pnpm react-test run
+
+      - name: Compile Electron
+        run: pnpm electron-compile
 
       - name: Build
         run: pnpm react-build
