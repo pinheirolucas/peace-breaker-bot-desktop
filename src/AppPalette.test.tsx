@@ -10,7 +10,7 @@ let mockApiUrl: string | null = "http://10.0.0.5:9001/api/v1";
 
 const providers: ProviderInfo[] = [
   { key: "myinstants", name: "MyInstants", supportsSearch: true, supportsRegion: true },
-  { key: "instantsmeme", name: "InstantsMeme", supportsSearch: true, supportsRegion: false }
+  { key: "soundboardguy", name: "SoundboardGuy", supportsSearch: true, supportsRegion: false }
 ];
 
 vi.mock("./service", async (importOriginal) => ({
@@ -387,10 +387,10 @@ describe("actions and settings", () => {
     await opened();
     await waitFor(() => expect(screen.queryByRole("option", { name: /Site do Explorar/ })).toBeNull());
 
-    await user.type(field(), ">site do explorar: instants");
-    await user.click(await screen.findByRole("option", { name: /Site do Explorar: InstantsMeme/ }));
+    await user.type(field(), ">site do explorar: soundboard");
+    await user.click(await screen.findByRole("option", { name: /Site do Explorar: SoundboardGuy/ }));
 
-    expect(JSON.parse(localStorage.getItem("provider")!)).toBe("instantsmeme");
+    expect(JSON.parse(localStorage.getItem("provider")!)).toBe("soundboardguy");
   });
 
   it("switches the global keys, when the bridge exists, with no preview", async () => {

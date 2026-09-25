@@ -21,7 +21,6 @@ let mockApiUrl: string | null = null;
 // tests never look at it, but it means a test that switches to Explorar
 // sees exactly what production would offer.
 const defaultProviders: ProviderInfo[] = [
-  { key: "instantsmeme", name: "InstantsMeme", supportsSearch: true, supportsRegion: false },
   { key: "myinstants", name: "MyInstants", supportsSearch: true, supportsRegion: true },
   { key: "soundboardguy", name: "SoundboardGuy", supportsSearch: true, supportsRegion: false },
   { key: "soundbuttons", name: "Sound Buttons", supportsSearch: true, supportsRegion: false }
@@ -858,7 +857,6 @@ describe("provider picker", () => {
     expect(tickedItem("MyInstants")).not.toBeNull();
     const menu = within(screen.getByRole("menu"));
     expect(menu.getByText("Sound Buttons")).toBeInTheDocument();
-    expect(menu.getByText("InstantsMeme")).toBeInTheDocument();
     expect(menu.getByText("SoundboardGuy")).toBeInTheDocument();
   });
 
