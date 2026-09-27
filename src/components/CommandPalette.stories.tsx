@@ -83,7 +83,12 @@ function candidates({ away, playing, organizing, noServer, os }: Scenario, curre
       item("settings", "Abrir Configurações", { icon: "sliders", sub: "Última seção aberta", keys: [mod(os), ","] }),
       item("find", "Focar a busca", { icon: "search", keys: [mod(os), "F"] }),
       item("import", "Importar favoritos", { icon: "upload", sub: "Dados e backup" }),
-      item("sheet", "Atalhos do teclado", { icon: "keyboard", keys: ["?"] })
+      item("sheet", "Atalhos do teclado", { icon: "keyboard", keys: ["?"] }),
+      ...(noServer
+        ? []
+        : away
+          ? [item("rejoin", "Chamar o bot para #geral", { icon: "join", sub: "Casa · último canal", keywords: "chamar voltar entrar canal voz bot join" })]
+          : [item("leave", "Tirar o bot de #geral", { icon: "leave", sub: "Casa · #geral", keywords: "sair tirar desconectar canal voz bot leave" })])
     ],
     defaultActions: 4,
     settings: [
@@ -252,6 +257,8 @@ export const CommandsOnly = story("Modo > · só ações e configurações", { i
 // ---- states of the bot, organizing and the server ----
 
 export const BotAway = story("Bot fora do canal · Enter apagado", { initialQuery: "bo", scenario: { away: true } });
+export const VoiceLeave = story("Canal de voz · tirar o bot", { initialQuery: "sair" });
+export const VoiceRejoin = story("Canal de voz · chamar de volta", { initialQuery: "chamar", scenario: { away: true } });
 export const Organizing = story("Organizar ligado · sons de fora", { scenario: { organizing: true } });
 export const NoServer = story("Sem servidor", { initialQuery: "servidor", scenario: { noServer: true } });
 
