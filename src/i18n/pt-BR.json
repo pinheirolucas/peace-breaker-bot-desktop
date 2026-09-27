@@ -197,7 +197,7 @@
     "invalid_body": "O bot não entendeu o pedido",
     "invalid_url": "Esse link não é válido",
     "instant_not_found": "Não encontramos esse instant",
-    "bot_not_connected": "O bot ainda não está em nenhum canal de voz. Mande !join no canal em que você quer que ele entre.",
+    "bot_not_connected": "O bot ainda não está em nenhum canal de voz. Entre em um e mande !join, ou use !join #canal.",
     "unsuported_audio_format": "Não dá para reproduzir o formato de áudio desse instant",
     "invalid_region": "Esse código de região não é válido",
     "provider_not_found": "Esse site não é suportado",
