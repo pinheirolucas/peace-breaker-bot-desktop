@@ -46,7 +46,6 @@ jobs:
             exit 1
           fi
 
-      # tsc is the only type check: Vite and tsup strip types without checking them.
       - name: Typecheck
         run: pnpm typecheck
 
