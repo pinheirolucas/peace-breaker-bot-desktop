@@ -26,13 +26,13 @@ describe("SaveForm", () => {
     renderForm();
 
     const name = screen.getByRole("textbox", { name: "Nome" });
-    expect(screen.queryByText("Mínimo 3 caracteres")).toBeNull();
+    expect(screen.queryByText("Use pelo menos 3 caracteres")).toBeNull();
 
     await user.type(name, "ab");
-    expect(screen.getByText("Mínimo 3 caracteres")).toBeInTheDocument();
+    expect(screen.getByText("Use pelo menos 3 caracteres")).toBeInTheDocument();
 
     await user.type(name, "c");
-    expect(screen.queryByText("Mínimo 3 caracteres")).toBeNull();
+    expect(screen.queryByText("Use pelo menos 3 caracteres")).toBeNull();
   });
 
   it("enables Salvar once both fields pass, and calls onSave with them", async () => {
@@ -59,7 +59,7 @@ describe("SaveForm", () => {
     await user.type(screen.getByRole("textbox", { name: "Nome" }), "ab{Enter}");
 
     expect(onSave).not.toHaveBeenCalled();
-    expect(screen.getByText("Mínimo 3 caracteres")).toBeInTheDocument();
+    expect(screen.getByText("Use pelo menos 3 caracteres")).toBeInTheDocument();
     expect(screen.getByText("Link inválido")).toBeInTheDocument();
   });
 

@@ -49,7 +49,7 @@ async function upload(user: UserEvent, file: File) {
 // so Importar is never offered against content that has not arrived.
 async function uploadParsed(user: UserEvent, file = jsonFile({ instants: incoming })) {
   await upload(user, file);
-  await screen.findByText("O que você deseja importar?");
+  await screen.findByText("O que você quer importar?");
 }
 
 // user-event replicates the file picker's own `accept` filtering, and
@@ -68,8 +68,8 @@ describe("ImportForm", () => {
     renderForm();
 
     expect(screen.getByText("Arraste o arquivo para cá")).toBeInTheDocument();
-    expect(screen.getByText("ou clique para escolher um do computador")).toBeInTheDocument();
-    expect(screen.queryByText("O que você deseja importar?")).toBeNull();
+    expect(screen.getByText("ou clique para escolher no computador")).toBeInTheDocument();
+    expect(screen.queryByText("O que você quer importar?")).toBeNull();
     expect(screen.getByRole("button", { name: "Importar" })).toBeDisabled();
   });
 
@@ -81,7 +81,7 @@ describe("ImportForm", () => {
 
     expect(await screen.findByText("config.json")).toBeInTheDocument();
     expect(await screen.findByText("2 instants no arquivo")).toBeInTheDocument();
-    expect(screen.getByText("O que você deseja importar?")).toBeInTheDocument();
+    expect(screen.getByText("O que você quer importar?")).toBeInTheDocument();
   });
 
   it("counts a single instant in the singular", async () => {
@@ -168,7 +168,7 @@ describe("ImportForm", () => {
 
     expect(await screen.findByText("Esse arquivo não serve")).toBeInTheDocument();
     expect(screen.getByText("Apenas arquivos .json são aceitos.")).toBeInTheDocument();
-    expect(screen.queryByText("O que você deseja importar?")).toBeNull();
+    expect(screen.queryByText("O que você quer importar?")).toBeNull();
   });
 
   it("reports a .json file whose contents are not valid JSON", async () => {
@@ -178,7 +178,7 @@ describe("ImportForm", () => {
     await upload(user, new File(["{ not json"], "config.json", { type: "application/json" }));
 
     expect(await screen.findByText("O conteúdo não é um JSON válido.")).toBeInTheDocument();
-    expect(screen.queryByText("O que você deseja importar?")).toBeNull();
+    expect(screen.queryByText("O que você quer importar?")).toBeNull();
   });
 
   // Pinned because the source carries a comment explaining it: react-dropzone

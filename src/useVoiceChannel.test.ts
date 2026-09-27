@@ -186,7 +186,7 @@ describe("useVoiceToasts", () => {
     await vi.waitFor(() => expect(show).toHaveBeenCalled());
 
     const toast = show.mock.lastCall![0];
-    expect(toast.message).toBe("O bot saiu de #geral. Paz restaurada.");
+    expect(toast.message).toBe("O bot saiu de #geral. A paz voltou.");
     expect(toast.actionLabel).toBe("Desfazer");
 
     await act(async () => toast.onAction());
@@ -199,7 +199,7 @@ describe("useVoiceToasts", () => {
     const { result } = renderHook(() => useVoiceToasts(voice({ lastChannel: null, action: { kind: "leave" } }), show, null));
 
     await act(async () => result.current.leave());
-    await vi.waitFor(() => expect(show).toHaveBeenCalledWith({ message: "O bot saiu do canal. Paz restaurada." }));
+    await vi.waitFor(() => expect(show).toHaveBeenCalledWith({ message: "O bot saiu do canal. A paz voltou." }));
   });
 
   it("translates a refusal by its label, and no answer as the connection error", async () => {

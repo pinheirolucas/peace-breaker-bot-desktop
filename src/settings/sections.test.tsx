@@ -188,7 +188,7 @@ describe("Servidor", () => {
     await userEvent.click(screen.getByRole("button", { name: "Remover bot.exemplo.dev:9001" }));
 
     expect(props.onRemove).toHaveBeenCalledWith(remote);
-    expect(screen.getByText("Adicionado à mão")).toBeInTheDocument();
+    expect(screen.getByText("Adicionado manualmente")).toBeInTheDocument();
   });
 
   it("has an empty state that says what to check, and a way to search again", async () => {
@@ -208,14 +208,14 @@ describe("Servidor", () => {
 
     const status = within(screen.getByRole("status"));
     expect(status.getByText("estudio:9001 não está respondendo")).toBeInTheDocument();
-    expect(status.getByText(/Os botões de tocar continuam ativos/)).toBeInTheDocument();
+    expect(status.getByText(/Os botões de reproduzir continuam ativos/)).toBeInTheDocument();
     expect(status.getByRole("button", { name: "Procurar novamente" })).toBeInTheDocument();
   });
 
   it("says when the bot is out of its channel, on a server that answers", () => {
     pane({ botStatus: { connected: false } });
 
-    expect(within(screen.getByRole("status")).getByText("bot fora de um canal de voz")).toBeInTheDocument();
+    expect(within(screen.getByRole("status")).getByText("bot fora do canal de voz")).toBeInTheDocument();
   });
 
   it("shows searching, and cannot be asked twice at once", () => {
@@ -340,14 +340,14 @@ describe("Explorar", () => {
     unmount();
     const props = pane({ provider: providers[1], regionSupported: false });
 
-    await userEvent.click(screen.getByRole("button", { name: "Restaurar padrão" }));
+    await userEvent.click(screen.getByRole("button", { name: "Restaurar padrões" }));
     expect(props.onReset).toHaveBeenCalledTimes(1);
   });
 
   it("disables Restaurar padrão at the defaults", () => {
     pane();
 
-    expect(screen.getByRole("button", { name: "Restaurar padrão" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Restaurar padrões" })).toBeDisabled();
   });
 
   it("offers no list, and says why, while the registry is unknown", () => {
@@ -548,7 +548,7 @@ describe("Barra de menus e Bandeja", () => {
     await userEvent.click(within(screen.getByRole("radiogroup", { name: "Estilo do acesso rápido" })).getByRole("radio", { name: "Conexão" }));
     expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ quickAccessStyle: "connection" }));
 
-    await userEvent.click(within(screen.getByRole("radiogroup", { name: "Ao clicar em um som" })).getByRole("radio", { name: "Enviar ao bot" }));
+    await userEvent.click(within(screen.getByRole("radiogroup", { name: "Ao clicar em um som" })).getByRole("radio", { name: "Reproduzir no Discord" }));
     expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ quickAccessClick: "discord" }));
   });
 

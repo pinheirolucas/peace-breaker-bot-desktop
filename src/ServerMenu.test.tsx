@@ -124,7 +124,7 @@ describe("ServerMenu", () => {
     renderMenu({ servers: [] });
 
     expect(screen.getByText("Nenhum servidor encontrado")).toBeInTheDocument();
-    expect(screen.getByText("A busca é bloqueada em muitas redes")).toBeInTheDocument();
+    expect(screen.getByText("Muitas redes bloqueiam a descoberta automática")).toBeInTheDocument();
   });
 
   it("calls onSelect with the clicked server, and keeps the menu open", async () => {
@@ -188,8 +188,8 @@ describe("ServerMenu", () => {
     it("shows a manual-section empty state distinct from the local one's discovery hint", () => {
       renderMenu({ servers: [] });
 
-      expect(screen.getByText("Nenhum servidor remoto adicionado")).toBeInTheDocument();
-      expect(screen.getAllByText("A busca é bloqueada em muitas redes")).toHaveLength(1);
+      expect(screen.getByText("Nenhum servidor remoto adicionado ainda")).toBeInTheDocument();
+      expect(screen.getAllByText("Muitas redes bloqueiam a descoberta automática")).toHaveLength(1);
     });
 
     it("shows a remove control only on a manually-added row", () => {
@@ -237,7 +237,7 @@ describe("ServerMenu", () => {
       });
 
       expect(
-        screen.getByRole("button", { name: "localhost:9001 · bot fora de um canal de voz" })
+        screen.getByRole("button", { name: "localhost:9001 · bot fora do canal de voz" })
       ).toBeInTheDocument();
     });
 
@@ -284,7 +284,7 @@ describe("ServerMenu", () => {
       });
 
       const header = screen.getByText("Conectado a").closest(".mhead")! as HTMLElement;
-      expect(within(header).getByText("bot fora de um canal de voz")).toBeInTheDocument();
+      expect(within(header).getByText("bot fora do canal de voz")).toBeInTheDocument();
     });
 
     it("shows the guild and channel as the header's second line once resolved", () => {
@@ -409,7 +409,7 @@ describe("ServerMenu voice row", () => {
 
     const row = screen.getByRole("menuitem", { name: /Chamar o bot/ });
     expect(row).toHaveAttribute("aria-disabled", "true");
-    expect(row).toHaveTextContent("Use !join no Discord uma vez e o app lembra o canal");
+    expect(row).toHaveTextContent("Mande !join no Discord uma vez e o app passa a lembrar do canal");
   });
 
   it("has no row without a voice action", () => {

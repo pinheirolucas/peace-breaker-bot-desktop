@@ -346,7 +346,7 @@ describe("MyInstantsPanel", () => {
     );
     expect(screen.getByRole("heading", { name: "O catálogo não carregou" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Tente novamente" }));
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
 
     expect(await screen.findByRole("article", { name: "Primeiro" })).toBeInTheDocument();
     expect(getInstants).toHaveBeenCalledTimes(2);
@@ -417,7 +417,7 @@ describe("MyInstantsPanel with a resolved provider", () => {
 
     renderPanel({ provider: soundButtons });
 
-    expect(await screen.findByText("O Sound Buttons não devolveu nenhum som.")).toBeInTheDocument();
+    expect(await screen.findByText("O Sound Buttons não retornou nenhum som.")).toBeInTheDocument();
   });
 
   it("names the active provider in the no-search-results message", async () => {
@@ -435,7 +435,7 @@ describe("MyInstantsPanel with a resolved provider", () => {
 
     renderPanel();
 
-    expect(await screen.findByText("O MyInstants não devolveu nenhum som.")).toBeInTheDocument();
+    expect(await screen.findByText("O MyInstants não retornou nenhum som.")).toBeInTheDocument();
   });
 });
 

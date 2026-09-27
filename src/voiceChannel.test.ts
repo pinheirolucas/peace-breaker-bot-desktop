@@ -163,10 +163,10 @@ describe("native menus", () => {
   it("uses title case in English", () => {
     const en = translatorFor("en-US");
     expect(labels(voiceMenuItems({ kind: "leave", channelName: "general" }, en, on()))).toEqual([
-      "Take the Bot Out of #general"
+      "Disconnect the Bot from #general"
     ]);
     expect(labels(voiceMenuItems({ kind: "rejoin", channelName: "general" }, en, on()))).toEqual([
-      "Call the Bot to #general"
+      "Bring the Bot Back to #general"
     ]);
   });
 
@@ -243,7 +243,7 @@ describe("native menus", () => {
 
     expect(labels(servidor).slice(0, 3)).toEqual([
       "192.168.0.5:9001",
-      "Bot fora de um canal de voz",
+      "Bot fora do canal de voz",
       "Chamar o bot para #geral"
     ]);
   });

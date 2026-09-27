@@ -49,7 +49,7 @@ export const SaveFormInvalid: StoryObj = {
       footer={<><Button variant="secondary">Cancelar</Button><Button disabled>Salvar</Button></>}
     >
       <div style={{ display: "grid", gap: 12 }}>
-        <Field label="Nome" defaultValue="Ri" error="Mínimo 3 caracteres" />
+        <Field label="Nome" defaultValue="Ri" error="Use pelo menos 3 caracteres" />
         <Field label="Link" placeholder="Cole o link aqui" error="Link inválido" />
       </div>
     </Dialog>
@@ -159,7 +159,7 @@ export const Toasts: StoryObj = {
       <Toast open onOpenChange={() => {}} duration={Infinity}
         message="Esse instant já está salvo como “Vish”" />
       <Toast open onOpenChange={() => {}} duration={Infinity}
-        message="O bot saiu de #geral. Paz restaurada." actionLabel="Desfazer" onAction={() => {}} />
+        message="O bot saiu de #geral. A paz voltou." actionLabel="Desfazer" onAction={() => {}} />
       <Toast open onOpenChange={() => {}} duration={Infinity}
         message="Chamando o bot para #geral…" />
       <Toast open onOpenChange={() => {}} duration={Infinity}

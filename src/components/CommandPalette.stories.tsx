@@ -73,7 +73,7 @@ function candidates({ away, playing, organizing, noServer, os }: Scenario, curre
     recents: organizing ? [] : clips.slice(0, 3).map(sound),
     sounds: organizing ? [] : clips.map(sound),
     playing: playing
-      ? item("stop", "Parar o som", { kind: "stop", icon: "stop", sub: "Tocando: Vine boom", keys: ["esc"], tag: "Tocando", keywords: "parar" })
+      ? item("stop", "Parar o som", { kind: "stop", icon: "stop", sub: "Reproduzindo: Vine boom", keys: ["esc"], tag: "Reproduzindo", keywords: "parar" })
       : undefined,
     explore: (query) => item("explore", `Buscar “${query}” em MyInstants`, { kind: "explore", icon: "compass", sub: "Explorar · leva o texto junto" }),
     actions: [
@@ -83,7 +83,7 @@ function candidates({ away, playing, organizing, noServer, os }: Scenario, curre
       item("settings", "Abrir Configurações", { icon: "sliders", sub: "Última seção aberta", keys: [mod(os), ","] }),
       item("find", "Focar a busca", { icon: "search", keys: [mod(os), "F"] }),
       item("import", "Importar favoritos", { icon: "upload", sub: "Dados e backup" }),
-      item("sheet", "Atalhos do teclado", { icon: "keyboard", keys: ["?"] }),
+      item("sheet", "Atalhos de teclado", { icon: "keyboard", keys: ["?"] }),
       ...(noServer
         ? []
         : away
@@ -247,7 +247,7 @@ export const NoMatch = story("Sem resultado", { initialQuery: "xyzzy" });
 
 // ---- one group each ----
 
-export const GroupPlaying = story("Grupo · Tocando agora", { scenario: { playing: true } });
+export const GroupPlaying = story("Grupo · Reproduzindo agora", { scenario: { playing: true } });
 export const GroupSounds = story("Grupo · Sons", { initialQuery: "b" });
 export const GroupActions = story("Grupo · Ações", { initialQuery: ">a" });
 export const GroupSettings = story("Grupo · Configurações (uma linha por seção)", { initialQuery: ">configurações ›" });

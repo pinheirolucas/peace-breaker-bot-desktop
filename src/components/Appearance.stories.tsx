@@ -91,7 +91,7 @@ function DemoApp() {
           <div className="toolbar__center">
             <div className="capsule">
               <SearchField
-                aria-label="Procurar um som"
+                aria-label="Buscar som"
                 placeholder={`Buscar em ${DEMO.length} favoritos`}
                 shortcut={["⌘", "F"]}
               />

@@ -8,7 +8,7 @@ describe("apiErrorMessage", () => {
     await i18n.changeLanguage("pt-BR");
     const err = new ApiError("instant_not_found", "some other backend wording");
 
-    expect(apiErrorMessage(i18n.t, err)).toBe("O instant enviado não foi encontrado");
+    expect(apiErrorMessage(i18n.t, err)).toBe("Não encontramos esse instant");
   });
 
   it("translates the same label differently once the language switches", async () => {

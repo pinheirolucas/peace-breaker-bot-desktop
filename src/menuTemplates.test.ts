@@ -74,8 +74,8 @@ describe("card menu", () => {
     const menu = cardMenu(card("idle"), deps());
 
     expect(labels(menu)).toEqual([
-      "Tocar aqui",
-      "Enviar ao Discord",
+      "Reproduzir aqui",
+      "Reproduzir no Discord",
       "-",
       "Copiar link do áudio",
       "Mostrar na pasta",
@@ -90,46 +90,46 @@ describe("card menu", () => {
   it("shows the favourite's key on the rows it triggers, read-only", () => {
     const menu = cardMenu(card("idle", { key: "a" }), deps());
 
-    expect(find(menu, "Enviar ao Discord")).toMatchObject({ accelerator: "A", registerAccelerator: false });
-    expect(find(menu, "Tocar aqui")).toMatchObject({ accelerator: "Shift+A", registerAccelerator: false });
-    expect(find(cardMenu(card("idle"), deps()), "Tocar aqui").accelerator).toBeUndefined();
+    expect(find(menu, "Reproduzir no Discord")).toMatchObject({ accelerator: "A", registerAccelerator: false });
+    expect(find(menu, "Reproduzir aqui")).toMatchObject({ accelerator: "Shift+A", registerAccelerator: false });
+    expect(find(cardMenu(card("idle"), deps()), "Reproduzir aqui").accelerator).toBeUndefined();
   });
 
   it("playing here: Parar with Esc, replay, Discord off, remove locked", () => {
     const menu = cardMenu(card("local", { key: "a" }), deps());
 
-    expect(labels(menu).slice(0, 3)).toEqual(["Parar", "Tocar de novo", "Enviar ao Discord"]);
+    expect(labels(menu).slice(0, 3)).toEqual(["Parar", "Reproduzir de novo", "Reproduzir no Discord"]);
     expect(find(menu, "Parar")).toMatchObject({ accelerator: "Esc", enabled: true });
-    expect(find(menu, "Tocar de novo").enabled).toBe(true);
-    expect(find(menu, "Enviar ao Discord").enabled).toBe(false);
+    expect(find(menu, "Reproduzir de novo").enabled).toBe(true);
+    expect(find(menu, "Reproduzir no Discord").enabled).toBe(false);
     expect(find(menu, "Remover dos favoritos").enabled).toBe(false);
   });
 
   it("playing on Discord: only this card is live, and there is no Discord row", () => {
     const menu = cardMenu(card("discord"), deps());
 
-    expect(labels(menu).slice(0, 2)).toEqual(["Parar no Discord", "Tocar aqui"]);
-    expect(find(menu, "Tocar aqui").enabled).toBe(false);
-    expect(menu.some((item) => item.label === "Enviar ao Discord")).toBe(false);
+    expect(labels(menu).slice(0, 2)).toEqual(["Parar no Discord", "Reproduzir aqui"]);
+    expect(find(menu, "Reproduzir aqui").enabled).toBe(false);
+    expect(menu.some((item) => item.label === "Reproduzir no Discord")).toBe(false);
   });
 
   it("another card playing disables both, without a bot reason", () => {
     const menu = cardMenu(card("idle", { otherPlaying: true }), deps());
 
-    expect(find(menu, "Tocar aqui").enabled).toBe(false);
-    expect(find(menu, "Enviar ao Discord")).toMatchObject({ enabled: false, sublabel: undefined });
+    expect(find(menu, "Reproduzir aqui").enabled).toBe(false);
+    expect(find(menu, "Reproduzir no Discord")).toMatchObject({ enabled: false, sublabel: undefined });
   });
 
   it("disables send only when the bot is known to be away, never when unknown", () => {
     const away = cardMenu(card("idle", { bot: { connected: false } as BotStatus }), deps());
-    expect(find(away, "Enviar ao Discord")).toMatchObject({ enabled: false, sublabel: "Bot fora de um canal de voz" });
-    expect(find(away, "Tocar aqui").enabled).toBe(true);
+    expect(find(away, "Reproduzir no Discord")).toMatchObject({ enabled: false, sublabel: "Bot fora do canal de voz" });
+    expect(find(away, "Reproduzir aqui").enabled).toBe(true);
 
     const unknown = cardMenu(card("idle", { bot: null }), deps());
-    expect(find(unknown, "Enviar ao Discord").enabled).toBe(true);
+    expect(find(unknown, "Reproduzir no Discord").enabled).toBe(true);
 
     const connected = cardMenu(card("idle", { bot: { connected: true } as BotStatus }), deps());
-    expect(find(connected, "Enviar ao Discord").enabled).toBe(true);
+    expect(find(connected, "Reproduzir no Discord").enabled).toBe(true);
   });
 
   it("offers Definir tecla only in Organizar", () => {
@@ -156,8 +156,8 @@ describe("card menu", () => {
   it("Explorar: the star toggle is named for its action, and Abrir names the provider", () => {
     const off = cardMenu(card("idle", { surface: "explore", favorite: false }), deps());
     expect(labels(off)).toEqual([
-      "Tocar aqui",
-      "Enviar ao Discord",
+      "Reproduzir aqui",
+      "Reproduzir no Discord",
       "-",
       "Adicionar aos favoritos",
       "-",
@@ -254,8 +254,8 @@ describe("grid menu", () => {
     const d = deps();
     const menu = gridMenu(explore(), d);
 
-    expect(labels(menu)).toEqual(["Recarregar listagem", "-", "Site", "Região", "-", "Restaurar padrão"]);
-    expect(find(menu, "Restaurar padrão").enabled).toBe(false);
+    expect(labels(menu)).toEqual(["Recarregar lista", "-", "Site", "Região", "-", "Restaurar padrões"]);
+    expect(find(menu, "Restaurar padrões").enabled).toBe(false);
 
     const site = find(menu, "Site").submenu as Item[];
     expect(site.map((i) => [i.label, i.type, i.checked])).toEqual([
@@ -277,7 +277,7 @@ describe("grid menu", () => {
   });
 
   it("enables Restaurar padrão once a filter differs", () => {
-    expect(find(gridMenu(explore({ filtersDefault: false }), deps()), "Restaurar padrão").enabled).toBe(true);
+    expect(find(gridMenu(explore({ filtersDefault: false }), deps()), "Restaurar padrões").enabled).toBe(true);
   });
 });
 
@@ -315,14 +315,14 @@ describe("server menus", () => {
 
   it("says the bot is out of a channel only when it is known to be", () => {
     expect(labels(serverMenu(connected({ botConnected: false, botChannel: null }), deps()))[1]).toBe(
-      "Bot fora de um canal de voz"
+      "Bot fora do canal de voz"
     );
     expect(labels(serverMenu(connected({ botConnected: null, botChannel: null }), deps()))).not.toContain(
-      "Bot fora de um canal de voz"
+      "Bot fora do canal de voz"
     );
     // A silent server shows no bot line at all.
     expect(labels(serverMenu(connected({ healthy: false, botConnected: false }), deps()))).not.toContain(
-      "Bot fora de um canal de voz"
+      "Bot fora do canal de voz"
     );
   });
 
@@ -506,11 +506,11 @@ describe("menu bar", () => {
   it("Reprodução: card items follow focus, and Enviar is off only for a known-away bot", () => {
     const items = (patch: Partial<MenuState>) => sub(top("darwin", patch), "Reprodução");
 
-    expect(find(items({}), "Tocar no cartão em foco").enabled).toBe(false);
-    expect(find(items({ focusedCard: true }), "Tocar no cartão em foco").enabled).toBe(true);
-    expect(find(items({ focusedCard: true, botConnected: null }), "Enviar cartão em foco ao Discord").enabled).toBe(true);
-    expect(find(items({ focusedCard: true, botConnected: false }), "Enviar cartão em foco ao Discord").enabled).toBe(false);
-    expect(find(items({ focusedCard: true }), "Tocar no cartão em foco").registerAccelerator).toBe(false);
+    expect(find(items({}), "Reproduzir o som selecionado").enabled).toBe(false);
+    expect(find(items({ focusedCard: true }), "Reproduzir o som selecionado").enabled).toBe(true);
+    expect(find(items({ focusedCard: true, botConnected: null }), "Reproduzir o som selecionado no Discord").enabled).toBe(true);
+    expect(find(items({ focusedCard: true, botConnected: false }), "Reproduzir o som selecionado no Discord").enabled).toBe(false);
+    expect(find(items({ focusedCard: true }), "Reproduzir o som selecionado").registerAccelerator).toBe(false);
   });
 
   it("mirrors the global keys switch, and Atalhos globais… opens Configurações on Atalhos", () => {
@@ -537,8 +537,8 @@ describe("menu bar", () => {
 
     expect(find(view("explore"), "Explorar").checked).toBe(true);
     expect(find(view("explore"), "Favoritos").checked).toBe(false);
-    expect(find(view("explore"), "Recarregar listagem").enabled).toBe(true);
-    expect(find(view("favorites"), "Recarregar listagem").enabled).toBe(false);
+    expect(find(view("explore"), "Recarregar lista").enabled).toBe(true);
+    expect(find(view("favorites"), "Recarregar lista").enabled).toBe(false);
     expect(find(view("explore"), "Organizar favoritos").enabled).toBe(false);
     expect(find(view("favorites"), "Organizar favoritos").enabled).toBe(true);
   });

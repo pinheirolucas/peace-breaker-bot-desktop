@@ -150,7 +150,7 @@ describe("FavoritesPanel", () => {
     const user = userEvent.setup();
     renderPanel({ instants: [] });
 
-    expect(screen.getByRole("heading", { name: "Sem sons ainda" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Nenhum som ainda" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Adicionar um instant" }));
 
     expect(screen.getByRole("dialog", { name: "Adicionar instant" })).toBeInTheDocument();
@@ -169,11 +169,11 @@ describe("FavoritesPanel", () => {
 
     expect(screen.getByRole("heading", { name: "Nada por aqui" })).toBeInTheDocument();
     expect(
-      screen.getByText("Nenhum dos seus 2 favoritos bate com “terceiro”. O catálogo do MyInstants é bem maior.")
+      screen.getByText("Nenhum dos seus 2 favoritos bate com “terceiro”. No Explorar tem muito mais.")
     ).toBeInTheDocument();
     expect(screen.queryByRole("article")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Procurar “terceiro” no MyInstants" }));
+    await user.click(screen.getByRole("button", { name: "Buscar “terceiro” no Explorar" }));
 
     expect(onSearchCatalog).toHaveBeenCalledTimes(1);
   });
@@ -229,7 +229,7 @@ describe("FavoritesPanel", () => {
     const save = dialog.getByRole("button", { name: "Salvar" });
 
     await user.type(dialog.getByLabelText("Nome"), "ab");
-    expect(dialog.getByText("Mínimo 3 caracteres")).toBeInTheDocument();
+    expect(dialog.getByText("Use pelo menos 3 caracteres")).toBeInTheDocument();
     expect(save).toBeDisabled();
 
     await user.type(dialog.getByLabelText("Link"), "https://www.myinstants.com/c/");
@@ -237,7 +237,7 @@ describe("FavoritesPanel", () => {
 
     await user.type(dialog.getByLabelText("Nome"), "c");
     expect(save).toBeEnabled();
-    expect(dialog.queryByText("Mínimo 3 caracteres")).toBeNull();
+    expect(dialog.queryByText("Use pelo menos 3 caracteres")).toBeNull();
   });
 
   it("plays a clip locally with the content the backend hands back", async () => {
@@ -279,7 +279,7 @@ describe("FavoritesPanel", () => {
 
   it("surfaces a Discord playback failure as a snackbar", async () => {
     const user = userEvent.setup();
-    vi.mocked(playOnDiscord).mockRejectedValue(new Error("O instant enviado não foi encontrado"));
+    vi.mocked(playOnDiscord).mockRejectedValue(new Error("Não encontramos esse instant"));
 
     const { snackbar } = renderPanel();
 
@@ -287,7 +287,7 @@ describe("FavoritesPanel", () => {
 
     await waitFor(() => {
       expect(snackbar.openSnackbar).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "O instant enviado não foi encontrado" })
+        expect.objectContaining({ message: "Não encontramos esse instant" })
       );
     });
   });
@@ -398,7 +398,7 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
 
   it("carries the backend message out of a failed discord send", async () => {
     const user = userEvent.setup();
-    vi.mocked(playOnDiscord).mockRejectedValue(new Error("O instant enviado não foi encontrado"));
+    vi.mocked(playOnDiscord).mockRejectedValue(new Error("Não encontramos esse instant"));
 
     const { snackbar } = renderPanel();
 
@@ -406,7 +406,7 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
 
     await waitFor(() => expect(snackbar.openSnackbar).toHaveBeenCalled());
     expect(snackbar.openSnackbar.mock.calls[0][0].message).toBe(
-      "O instant enviado não foi encontrado"
+      "Não encontramos esse instant"
     );
   });
 
@@ -462,7 +462,7 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
       expect(field).toHaveValue("Primeiro");
       await user.clear(field);
       await user.type(field, "Br");
-      expect(dialog.getByText("Mínimo 3 caracteres")).toBeInTheDocument();
+      expect(dialog.getByText("Use pelo menos 3 caracteres")).toBeInTheDocument();
       expect(save).toBeDisabled();
 
       await user.type(field, "uxaria");

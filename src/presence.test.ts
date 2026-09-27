@@ -284,11 +284,11 @@ describe("tray menu", () => {
 
   it("says what is going on, in the order that matters", () => {
     expect(statusLine(snap(), t)).toBe("Nenhum servidor encontrado");
-    expect(statusLine(snap({ server, bot: inChannel, playing }), t)).toBe("Tocando: Vine boom");
+    expect(statusLine(snap({ server, bot: inChannel, playing }), t)).toBe("Reproduzindo: Vine boom");
     expect(statusLine(snap({ server }), t)).toBe("Verificando o servidor…");
-    expect(statusLine(snap({ server, silent: true }), t)).toBe("Servidor não está respondendo");
+    expect(statusLine(snap({ server, silent: true }), t)).toBe("O servidor não está respondendo");
     expect(statusLine(snap({ server, bot: { connected: false } }), t)).toBe(
-      "bot fora de um canal de voz"
+      "bot fora do canal de voz"
     );
     expect(statusLine(snap({ server, bot: { connected: true } }), t)).toBe("Bot em um canal de voz");
   });

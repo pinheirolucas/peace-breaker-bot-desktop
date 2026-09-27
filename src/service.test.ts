@@ -81,13 +81,13 @@ describe("playOnDiscord", () => {
       http.post(`${apiUrl}/bot/play`, () =>
         errorAtStatus(400, {
           label: "instant_not_found",
-          message: "O instant enviado não foi encontrado"
+          message: "Não encontramos esse instant"
         })
       )
     );
 
     await expect(playOnDiscord("https://www.myinstants.com/a/")).rejects.toThrow(
-      "O instant enviado não foi encontrado"
+      "Não encontramos esse instant"
     );
   });
 
@@ -97,7 +97,7 @@ describe("playOnDiscord", () => {
     );
 
     await expect(playOnDiscord("https://www.myinstants.com/a/")).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 
@@ -105,7 +105,7 @@ describe("playOnDiscord", () => {
     server.use(http.post(`${apiUrl}/bot/play`, () => HttpResponse.error()));
 
     await expect(playOnDiscord("https://www.myinstants.com/a/")).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 
@@ -134,12 +134,12 @@ describe("playOnDiscord", () => {
   it("surfaces the backend message when the error arrives with HTTP 200", async () => {
     server.use(
       http.post(`${apiUrl}/bot/play`, () =>
-        errorAt200("instant_not_found", "O instant enviado não foi encontrado")
+        errorAt200("instant_not_found", "Não encontramos esse instant")
       )
     );
 
     await expect(playOnDiscord("https://www.myinstants.com/a/")).rejects.toThrow(
-      "O instant enviado não foi encontrado"
+      "Não encontramos esse instant"
     );
   });
 
@@ -149,7 +149,7 @@ describe("playOnDiscord", () => {
     );
 
     await expect(playOnDiscord("https://www.myinstants.com/a/")).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 });
@@ -158,14 +158,14 @@ describe("ApiError", () => {
   it("carries the backend's label alongside its message", async () => {
     server.use(
       http.post(`${apiUrl}/bot/play`, () =>
-        errorAt200("instant_not_found", "O instant enviado não foi encontrado")
+        errorAt200("instant_not_found", "Não encontramos esse instant")
       )
     );
 
     await expect(playOnDiscord("x")).rejects.toBeInstanceOf(ApiError);
     await expect(playOnDiscord("x")).rejects.toMatchObject({
       label: "instant_not_found",
-      message: "O instant enviado não foi encontrado"
+      message: "Não encontramos esse instant"
     });
   });
 
@@ -298,7 +298,7 @@ describe("getContent", () => {
     );
 
     await expect(getContent("https://www.myinstants.com/a/")).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 });
@@ -338,7 +338,7 @@ describe("getBotStatus", () => {
     );
 
     await expect(getBotStatus()).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 });
@@ -471,11 +471,11 @@ describe("getInstants", () => {
   it("throws the backend message when the region is refused", async () => {
     server.use(
       http.get(`${apiUrl}/instants`, () =>
-        errorAt200("invalid_region", "A região enviada é inválida")
+        errorAt200("invalid_region", "Esse código de região não é válido")
       )
     );
 
-    await expect(getInstants(1, "", "zz")).rejects.toThrow("A região enviada é inválida");
+    await expect(getInstants(1, "", "zz")).rejects.toThrow("Esse código de região não é válido");
   });
 
   it("falls back to the generic message when the error body carries none", async () => {
@@ -484,7 +484,7 @@ describe("getInstants", () => {
     );
 
     await expect(getInstants(1)).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 
@@ -507,7 +507,7 @@ describe("getInstants", () => {
     );
 
     await expect(getInstants(1)).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 
@@ -515,7 +515,7 @@ describe("getInstants", () => {
     server.use(http.get(`${apiUrl}/instants`, () => HttpResponse.json({})));
 
     await expect(getInstants(1)).rejects.toThrow(
-      "Erro desconhecido, tente novamente mais tarde"
+      "Algo deu errado. Tente de novo daqui a pouco."
     );
   });
 
@@ -541,7 +541,7 @@ describe("getProviders", () => {
   it("throws the backend message on a real error status", async () => {
     server.use(http.get(`${apiUrl}/providers`, () => errorAtStatus(500, {})));
 
-    await expect(getProviders()).rejects.toThrow("Erro desconhecido, tente novamente mais tarde");
+    await expect(getProviders()).rejects.toThrow("Algo deu errado. Tente de novo daqui a pouco.");
   });
 });
 
@@ -571,7 +571,7 @@ describe("api base url", () => {
       );
 
       await expect(getInstants(1)).rejects.toThrow(
-        "Erro desconhecido, tente novamente mais tarde"
+        "Algo deu errado. Tente de novo daqui a pouco."
       );
 
       expect(hit).toBe(false);
@@ -897,7 +897,7 @@ describe("testServer", () => {
 
     await expect(testServer(candidate)).rejects.toMatchObject({
       label: null,
-      message: "Erro desconhecido, tente novamente mais tarde"
+      message: "Algo deu errado. Tente de novo daqui a pouco."
     });
   });
 

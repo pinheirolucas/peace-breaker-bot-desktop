@@ -14,7 +14,7 @@ const grid = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))"
 export const FirstLaunch: StoryObj = {
   render: () => (
     <EmptyState
-      title="Sem sons ainda"
+      title="Nenhum som ainda"
       body="Cole o link de um instant, ou vá ao MyInstants e favorite os que você usa toda hora."
       action={<Button>Adicionar um instant</Button>}
     />
@@ -25,8 +25,8 @@ export const NoResults: StoryObj = {
   render: () => (
     <EmptyState
       title="Nada por aqui"
-      body="Nenhum dos seus 12 favoritos bate com “xuxa”. O catálogo do MyInstants é bem maior."
-      action={<Button variant="secondary">Procurar “xuxa” no MyInstants</Button>}
+      body="Nenhum dos seus 12 favoritos bate com “xuxa”. No Explorar tem muito mais."
+      action={<Button variant="secondary">Buscar “xuxa” no Explorar</Button>}
     />
   )
 };
