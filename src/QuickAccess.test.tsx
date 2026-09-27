@@ -302,6 +302,9 @@ describe("QuickAccess", () => {
       setPlaying: vi.fn(),
       setSettings: vi.fn(),
       stop,
+      leave: vi.fn(),
+      rejoin: vi.fn(),
+      seedLastChannel: vi.fn(),
       onSnapshot: (listener) => {
         listener(snap({ bot: { connected: true }, playing }));
         return () => {};
