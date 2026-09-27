@@ -4,6 +4,7 @@
 // data-testid in production the way createSvgIcon does.
 
 import type { SVGProps } from "react";
+import appMark from "../../assets/icon/fita-win.svg";
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number;
@@ -160,15 +161,9 @@ export function CloseIcon({ size = 16, ...rest }: IconProps) {
   );
 }
 
-/** The app mark in the Windows title bar — a cassette, matching Fita. */
-export function AppMarkIcon({ size = 15, ...rest }: IconProps) {
-  return (
-    <svg {...base(size)} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...rest}>
-      <path d="M9 18V6l10-2v12" />
-      <circle cx="6.5" cy="18" r="2.6" />
-      <circle cx="16.5" cy="16" r="2.6" />
-    </svg>
-  );
+/** The app icon, the Fita tile Windows shows (assets/icon/fita-win.svg), for the title bar and the Settings sidebar. */
+export function AppMarkIcon({ size = 16 }: { size?: number }) {
+  return <img src={appMark} width={size} height={size} alt="" draggable={false} />;
 }
 
 /**
