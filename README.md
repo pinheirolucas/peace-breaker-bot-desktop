@@ -4,12 +4,13 @@ Desktop app (Electron + React, built with Vite) for browsing, favoriting, and pl
 
 ## Features
 
-- **Favorites**: save clips, and play/remove them.
-- **MyInstants browser**: paginated search of myinstants.com, with a star toggle to favorite results.
-- Play a clip locally, or send it to the Discord bot to play in a voice channel — mutually exclusive per panel.
-- Light/dark theme toggle.
-- Import/export all app data (favorites, theme) as a JSON file.
-- Runs as an Electron desktop app, which discovers the backend on the network automatically.
+- **Favoritos and Explorar**: save clips, and browse or search several sites (MyInstants, SoundboardGuy, Sound Buttons) with a region filter where the site supports one.
+- Play a clip locally, or send it to the Discord bot to play in a voice channel.
+- **Keys**: give a favourite a key to play it, with optional global keys that work while another app has focus, plus a command palette (Cmd/Ctrl+K).
+- **Appearance**: eight palettes, each in auto, light or dark.
+- **Servers**: finds the backend on the network automatically, or add one by address. The server chip in the toolbar shows its health and the bot's voice status.
+- **Tray and quick access**: a tray menu and a small quick-access window for playing favourites without the main window.
+- **Configurações**: a settings window, plus import/export of favourites and settings as a JSON file.
 
 ## Requirements
 
@@ -42,7 +43,7 @@ then open http://localhost:3000.
 
 ### Backend connection
 
-There is no default backend address. The Electron app finds it automatically via mDNS discovery, or you pick it from the server menu in the tools row if more than one is on the network. A plain web browser tab has no discovery and no way to enter an address by hand, so it currently has no way to connect to anything — use the Electron app.
+There is no default backend address. The Electron app finds the backend automatically through mDNS, and you pick between servers from the server chip in the toolbar. When discovery can't see it (multicast blocked, another network), add the server by address from the same menu or from Configurações.
 
 ## Building
 
@@ -58,6 +59,7 @@ Packaged builds are published to GitHub releases and picked up automatically by 
 ```bash
 pnpm react-start   # Vite dev server only, at http://localhost:3000
 pnpm react-test    # run the test suite (Vitest, watch mode)
+pnpm typecheck     # tsc --noEmit, the only type check
 pnpm react-build   # production build to build/
 ```
 

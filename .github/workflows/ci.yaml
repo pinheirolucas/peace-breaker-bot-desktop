@@ -39,8 +39,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck
+        run: pnpm typecheck
+
       - name: Test
         run: pnpm react-test run
+
+      - name: Compile Electron
+        run: pnpm electron-compile
 
       - name: Build
         run: pnpm react-build

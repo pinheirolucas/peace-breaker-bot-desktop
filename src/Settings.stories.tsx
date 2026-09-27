@@ -44,7 +44,6 @@ const remote: Server = { ...estudio, id: "remote", apiUrl: "https://bot.exemplo.
 
 const providers: ProviderInfo[] = [
   { key: "myinstants", name: "MyInstants", supportsSearch: true, supportsRegion: true },
-  { key: "instantsmeme", name: "Instants.meme", supportsSearch: true, supportsRegion: false },
   { key: "soundboardguy", name: "Soundboard Guy", supportsSearch: true, supportsRegion: false },
   { key: "soundbuttons", name: "Sound Buttons", supportsSearch: true, supportsRegion: false }
 ];
@@ -280,7 +279,7 @@ export const ServerManual = story("Servidor · com um endereço manual", { secti
 
 export const ExploreNoRegion = story(
   "Explorar · site sem país",
-  { section: "explore", scenario: { provider: "instantsmeme" } },
+  { section: "explore", scenario: { provider: "soundbuttons" } },
   "The country is dimmed and disabled with its reason when the site has no catalogue by country."
 );
 

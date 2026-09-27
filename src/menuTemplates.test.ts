@@ -238,7 +238,7 @@ describe("grid menu", () => {
       tab: "explore",
       providers: [
         { key: "myinstants", name: "MyInstants" },
-        { key: "instants.meme", name: "instants.meme" }
+        { key: "soundbuttons", name: "Sound Buttons" }
       ],
       provider: "myinstants",
       regionSupported: true,
@@ -260,11 +260,11 @@ describe("grid menu", () => {
     const site = find(menu, "Site").submenu as Item[];
     expect(site.map((i) => [i.label, i.type, i.checked])).toEqual([
       ["MyInstants", "radio", true],
-      ["instants.meme", "radio", false]
+      ["Sound Buttons", "radio", false]
     ]);
 
     (site[1].click as () => void)();
-    expect(d.send).toHaveBeenCalledWith({ type: "provider", key: "instants.meme" });
+    expect(d.send).toHaveBeenCalledWith({ type: "provider", key: "soundbuttons" });
 
     const region = find(menu, "Região").submenu as Item[];
     (region[1].click as () => void)();

@@ -187,7 +187,13 @@
     "bad_http_status": "That provider's site answered with an error",
     "total_pages_count": "Couldn't read the page count from that provider's site",
     "name_link_not_matched": "That provider's results couldn't be read — its page layout may have changed",
-    "unknown_error": "Something went wrong. Try again in a moment"
+    "unknown_error": "Something went wrong. Try again in a moment",
+    "bot_not_ready": "The bot is still starting up. Try again in a moment",
+    "channel_not_found": "That voice channel couldn't be found",
+    "owner_not_in_voice": "The bot's owner isn't in a voice channel the bot can see",
+    "owner_unknown": "The bot hasn't seen its owner yet. Send it any message on Discord, then try again",
+    "not_voice_channel": "That channel isn't a voice channel",
+    "voice_join_failed": "The bot couldn't connect to that voice channel"
   },
   "rename": {
     "title": "Rename sound",
@@ -587,7 +593,7 @@
       },
       "site": {
         "title": "Catalogue site",
-        "hint": "MyInstants, Instants.meme and others"
+        "hint": "MyInstants, SoundboardGuy and others"
       },
       "country": {
         "title": "Catalogue country",

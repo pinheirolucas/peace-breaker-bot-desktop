@@ -286,7 +286,7 @@ describe("Servidor", () => {
 describe("Explorar", () => {
   const providers = [
     { key: "myinstants", name: "MyInstants", supportsSearch: true, supportsRegion: true },
-    { key: "instantsmeme", name: "Instants.meme", supportsSearch: true, supportsRegion: false }
+    { key: "soundboardguy", name: "SoundboardGuy", supportsSearch: true, supportsRegion: false }
   ];
 
   function pane(patch: Partial<React.ComponentProps<typeof ExplorePane>> = {}) {
@@ -311,10 +311,10 @@ describe("Explorar", () => {
     const sites = within(screen.getByRole("radiogroup", { name: "Site do catálogo" }));
     expect(sites.getByRole("radio", { name: /MyInstants/ })).toBeChecked();
     expect(within(sites.getByRole("radio", { name: /MyInstants/ })).getByText("país")).toBeInTheDocument();
-    expect(within(sites.getByRole("radio", { name: /Instants\.meme/ })).queryByText("país")).toBeNull();
+    expect(within(sites.getByRole("radio", { name: /SoundboardGuy/ })).queryByText("país")).toBeNull();
 
-    await userEvent.click(sites.getByRole("radio", { name: /Instants\.meme/ }));
-    expect(props.onProvider).toHaveBeenCalledWith("instantsmeme");
+    await userEvent.click(sites.getByRole("radio", { name: /SoundboardGuy/ }));
+    expect(props.onProvider).toHaveBeenCalledWith("soundboardguy");
   });
 
   it("picks a country from the curated list", async () => {

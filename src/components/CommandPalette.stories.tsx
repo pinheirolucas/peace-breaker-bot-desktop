@@ -91,7 +91,7 @@ function candidates({ away, playing, organizing, noServer, os }: Scenario, curre
       item("palette", "Paleta", { kind: "drill", icon: "palette", sub: "Aparência · prévia ao vivo", keywords: "tema cores" }),
       ...modes.map(([id, label]) => item(`mode:${id}`, `Modo: ${label}`, { kind: "setting", icon: "moon", sub: "Aparência", keywords: "modo escuro claro tema", current: current.mode === id, preview: { mode: id } })),
       item("lang:en", "Idioma: English", { kind: "setting", icon: "globe", sub: "Geral", keywords: "language" }),
-      item("site:instants", "Site do Explorar: InstantsMeme", { kind: "setting", icon: "compass", sub: "Explorar" }),
+      item("site:instants", "Site do Explorar: SoundboardGuy", { kind: "setting", icon: "compass", sub: "Explorar" }),
       item("global", "Ligar teclas globais", { kind: "setting", icon: "keyboard", sub: "Atalhos", keywords: "teclas globais" })
     ],
     servers: noServer

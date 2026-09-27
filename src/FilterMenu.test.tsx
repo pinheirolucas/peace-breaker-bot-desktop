@@ -9,7 +9,7 @@ import type { ProviderInfo } from "./service";
 
 const providers: ProviderInfo[] = [
   { key: "myinstants", name: "MyInstants", supportsSearch: true, supportsRegion: true },
-  { key: "instantsmeme", name: "Instants.meme", supportsSearch: true, supportsRegion: false }
+  { key: "soundboardguy", name: "SoundboardGuy", supportsSearch: true, supportsRegion: false }
 ];
 
 function props(patch: Partial<FilterMenuProps> = {}): FilterMenuProps {
