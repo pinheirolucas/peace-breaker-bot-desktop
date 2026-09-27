@@ -8,6 +8,10 @@ import { Field } from "./Field";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "./Menu";
 import { RadioGroup } from "./Radio";
 import { ServerChip } from "./ServerChip";
+import ServerMenuView, { VoiceMenuItem } from "../ServerMenu";
+import type { Server } from "../../electron/discovery";
+import type { VoiceAction } from "../../electron/presence";
+import type { BotStatus } from "../service";
 import { Switch } from "./Switch";
 import { Toast, ToastProvider } from "./Toast";
 
@@ -154,6 +158,12 @@ export const Toasts: StoryObj = {
         message="Não foi possível falar com localhost:9001" actionLabel="Trocar" onAction={() => {}} />
       <Toast open onOpenChange={() => {}} duration={Infinity}
         message="Esse instant já está salvo como “Vish”" />
+      <Toast open onOpenChange={() => {}} duration={Infinity}
+        message="O bot saiu de #geral. Paz restaurada." actionLabel="Desfazer" onAction={() => {}} />
+      <Toast open onOpenChange={() => {}} duration={Infinity}
+        message="Chamando o bot para #geral…" />
+      <Toast open onOpenChange={() => {}} duration={Infinity}
+        message="O bot não está em um canal de voz." actionLabel="Chamar para #geral" onAction={() => {}} />
     </ToastProvider>
   )
 };
@@ -165,6 +175,7 @@ export const ServerMenu: StoryObj = {
         Conectado a <b>bot.exemplo.com:9001</b>
         <span className="msub">bot fora de um canal de voz</span>
       </div>
+      <VoiceMenuItem voice={{ kind: "none" }} />
       <MenuSeparator />
       <MenuLabel>Rede local</MenuLabel>
       <MenuItem tick={null} primary="192.168.0.12:9001" secondary="macbook · este computador" />
@@ -197,4 +208,53 @@ export const ProviderMenu: StoryObj = {
       <MenuItem tick={null} primary="SoundboardGuy" />
     </Menu>
   )
+};
+
+const voiceServers: Server[] = [
+  { id: "a", apiUrl: "http://192.168.0.12:9001/api/v1", address: "192.168.0.12", port: 9001, hostname: "macbook", isLocal: true }
+];
+
+function VoiceServerMenu({ botStatus, voice }: { botStatus: BotStatus; voice: VoiceAction }) {
+  return (
+    <ServerMenuView
+      servers={voiceServers}
+      currentApiUrl="http://192.168.0.12:9001/api/v1"
+      healthy
+      botStatus={botStatus}
+      open
+      onOpenChange={() => {}}
+      onSelect={() => {}}
+      onRefresh={() => {}}
+      onAddServer={() => {}}
+      onRemoveServer={() => {}}
+      voice={voice}
+      onLeave={() => {}}
+      onRejoin={() => {}}
+    />
+  );
+}
+
+/** The row under the header takes the bot out of the channel the header names. */
+export const ServerMenuLeave: StoryObj = {
+  name: "Server menu · take the bot out",
+  render: () => (
+    <VoiceServerMenu
+      botStatus={{ connected: true, guildName: "Casa", channelId: "1", channelName: "geral" }}
+      voice={{ kind: "leave", channelName: "geral" }}
+    />
+  )
+};
+
+/** With the bot out, the same row calls it back to the last channel the app saw. */
+export const ServerMenuRejoin: StoryObj = {
+  name: "Server menu · call the bot back",
+  render: () => (
+    <VoiceServerMenu botStatus={{ connected: false }} voice={{ kind: "rejoin", channelName: "geral", guildName: "Casa" }} />
+  )
+};
+
+/** Nothing remembered yet: disabled, saying what unblocks it. */
+export const ServerMenuNothingRemembered: StoryObj = {
+  name: "Server menu · nothing to call back",
+  render: () => <VoiceServerMenu botStatus={{ connected: false }} voice={{ kind: "none" }} />
 };

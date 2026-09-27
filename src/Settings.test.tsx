@@ -234,7 +234,7 @@ describe("Settings, the window", () => {
     window.instantsPlatform = { os: "mac", chrome: "custom", setChrome: vi.fn() };
     window.instantsShortcuts = { modifiers: ["ctrl-alt", "ctrl-shift"], setGlobal: vi.fn().mockResolvedValue({ registered: [], failed: [] }), onFired: () => () => undefined };
     window.instantsQuickAccess = { action: vi.fn(), setShortcut: vi.fn().mockResolvedValue({ registered: [], failed: [] }), onShown: () => () => undefined };
-    window.instantsPresence = { setServer: vi.fn(), setPlaying: vi.fn(), setSettings: vi.fn(), stop: vi.fn(), onSnapshot: () => () => undefined };
+    window.instantsPresence = { setServer: vi.fn(), setPlaying: vi.fn(), setSettings: vi.fn(), stop: vi.fn(), leave: vi.fn(), rejoin: vi.fn(), seedLastChannel: vi.fn(), onSnapshot: () => () => undefined };
     window.instantsMenu = { setState: vi.fn(), onCommand: vi.fn(() => () => undefined), cardContext: vi.fn(), gridContext: vi.fn(), serverContext: vi.fn(), serverRowContext: vi.fn(), selectionContext: vi.fn() };
     window.instantsDiscovery = { onServers: () => () => undefined, refresh: vi.fn() };
   }

@@ -68,6 +68,28 @@
     "notResponding": "não está respondendo",
     "settings": "Configurações do servidor…"
   },
+  "voice": {
+    "leave": "Tirar o bot de #{{channelName}}",
+    "leaveUnnamed": "Tirar o bot do canal",
+    "rejoin": "Chamar o bot para #{{channelName}}",
+    "rejoinUnnamed": "Chamar o bot para o último canal",
+    "rejoinWhere": "{{guildName}} · último canal",
+    "rejoinWhereUnnamed": "Último canal",
+    "rejoinNone": "Chamar o bot",
+    "rejoinNoneHint": "Use !join no Discord uma vez e o app lembra o canal",
+    "left": "O bot saiu de #{{channelName}}. Paz restaurada.",
+    "leftUnnamed": "O bot saiu do canal. Paz restaurada.",
+    "rejoining": "Chamando o bot para #{{channelName}}…",
+    "rejoiningUnnamed": "Chamando o bot para o último canal…",
+    "rejoined": "O bot voltou para #{{channelName}}.",
+    "rejoinedUnnamed": "O bot voltou para o último canal.",
+    "rejoinAction": "Chamar para #{{channelName}}",
+    "rejoinActionUnnamed": "Chamar o bot",
+    "away": "O bot não está em um canal de voz.",
+    "undo": "Desfazer",
+    "leaveWords": "sair tirar desconectar canal voz bot leave kick disconnect",
+    "rejoinWords": "chamar voltar entrar canal voz bot join rejoin call"
+  },
   "save": {
     "title": "Adicionar instant",
     "description": "Cole o link de um som do myinstants.com e dê um nome que você reconheça.",
@@ -330,7 +352,11 @@
       "copy": "Copiar endereço",
       "copyAddress": "Copiar endereço do servidor",
       "refresh": "Procurar novamente",
-      "add": "Adicionar servidor…"
+      "add": "Adicionar servidor…",
+      "leave": "Tirar o bot de #{{channelName}}",
+      "leaveUnnamed": "Tirar o bot do canal",
+      "rejoin": "Chamar o bot para #{{channelName}}",
+      "rejoinUnnamed": "Chamar o bot para o último canal"
     },
     "window": {
       "title": "Janela",
@@ -742,6 +768,7 @@
     "appliedSite": "Explorar agora usa {{site}}",
     "globalOnToast": "Teclas globais ligadas",
     "globalOffToast": "Teclas globais desligadas",
-    "appliedServer": "Conectado a {{address}}"
+    "appliedServer": "Conectado a {{address}}",
+    "voiceSub": "Canal de voz"
   }
 }

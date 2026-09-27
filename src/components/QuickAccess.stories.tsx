@@ -5,7 +5,11 @@ import type { PresenceSnapshot } from "../../electron/presence";
 import type { Server } from "../../electron/discovery";
 import type { Instant } from "../storage";
 import type { Playback } from "./InstantCard";
-import { MenuItem } from "./Menu";
+import { MoreIcon } from "../icons";
+import { VoiceMenuItem } from "../ServerMenu";
+import type { VoiceAction } from "../../electron/presence";
+import { IconButton } from "./Button";
+import { Menu, MenuItem, MenuSeparator } from "./Menu";
 import { PresenceStrip } from "./PresenceStrip";
 import { QuickAccessConnection, QuickAccessFavorites } from "./QuickAccessViews";
 import type { QuickAccessFavoritesProps } from "./QuickAccessViews";
@@ -187,4 +191,29 @@ export const ConexaoSilent: StoryObj = {
 export const ConexaoBotAway: StoryObj = {
   name: "Conexão · bot out of its channel",
   render: () => <Connection state={snapshot({ bot: { connected: false } })} />
+};
+
+/** The strip's ⋯ menu, open: the leave or rejoin row comes first. */
+function MoreMenu({ voice }: { voice: VoiceAction }) {
+  return (
+    <Menu open trigger={<IconButton label="Mais"><MoreIcon /></IconButton>}>
+      <VoiceMenuItem voice={voice} onLeave={noop} onRejoin={noop} />
+      <MenuSeparator />
+      <MenuItem primary="Abrir Peace Breaker Bot" />
+      <MenuItem primary="Procurar servidor novamente" />
+      <MenuSeparator />
+      <MenuItem primary="Configurações…" />
+      <MenuItem primary="Sair" />
+    </Menu>
+  );
+}
+
+export const MoreMenuLeave: StoryObj = {
+  name: "⋯ menu · take the bot out",
+  render: () => <MoreMenu voice={{ kind: "leave", channelName: "geral" }} />
+};
+
+export const MoreMenuRejoin: StoryObj = {
+  name: "⋯ menu · call the bot back",
+  render: () => <MoreMenu voice={{ kind: "rejoin", channelName: "geral", guildName: "Casa" }} />
 };

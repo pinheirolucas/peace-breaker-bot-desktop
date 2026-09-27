@@ -5,13 +5,13 @@
 
 import type { MenuItemConstructorOptions } from "electron";
 import type { Translate } from "./menuI18n";
-import { statusLine, statusTone } from "./presence";
+import { statusLine, statusTone, voiceAction } from "./presence";
 import type { StatusTone } from "./presence";
 import type { PresenceSnapshot } from "./presence";
 
-export type TrayAction = "stop" | "open-quick-access" | "open-app" | "refresh";
+export type TrayAction = "stop" | "open-quick-access" | "open-app" | "refresh" | "leave" | "rejoin";
 
-/** The `--action=` values a second launch (Jump List, desktop entry) may carry. */
+/** The `--action=` values a second launch (Jump List, desktop entry) may carry. Leave and rejoin are menu rows only. */
 const actionArg = /^--action=(stop|open-quick-access|open-panel|open-app|refresh)$/;
 
 export function actionFromArgv(argv: readonly string[]): TrayAction | null {
@@ -62,6 +62,7 @@ export function trayMenu(
   items.push(
     { type: "separator" },
     { label: t("presence.stop"), enabled: snapshot.playing !== null, click: on.stop },
+    ...voiceMenuItems(voiceAction(snapshot.server, snapshot.bot, snapshot.lastChannel), t, on),
     { label: t("presence.refresh"), click: on.refresh }
   );
 
@@ -70,6 +71,40 @@ export function trayMenu(
   }
 
   return items;
+}
+
+/**
+ * The leave or rejoin row of a native menu. A native row has no second line
+ * to say why it is unavailable, so with nothing remembered it is left out.
+ */
+export function voiceMenuItems(
+  action: ReturnType<typeof voiceAction>,
+  t: Translate,
+  on: { leave: () => void; rejoin: () => void }
+): MenuItemConstructorOptions[] {
+  if (action?.kind === "leave") {
+    return [
+      {
+        label: action.channelName
+          ? t("menu.server.leave", { channelName: action.channelName })
+          : t("menu.server.leaveUnnamed"),
+        click: on.leave
+      }
+    ];
+  }
+
+  if (action?.kind === "rejoin") {
+    return [
+      {
+        label: action.channelName
+          ? t("menu.server.rejoin", { channelName: action.channelName })
+          : t("menu.server.rejoinUnnamed"),
+        click: on.rejoin
+      }
+    ];
+  }
+
+  return [];
 }
 
 export interface JumpListTask {

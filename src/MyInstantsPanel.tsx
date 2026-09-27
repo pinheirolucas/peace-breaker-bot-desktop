@@ -12,6 +12,7 @@ import { StarIcon } from "./icons";
 import { apiErrorMessage } from "./i18n/apiError";
 import type { Region } from "./regions";
 import SnackbarContext from "./SnackbarContext";
+import VoiceContext from "./VoiceContext";
 import { getContent, getInstants } from "./service";
 import type { BotStatus } from "./service";
 import { useInstantsState } from "./storage";
@@ -78,6 +79,7 @@ export default function MyInstantsPanel({
   const [discordUrl, isDiscordPlaying, playDiscord, stopDiscord] = useDiscordPlayer();
   const [favorites, setFavorites] = useInstantsState([]);
   const { openSnackbar } = useContext(SnackbarContext);
+  const { botAway } = useContext(VoiceContext);
 
   // Held in a ref so the listing effect does not refire whenever the
   // provider hands down a new function identity.
@@ -191,7 +193,7 @@ export default function MyInstantsPanel({
     names.current.set(instant.url, instant.name);
     const error = await playDiscord(instant.url);
     if (error) {
-      openSnackbar({ message: apiErrorMessage(t, error) });
+      openSnackbar(botAway(error) ?? { message: apiErrorMessage(t, error) });
     }
   }
 

@@ -374,3 +374,47 @@ describe("ServerMenu", () => {
     });
   });
 });
+
+describe("ServerMenu voice row", () => {
+  it("takes the bot out of the channel the header names", async () => {
+    const onLeave = vi.fn();
+    renderMenu({
+      botStatus: { connected: true, guildName: "Casa", channelId: "1", channelName: "geral" },
+      voice: { kind: "leave", channelName: "geral" },
+      onLeave
+    });
+
+    await userEvent.click(screen.getByRole("menuitem", { name: "Tirar o bot de #geral" }));
+
+    expect(onLeave).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls the bot back to the last channel, saying it is the last one", async () => {
+    const onRejoin = vi.fn();
+    renderMenu({
+      botStatus: { connected: false },
+      voice: { kind: "rejoin", channelName: "geral", guildName: "Casa" },
+      onRejoin
+    });
+
+    const row = screen.getByRole("menuitem", { name: /Chamar o bot para #geral/ });
+    expect(row).toHaveTextContent("Casa · último canal");
+    await userEvent.click(row);
+
+    expect(onRejoin).toHaveBeenCalledTimes(1);
+  });
+
+  it("says what unblocks it when nothing is remembered", () => {
+    renderMenu({ botStatus: { connected: false }, voice: { kind: "none" } });
+
+    const row = screen.getByRole("menuitem", { name: /Chamar o bot/ });
+    expect(row).toHaveAttribute("aria-disabled", "true");
+    expect(row).toHaveTextContent("Use !join no Discord uma vez e o app lembra o canal");
+  });
+
+  it("has no row without a voice action", () => {
+    renderMenu({ botStatus: { connected: true } });
+
+    expect(screen.queryByRole("menuitem", { name: /Tirar o bot|Chamar o bot/ })).toBeNull();
+  });
+});

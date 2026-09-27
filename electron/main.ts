@@ -36,13 +36,19 @@ import { createClipStore } from "./clipStore";
 import {
   isPlayingReport,
   isPresenceSettings,
+  lastChannelFrom,
+  presenceLastChannelChannel,
+  presenceLeaveChannel,
   presencePlayingChannel,
+  presenceRejoinChannel,
   presenceServerChannel,
   presenceSettingsChannel,
   presenceSnapshotChannel,
   presenceStopChannel,
-  serverUrl
+  serverUrl,
+  voiceAction
 } from "./presence";
+import type { VoiceResult } from "./presence";
 import { createPresenceHost } from "./presenceHost";
 import { createQuickAccessWindow } from "./quickAccessWindow";
 import { createSettingsWindow } from "./settingsWindow";
@@ -405,6 +411,11 @@ function menuDeps(): MenuDeps {
     send: (command: MenuCommand) => sendToWindow(menuCommandChannel, command),
     copy: (text) => clipboard.writeText(text),
     openSettings,
+    voice: {
+      action: currentVoiceAction(),
+      leave: () => void presence.leave(),
+      rejoin: () => void presence.rejoin()
+    },
     // Only https ever reaches the shell; the url may come from a stored favourite.
     reveal: (request) => {
       void clips.prepare(request).then((file) => {
@@ -417,6 +428,21 @@ function menuDeps(): MenuDeps {
     }
   };
 }
+
+function currentVoiceAction() {
+  const { server, bot, lastChannel } = presence.snapshot();
+  return voiceAction(server, bot, lastChannel);
+}
+
+// The Servidor menu's leave or rejoin row reads main's own record, so the bar
+// follows it too, rebuilt only when that row would change.
+let barVoice = "";
+presence.onChange(() => {
+  const next = JSON.stringify(currentVoiceAction());
+  if (next === barVoice) return;
+  barVoice = next;
+  rebuildMenuBar();
+});
 
 /**
  * The menu bar, rebuilt from the state the renderer reports. On macOS it is
@@ -772,6 +798,22 @@ ipcMain.on(presencePlayingChannel, (event, report: unknown) => {
 
 ipcMain.on(presenceStopChannel, (event) => {
   if (fromAppWindow(event)) presence.stop();
+});
+
+ipcMain.handle(presenceLeaveChannel, (event): Promise<VoiceResult> | VoiceResult => {
+  if (!fromAppWindow(event)) return { ok: false, offline: false, label: null };
+  return presence.leave();
+});
+
+ipcMain.handle(presenceRejoinChannel, (event): Promise<VoiceResult> | VoiceResult => {
+  if (!fromAppWindow(event)) return { ok: false, offline: false, label: null };
+  return presence.rejoin();
+});
+
+// Only the main window stores the last channel, so only it hands it back.
+ipcMain.on(presenceLastChannelChannel, (event, stored: unknown) => {
+  const lastChannel = lastChannelFrom(stored);
+  if (fromMainWindow(event) && lastChannel) presence.seedLastChannel(lastChannel);
 });
 
 ipcMain.on(presenceSettingsChannel, (event, settings: unknown) => {

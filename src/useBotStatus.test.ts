@@ -120,6 +120,9 @@ describe("useBotStatus under Electron", () => {
       setPlaying: vi.fn(),
       setSettings: vi.fn(),
       stop: vi.fn(),
+      leave: vi.fn(),
+      rejoin: vi.fn(),
+      seedLastChannel: vi.fn(),
       onSnapshot: (listener: (snapshot: never) => void) => {
         push = listener as (snapshot: unknown) => void;
         return () => {};

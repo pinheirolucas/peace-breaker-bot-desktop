@@ -15,6 +15,11 @@ const POLL_MS = 8000;
  * applies to server discovery (see CLAUDE.md).
  */
 export default function useBotStatus(apiUrl: string | null): BotStatus | null {
+  return useBotStatusState(apiUrl)[0];
+}
+
+/** The same, with a setter for an answer that already carries the status (leave, join). Only a plain browser tab needs it. */
+export function useBotStatusState(apiUrl: string | null): [BotStatus | null, (status: BotStatus | null) => void] {
   const [status, setStatus] = useState<BotStatus | null>(null);
   // Under Electron the main process makes the one poll for every window and
   // broadcasts it; a plain browser tab has no bridge and polls for itself.
@@ -58,5 +63,5 @@ export default function useBotStatus(apiUrl: string | null): BotStatus | null {
 
   // The snapshot may lag a server switch by one broadcast: until it has
   // caught up, the last server's answer must not stand.
-  return status;
+  return [status, setStatus];
 }

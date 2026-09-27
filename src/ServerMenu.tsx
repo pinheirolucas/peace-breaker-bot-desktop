@@ -3,8 +3,9 @@ import type { Server } from "../electron/discovery";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "./components/Menu";
 import { menuBridge } from "./hooks/useMenuBridge";
 import { ServerChip } from "./components/ServerChip";
-import { CheckIcon, CloseIcon, PlusIcon, RefreshIcon } from "./icons";
+import { CheckIcon, CloseIcon, JoinIcon, LeaveIcon, PlusIcon, RefreshIcon } from "./icons";
 import type { BotStatus } from "./service";
+import type { VoiceAction } from "../electron/presence";
 
 export function formatApiUrl(url: string): string {
   try {
@@ -38,6 +39,50 @@ export interface ServerMenuProps {
   onRemoveServer: (server: Server) => void;
   /** The way into Configurações › Servidor, for what a pick cannot do. */
   onOpenSettings?: () => void;
+  /** The leave or rejoin row under the header; absent, there is none. */
+  voice?: VoiceAction;
+  onLeave?: () => void;
+  onRejoin?: () => void;
+}
+
+/** The row under the header that takes the bot out of its channel or calls it back to the last one. */
+export function VoiceMenuItem({
+  voice,
+  onLeave,
+  onRejoin
+}: {
+  voice: VoiceAction;
+  onLeave?: () => void;
+  onRejoin?: () => void;
+}) {
+  const { t } = useTranslation();
+
+  if (voice?.kind === "leave") {
+    return (
+      <MenuItem
+        tick={<LeaveIcon />}
+        primary={voice.channelName ? t("voice.leave", { channelName: voice.channelName }) : t("voice.leaveUnnamed")}
+        onSelect={onLeave}
+      />
+    );
+  }
+
+  if (voice?.kind === "rejoin") {
+    return (
+      <MenuItem
+        tick={<JoinIcon />}
+        primary={voice.channelName ? t("voice.rejoin", { channelName: voice.channelName }) : t("voice.rejoinUnnamed")}
+        secondary={voice.guildName ? t("voice.rejoinWhere", { guildName: voice.guildName }) : t("voice.rejoinWhereUnnamed")}
+        onSelect={onRejoin}
+      />
+    );
+  }
+
+  if (voice?.kind === "none") {
+    return <MenuItem disabled tick={<JoinIcon />} primary={t("voice.rejoinNone")} secondary={t("voice.rejoinNoneHint")} />;
+  }
+
+  return null;
 }
 
 /** The header's second line: which of the bot's channel, "not in a
@@ -83,7 +128,10 @@ export default function ServerMenu({
   onRefresh,
   onAddServer,
   onRemoveServer,
-  onOpenSettings
+  onOpenSettings,
+  voice = null,
+  onLeave,
+  onRejoin
 }: ServerMenuProps) {
   const { t } = useTranslation();
   const current = currentApiUrl ? formatApiUrl(currentApiUrl) : null;
@@ -143,6 +191,7 @@ export default function ServerMenu({
             {t("server.connectedTo")} <b>{current}</b>
             {sub && <span className="msub">{sub}</span>}
           </div>
+          <VoiceMenuItem voice={voice} onLeave={onLeave} onRejoin={onRejoin} />
           <MenuSeparator />
         </>
       )}

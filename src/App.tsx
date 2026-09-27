@@ -74,7 +74,9 @@ import { THEMES } from "./themes";
 import type { ColorMode } from "./themes";
 import { isLanguageId } from "./i18n/detect";
 import { useQuickAccessShortcut } from "./hooks/useQuickAccessShortcut";
-import useBotStatus from "./useBotStatus";
+import { useBotStatusState } from "./useBotStatus";
+import useVoiceChannel, { useVoiceToasts } from "./useVoiceChannel";
+import VoiceContext from "./VoiceContext";
 import { usePresenceSettings, useReportPlaying, useReportPresenceSettings } from "./hooks/usePresence";
 import useProviders from "./useProviders";
 import "./styles/shell.css";
@@ -218,7 +220,8 @@ export default function App() {
   const [activeUrl, setActiveUrl] = useState<string | null>(getApiUrl());
   const [healthy, setHealthy] = useState<boolean>(isHealthy);
   const healthyRef = useRef<boolean>(isHealthy());
-  const botStatus = useBotStatus(activeUrl);
+  const [botStatus, setBotStatus] = useBotStatusState(activeUrl);
+  const voice = useVoiceChannel(activeUrl, botStatus, { owner: true, onStatus: setBotStatus });
   const providers = useProviders(activeUrl);
   const { provider, setProvider } = useProvider(providers);
   // Unknown (still loading, or an old backend with no /providers route)
@@ -484,6 +487,9 @@ export default function App() {
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, [showToast, t]);
 
+  const voiceToasts = useVoiceToasts(voice, showToast, activeUrl ? formatApiUrl(activeUrl) : null);
+  const voiceContext = useMemo(() => ({ botAway: voiceToasts.botAway }), [voiceToasts.botAway]);
+
   const openSnackbar = useCallback(
     (options: SnackbarOptions) => {
       // While unreachable, the connection toast is the accurate one — and a
@@ -661,7 +667,12 @@ export default function App() {
         : []),
       action("import", t("app.import"), "upload", t("settings.sections.data"), "importar backup restaurar import", () => setImportOpen(true)),
       action("export", t("app.export"), "download", t("settings.sections.data"), "exportar backup salvar export", () => exportToJSON()),
-      action("sheet", t("shortcuts.sheet.title"), "keyboard", t("menu.help.title"), "atalhos teclas lista ajuda shortcuts", () => setSheetOpen(true), ["?"])
+      action("sheet", t("shortcuts.sheet.title"), "keyboard", t("menu.help.title"), "atalhos teclas lista ajuda shortcuts", () => setSheetOpen(true), ["?"]),
+      ...(voice.action?.kind === "leave"
+        ? [action("leave", voice.action.channelName ? t("voice.leave", { channelName: voice.action.channelName }) : t("voice.leaveUnnamed"), "leave", botLine(healthy, botStatus, t) ?? t("palette.voiceSub"), t("voice.leaveWords"), voiceToasts.leave)]
+        : voice.action?.kind === "rejoin"
+          ? [action("rejoin", voice.action.channelName ? t("voice.rejoin", { channelName: voice.action.channelName }) : t("voice.rejoinUnnamed"), "join", voice.action.guildName ? t("voice.rejoinWhere", { guildName: voice.action.guildName }) : t("voice.rejoinWhereUnnamed"), t("voice.rejoinWords"), voiceToasts.rejoin)]
+          : [])
     ];
 
     const sectionRow = (id: SettingsSection, label: string, icon: string): PaletteItem => ({
@@ -1013,286 +1024,291 @@ export default function App() {
 
   return (
     <SnackbarContext.Provider value={snackbar}>
-      <TooltipProvider>
-        <ToastProvider>
-          <SegmentedRoot value={tab} onChange={setTab} className="app" rootRef={appRef}>
-            <AppearanceStage open={editing}>
-              <header
-                className="toolbar"
-                data-tab={tab}
-                data-scrolled={scrolled || undefined}
-                data-organizing={organizing || undefined}
-              >
-                <div className="toolbar__start">
-                  {os === "win" && chrome === "custom" && (
-                    <span className="toolbar__brand" aria-hidden="true">
-                      <AppMarkIcon />
-                      <span className="toolbar__name">Peace Breaker Bot</span>
-                    </span>
-                  )}
-                  <Segmented aria-label={t("app.sectionAriaLabel")} options={tabs} />
-                </div>
+      <VoiceContext.Provider value={voiceContext}>
+        <TooltipProvider>
+          <ToastProvider>
+            <SegmentedRoot value={tab} onChange={setTab} className="app" rootRef={appRef}>
+              <AppearanceStage open={editing}>
+                <header
+                  className="toolbar"
+                  data-tab={tab}
+                  data-scrolled={scrolled || undefined}
+                  data-organizing={organizing || undefined}
+                >
+                  <div className="toolbar__start">
+                    {os === "win" && chrome === "custom" && (
+                      <span className="toolbar__brand" aria-hidden="true">
+                        <AppMarkIcon />
+                        <span className="toolbar__name">Peace Breaker Bot</span>
+                      </span>
+                    )}
+                    <Segmented aria-label={t("app.sectionAriaLabel")} options={tabs} />
+                  </div>
 
-                <div className="toolbar__center">
-                  {organizing ? (
-                    <span className="toolbar__hint" aria-hidden="true">
+                  <div className="toolbar__center">
+                    {organizing ? (
+                      <span className="toolbar__hint" aria-hidden="true">
+                        {summary}
+                      </span>
+                    ) : showSearch ? (
+                      <div className="capsule">
+                        {tab === "explore" && !foldActions && <FilterMenu {...filterProps} />}
+                        <SearchField
+                          ref={searchRef}
+                          aria-label={t("app.searchAriaLabel")}
+                          data-ctx="search"
+                          placeholder={
+                            tab === "favorites"
+                              ? t("app.searchInFavorites", { count: favorites.length })
+                              : t("app.searchInProvider", {
+                                  provider: provider?.name ?? DEFAULT_PROVIDER_NAME
+                                })
+                          }
+                          shortcut={shortcutParts(os, "F")}
+                          value={query}
+                          onChange={(event) => handleSearchChange(event.target.value)}
+                        />
+                      </div>
+                    ) : null}
+                    {/* The count that used to be the hero's second line. It is
+                        still announced; it is drawn only in the window title. */}
+                    <span className="sr-only" aria-live="polite">
                       {summary}
                     </span>
-                  ) : showSearch ? (
-                    <div className="capsule">
-                      {tab === "explore" && !foldActions && <FilterMenu {...filterProps} />}
-                      <SearchField
-                        ref={searchRef}
-                        aria-label={t("app.searchAriaLabel")}
-                        data-ctx="search"
-                        placeholder={
-                          tab === "favorites"
-                            ? t("app.searchInFavorites", { count: favorites.length })
-                            : t("app.searchInProvider", {
-                                provider: provider?.name ?? DEFAULT_PROVIDER_NAME
-                              })
-                        }
-                        shortcut={shortcutParts(os, "F")}
-                        value={query}
-                        onChange={(event) => handleSearchChange(event.target.value)}
+                  </div>
+
+                  <div className="toolbar__end">
+                    {tab === "favorites" && organizing && (
+                      <Button
+                        className="done"
+                        aria-label={t("favorites.organizeDone")}
+                        onClick={() => setOrganizing(false)}
+                      >
+                        <CheckIcon />
+                        <span className="lbl">{t("favorites.organizeDone")}</span>
+                      </Button>
+                    )}
+                    {tab === "favorites" && !organizing && !foldActions && (
+                      <AddMenu
+                        onAdd={() => setAddOpen(true)}
+                        onOrganize={() => setOrganizing(true)}
+                        onImport={() => setImportOpen(true)}
+                        onExport={() => exportToJSON()}
+                        canOrganize={favorites.length > 0}
+                        organizeBlockedReason={organizeBlockedReason}
+                        shortcut={shortcutLabel(os, "n")}
+                      />
+                    )}
+                    <div className="toolbar__chip">
+                      <ServerMenu
+                        servers={servers}
+                        currentApiUrl={activeUrl}
+                        healthy={healthy}
+                        botStatus={botStatus}
+                        open={serverMenuOpen}
+                        onOpenChange={setServerMenuOpen}
+                        onSelect={(server) => setSelectedServer(server.apiUrl)}
+                        onRefresh={refreshDiscovery}
+                        onOpenSettings={() => openSettings("server")}
+                        onAddServer={() => setAddServerOpen(true)}
+                        onRemoveServer={removeManualServer}
+                        voice={voice.action}
+                        onLeave={voiceToasts.leave}
+                        onRejoin={voiceToasts.rejoin}
                       />
                     </div>
-                  ) : null}
-                  {/* The count that used to be the hero's second line. It is
-                      still announced; it is drawn only in the window title. */}
-                  <span className="sr-only" aria-live="polite">
-                    {summary}
-                  </span>
-                </div>
+                    <div className="toolbar__more">
+                      <Menu
+                        className={foldActions && tab === "explore" ? "menu--scroll" : undefined}
+                        onCloseAutoFocus={(event) => {
+                          // The server item closes this menu to open the
+                          // picker. Focus going back to the button in between
+                          // would dismiss the picker the moment it opens.
+                          if (openServerNext.current) {
+                            event.preventDefault();
+                            openServerNext.current = false;
+                            setServerMenuOpen(true);
+                          }
+                        }}
+                        trigger={
+                          <IconButton label={t("app.moreOptions")} data-attention={attention ? (healthy ? "bot" : "down") : undefined}>
+                            {os === "linux" ? <MenuIcon /> : <MoreIcon />}
+                          </IconButton>
+                        }
+                      >
+                        {foldActions && tab === "favorites" && (
+                          <>
+                            <MenuItem
+                              primary={t("app.add")}
+                              hint={shortcutParts(os, "n")}
+                              onSelect={() => setAddOpen(true)}
+                            />
+                            {favorites.length > 0 && (
+                              <MenuItem
+                                primary={t("favorites.organize")}
+                                secondary={organizeBlockedReason ?? undefined}
+                                disabled={organizeBlockedReason !== null}
+                                onSelect={() => setOrganizing(true)}
+                              />
+                            )}
+                            <MenuItem primary={t("app.import")} onSelect={() => setImportOpen(true)} />
+                            <MenuItem primary={t("app.export")} onSelect={() => exportToJSON()} />
+                            <MenuSeparator />
+                          </>
+                        )}
+                        {foldActions && tab === "explore" && hasFilters(filterProps) && (
+                          <>
+                            <FilterMenuItems {...filterProps} />
+                            <MenuSeparator />
+                          </>
+                        )}
+                        {tier === "tight" && (
+                          <>
+                            <MenuItem
+                              tick={
+                                <span
+                                  className="dot"
+                                  data-healthy={healthy}
+                                  data-bot-away={healthy && botStatus?.connected === false}
+                                />
+                              }
+                              primary={serverAddress ?? t("server.none")}
+                              secondary={serverStatus ?? undefined}
+                              onSelect={() => {
+                                openServerNext.current = true;
+                              }}
+                            />
+                            <MenuSeparator />
+                          </>
+                        )}
+                        <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
+                        <MenuItem
+                          primary={t("app.settings")}
+                          hint={shortcutParts(os, ",")}
+                          onSelect={() => openSettings()}
+                        />
+                        <MenuItem
+                          primary={t("shortcuts.sheet.title")}
+                          hint={["?"]}
+                          onSelect={() => setSheetOpen(true)}
+                        />
+                      </Menu>
+                    </div>
+                  </div>
+                </header>
 
-                <div className="toolbar__end">
-                  {tab === "favorites" && organizing && (
-                    <Button
-                      className="done"
-                      aria-label={t("favorites.organizeDone")}
-                      onClick={() => setOrganizing(false)}
-                    >
-                      <CheckIcon />
-                      <span className="lbl">{t("favorites.organizeDone")}</span>
-                    </Button>
-                  )}
-                  {tab === "favorites" && !organizing && !foldActions && (
-                    <AddMenu
-                      onAdd={() => setAddOpen(true)}
-                      onOrganize={() => setOrganizing(true)}
-                      onImport={() => setImportOpen(true)}
-                      onExport={() => exportToJSON()}
-                      canOrganize={favorites.length > 0}
-                      organizeBlockedReason={organizeBlockedReason}
-                      shortcut={shortcutLabel(os, "n")}
-                    />
-                  )}
-                  <div className="toolbar__chip">
-                    <ServerMenu
-                      servers={servers}
-                      currentApiUrl={activeUrl}
+                <main
+                  className="scroll"
+                  onScroll={(event) => {
+                    const next = event.currentTarget.scrollTop > 4;
+                    setScrolled((current) => (current === next ? current : next));
+                  }}
+                >
+                  {/* Stays mounted, hidden, on Explorar so its keys keep working. */}
+                  <SegmentedPanel value="favorites" forceMount hidden={tab !== "favorites"}>
+                    <FavoritesPanel
+                      search={search}
                       healthy={healthy}
                       botStatus={botStatus}
-                      open={serverMenuOpen}
-                      onOpenChange={setServerMenuOpen}
-                      onSelect={(server) => setSelectedServer(server.apiUrl)}
-                      onRefresh={refreshDiscovery}
-                      onOpenSettings={() => openSettings("server")}
-                      onAddServer={() => setAddServerOpen(true)}
-                      onRemoveServer={removeManualServer}
-                    />
-                  </div>
-                  <div className="toolbar__more">
-                    <Menu
-                      className={foldActions && tab === "explore" ? "menu--scroll" : undefined}
-                      onCloseAutoFocus={(event) => {
-                        // The server item closes this menu to open the
-                        // picker. Focus going back to the button in between
-                        // would dismiss the picker the moment it opens.
-                        if (openServerNext.current) {
-                          event.preventDefault();
-                          openServerNext.current = false;
-                          setServerMenuOpen(true);
-                        }
-                      }}
-                      trigger={
-                        <IconButton label={t("app.moreOptions")} data-attention={attention ? (healthy ? "bot" : "down") : undefined}>
-                          {os === "linux" ? <MenuIcon /> : <MoreIcon />}
-                        </IconButton>
+                      serverAddress={serverAddress}
+                      onSwitchServer={openServerMenu}
+                      onSummary={setSummary}
+                      addOpen={addOpen}
+                      onAddOpenChange={setAddOpen}
+                      onSearchCatalog={() => setTab("explore")}
+                      organizing={organizing}
+                      onOrganizingChange={setOrganizing}
+                      onPlayingChange={setFavoritesPlaying}
+                      onPlaybackChange={reportFavorites}
+                      active={tab === "favorites"}
+                      controlsRef={favoritesControls}
+                      onGlobalStatus={setGlobalStatus}
+                      onGlobalSetupFailed={(count) =>
+                        showToast({
+                          message: t("shortcuts.global.failedToast", { count }),
+                          actionLabel: t("shortcuts.global.see"),
+                          onAction: () => setSheetOpen(true)
+                        })
                       }
-                    >
-                      {foldActions && tab === "favorites" && (
-                        <>
-                          <MenuItem
-                            primary={t("app.add")}
-                            hint={shortcutParts(os, "n")}
-                            onSelect={() => setAddOpen(true)}
-                          />
-                          {favorites.length > 0 && (
-                            <MenuItem
-                              primary={t("favorites.organize")}
-                              secondary={organizeBlockedReason ?? undefined}
-                              disabled={organizeBlockedReason !== null}
-                              onSelect={() => setOrganizing(true)}
-                            />
-                          )}
-                          <MenuItem primary={t("app.import")} onSelect={() => setImportOpen(true)} />
-                          <MenuItem primary={t("app.export")} onSelect={() => exportToJSON()} />
-                          <MenuSeparator />
-                        </>
-                      )}
-                      {foldActions && tab === "explore" && hasFilters(filterProps) && (
-                        <>
-                          <FilterMenuItems {...filterProps} />
-                          <MenuSeparator />
-                        </>
-                      )}
-                      {tier === "tight" && (
-                        <>
-                          <MenuItem
-                            tick={
-                              <span
-                                className="dot"
-                                data-healthy={healthy}
-                                data-bot-away={healthy && botStatus?.connected === false}
-                              />
-                            }
-                            primary={serverAddress ?? t("server.none")}
-                            secondary={serverStatus ?? undefined}
-                            onSelect={() => {
-                              openServerNext.current = true;
-                            }}
-                          />
-                          <MenuSeparator />
-                        </>
-                      )}
-                      <MenuItem primary={t("app.appearance")} onSelect={appearance.begin} />
-                      <MenuItem
-                        primary={t("app.settings")}
-                        hint={shortcutParts(os, ",")}
-                        onSelect={() => openSettings()}
-                      />
-                      <MenuItem
-                        primary={t("shortcuts.sheet.title")}
-                        hint={["?"]}
-                        onSelect={() => setSheetOpen(true)}
-                      />
-                    </Menu>
-                  </div>
-                </div>
-              </header>
+                    />
+                  </SegmentedPanel>
+                  <SegmentedPanel value="explore">
+                    <MyInstantsPanel
+                      search={search}
+                      region={region}
+                      provider={provider ?? undefined}
+                      healthy={healthy}
+                      botStatus={botStatus}
+                      serverAddress={serverAddress}
+                      onSwitchServer={openServerMenu}
+                      onSummary={setSummary}
+                      onClearSearch={clearSearch}
+                      onPlaybackChange={reportExplore}
+                    />
+                  </SegmentedPanel>
+                </main>
+              </AppearanceStage>
 
-              <main
-                className="scroll"
-                onScroll={(event) => {
-                  const next = event.currentTarget.scrollTop > 4;
-                  setScrolled((current) => (current === next ? current : next));
-                }}
-              >
-                {/* Stays mounted, hidden, on Explorar so its keys keep working. */}
-                <SegmentedPanel value="favorites" forceMount hidden={tab !== "favorites"}>
-                  <FavoritesPanel
-                    search={search}
-                    healthy={healthy}
-                    botStatus={botStatus}
-                    serverAddress={serverAddress}
-                    onSwitchServer={openServerMenu}
-                    onSummary={setSummary}
-                    addOpen={addOpen}
-                    onAddOpenChange={setAddOpen}
-                    onSearchCatalog={() => setTab("explore")}
-                    organizing={organizing}
-                    onOrganizingChange={setOrganizing}
-                    onPlayingChange={setFavoritesPlaying}
-                    onPlaybackChange={reportFavorites}
-                    active={tab === "favorites"}
-                    controlsRef={favoritesControls}
-                    onGlobalStatus={setGlobalStatus}
-                    onGlobalSetupFailed={(count) =>
-                      showToast({
-                        message: t("shortcuts.global.failedToast", { count }),
-                        actionLabel: t("shortcuts.global.see"),
-                        onAction: () => setSheetOpen(true)
-                      })
-                    }
-                  />
-                </SegmentedPanel>
-                <SegmentedPanel value="explore">
-                  <MyInstantsPanel
-                    search={search}
-                    region={region}
-                    provider={provider ?? undefined}
-                    healthy={healthy}
-                    botStatus={botStatus}
-                    serverAddress={serverAddress}
-                    onSwitchServer={openServerMenu}
-                    onSummary={setSummary}
-                    onClearSearch={clearSearch}
-                    onPlaybackChange={reportExplore}
-                  />
-                </SegmentedPanel>
-              </main>
-            </AppearanceStage>
+              {editing && (
+                <AppearanceDock
+                  theme={appearance.theme}
+                  mode={appearance.mode}
+                  resolved={resolved}
+                  onThemeChange={(next) => appearance.preview({ theme: next })}
+                  onModeChange={(next) => appearance.preview({ mode: next })}
+                  onCancel={appearance.cancel}
+                  onConfirm={() => appearance.commit()}
+                />
+              )}
+            </SegmentedRoot>
 
-            {editing && (
-              <AppearanceDock
-                theme={appearance.theme}
-                mode={appearance.mode}
-                resolved={resolved}
-                onThemeChange={(next) => appearance.preview({ theme: next })}
-                onModeChange={(next) => appearance.preview({ mode: next })}
-                onCancel={appearance.cancel}
-                onConfirm={() => appearance.commit()}
-              />
-            )}
-          </SegmentedRoot>
+            {/* Always mounted, so a closing palette drops its preview; its rows are built only while it is open. */}
+            <CommandPalette
+              open={paletteOpen}
+              onOpenChange={setPaletteOpen}
+              candidates={paletteOpen ? paletteCandidates() : noCandidates}
+              themes={themeRows}
+              onPreview={previewAppearance}
+              status={paletteStatus}
+            />
 
-          {/* Always mounted, so a closing palette drops its preview; its rows are built only while it is open. */}
-          <CommandPalette
-            open={paletteOpen}
-            onOpenChange={setPaletteOpen}
-            candidates={paletteOpen ? paletteCandidates() : noCandidates}
-            themes={themeRows}
-            onPreview={previewAppearance}
-            status={paletteStatus}
-          />
+            <ImportForm open={importOpen} onClose={() => setImportOpen(false)} />
 
-          <ImportForm open={importOpen} onClose={() => setImportOpen(false)} />
+            <ShortcutSheet
+              open={sheetOpen}
+              onOpenChange={setSheetOpen}
+              instants={favorites}
+              os={os}
+              status={globalStatus}
+              onOpenSettings={() => openSettings("keys")}
+              onOrganize={() => {
+                if (organizeBlockedReason) {
+                  showToast({ message: organizeBlockedReason });
+                  return;
+                }
+                setTab("favorites");
+                setOrganizing(true);
+              }}
+            />
 
-          <ShortcutSheet
-            open={sheetOpen}
-            onOpenChange={setSheetOpen}
-            instants={favorites}
-            os={os}
-            status={globalStatus}
-            onOpenSettings={() => openSettings("keys")}
-            onOrganize={() => {
-              if (organizeBlockedReason) {
-                showToast({ message: organizeBlockedReason });
-                return;
-              }
-              setTab("favorites");
-              setOrganizing(true);
-            }}
-          />
+            <AddServerForm
+              open={addServerOpen}
+              onCancel={() => setAddServerOpen(false)}
+              onAdd={addManualServer}
+            />
 
-          <AddServerForm
-            open={addServerOpen}
-            onCancel={() => setAddServerOpen(false)}
-            onAdd={addManualServer}
-          />
-
-          <Toast
-            key={toast.key}
-            open={toast.open}
-            onOpenChange={(open) => setToast((current) => ({ ...current, open }))}
-            message={toast.message}
-            actionLabel={toast.actionLabel}
-            onAction={toast.onAction}
-            duration={toast.duration}
-          />
-        </ToastProvider>
-      </TooltipProvider>
+            <Toast
+              key={toast.key}
+              open={toast.open}
+              onOpenChange={(open) => setToast((current) => ({ ...current, open }))}
+              message={toast.message}
+              actionLabel={toast.actionLabel}
+              onAction={toast.onAction}
+              duration={toast.duration}
+            />
+          </ToastProvider>
+        </TooltipProvider>
+      </VoiceContext.Provider>
     </SnackbarContext.Provider>
   );
 }

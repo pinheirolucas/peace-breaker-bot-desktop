@@ -28,6 +28,8 @@ import type { Instant } from "./storage";
 import useAudioPlayer from "./useAudioPlayer";
 import useBotStatus from "./useBotStatus";
 import useDiscordPlayer from "./useDiscordPlayer";
+import useVoiceChannel, { useVoiceToasts } from "./useVoiceChannel";
+import { formatApiUrl, VoiceMenuItem } from "./ServerMenu";
 
 /** How long "Procurando…" is shown: discovery reports no end, so this is the answer window multicast usually needs. */
 const SEARCH_MS = 2500;
@@ -87,6 +89,9 @@ export default function QuickAccess() {
     (options: SnackbarOptions) => setToast((current) => ({ ...options, open: true, key: current.key + 1 })),
     []
   );
+  const voice = useVoiceChannel(activeUrl, botStatus);
+  const voiceToasts = useVoiceToasts(voice, openSnackbar, activeUrl ? formatApiUrl(activeUrl) : null);
+
   const snackbar = useMemo(
     () => ({ openSnackbar, closeSnackbar: () => setToast((current) => ({ ...current, open: false })) }),
     [openSnackbar]
@@ -152,7 +157,7 @@ export default function QuickAccess() {
   async function handlePlayOnDiscord(instant: Instant) {
     names.current.set(instant.url, instant.name);
     const error = await playDiscord(instant.url);
-    if (error) openSnackbar({ message: apiErrorMessage(t, error) });
+    if (error) openSnackbar(voiceToasts.botAway(error) ?? { message: apiErrorMessage(t, error) });
   }
 
   async function handleStop() {
@@ -297,6 +302,12 @@ export default function QuickAccess() {
 
   const menu = (
     <>
+      {voice.action && (
+        <>
+          <VoiceMenuItem voice={voice.action} onLeave={voiceToasts.leave} onRejoin={voiceToasts.rejoin} />
+          <MenuSeparator />
+        </>
+      )}
       <MenuItem primary={t("presence.openApp")} onSelect={() => action("open-app")} />
       <MenuItem primary={t("presence.refresh")} onSelect={() => { refresh(); action("refresh"); }} />
       <MenuSeparator />

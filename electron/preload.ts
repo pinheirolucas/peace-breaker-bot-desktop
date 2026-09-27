@@ -7,13 +7,17 @@ import type { QuickAccessAction, QuickAccessShortcutRequest } from "./quickAcces
 import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "./clip";
 import {
   isPresenceSnapshot,
+  isVoiceResult,
+  presenceLastChannelChannel,
+  presenceLeaveChannel,
   presencePlayingChannel,
+  presenceRejoinChannel,
   presenceServerChannel,
   presenceSettingsChannel,
   presenceSnapshotChannel,
   presenceStopChannel
 } from "./presence";
-import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "./presence";
+import type { LastChannel, PlayingReport, PresenceSettings, PresenceSnapshot, VoiceResult } from "./presence";
 import {
   isSettingsConflict,
   isSettingsSection,
@@ -284,11 +288,25 @@ ipcRenderer.on(presenceSnapshotChannel, (_event, snapshot: unknown) => {
   snapshotListeners.forEach((listener) => listener(snapshot));
 });
 
+const failedVoice: VoiceResult = { ok: false, offline: false, label: null };
+
+async function voiceCall(channel: string): Promise<VoiceResult> {
+  try {
+    const result: unknown = await ipcRenderer.invoke(channel);
+    return isVoiceResult(result) ? result : failedVoice;
+  } catch {
+    return failedVoice;
+  }
+}
+
 contextBridge.exposeInMainWorld("instantsPresence", {
   setServer: (url: string | null) => ipcRenderer.send(presenceServerChannel, url),
   setPlaying: (report: PlayingReport | null) => ipcRenderer.send(presencePlayingChannel, report),
   setSettings: (settings: PresenceSettings) => ipcRenderer.send(presenceSettingsChannel, settings),
   stop: () => ipcRenderer.send(presenceStopChannel),
+  leave: () => voiceCall(presenceLeaveChannel),
+  rejoin: () => voiceCall(presenceRejoinChannel),
+  seedLastChannel: (lastChannel: LastChannel) => ipcRenderer.send(presenceLastChannelChannel, lastChannel),
   // Replays the last snapshot to a late subscriber, like instantsDiscovery.
   onSnapshot: (listener: SnapshotListener) => {
     if (typeof listener !== "function") {
