@@ -197,7 +197,7 @@
     "invalid_body": "The bot couldn't understand the request",
     "invalid_url": "That URL isn't valid",
     "instant_not_found": "That instant couldn't be found",
-    "bot_not_connected": "The bot isn't in a voice channel yet — send !join from the channel you want it in.",
+    "bot_not_connected": "The bot isn't in a voice channel yet. Join one and type !join, or use !join #channel.",
     "unsuported_audio_format": "That instant isn't an audio format we can play",
     "invalid_region": "That region code isn't valid",
     "provider_not_found": "That site isn't supported",
