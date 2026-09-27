@@ -3,14 +3,12 @@ import contract from "./botContract.json";
 import enUS from "./i18n/en-US.json";
 import ptBR from "./i18n/pt-BR.json";
 
-// Every non-test module that can talk to the bot, as raw text.
 const sources = import.meta.glob(["./**/*.{ts,tsx}", "../electron/**/*.ts", "!./**/*.test.*", "!./**/*.stories.*"], {
   query: "?raw",
   import: "default",
   eager: true
 }) as Record<string, string>;
 
-/** `${base}/instants/${encodeURIComponent(url)}/content?x` → `/instants/{}/content` */
 function calledPaths(): Set<string> {
   const paths = new Set<string>();
   for (const text of Object.values(sources)) {

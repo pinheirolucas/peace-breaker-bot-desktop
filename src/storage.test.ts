@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { settingsKeys } from "./storage";
 
-// Stored keys that Restaurar configurações must leave alone.
 const notSettings = ["instants", "recentClips"];
 
 const sources = import.meta.glob(["./**/*.{ts,tsx}", "!./**/*.test.*", "!./**/*.stories.*"], {
