@@ -36,7 +36,6 @@ Desktop UI (Vite + React 19 + Electron 44) for Peace Breaker Bot: browse and fav
 
 - Skills in `.claude/skills/`: `add-ipc-channel` and `add-component`.
 - `.claude/settings.json` allows the routine commands and denies force-push, tags, releases and workflow runs.
-- CI also fails on retired product and provider names (pattern in `.github/workflows/ci.yaml`).
 
 ## Contract with the bot
 
