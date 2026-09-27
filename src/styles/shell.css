@@ -61,6 +61,9 @@
  * (the overlay's geometry), so the toolbar stops short of them whichever
  * side they are on; macOS's traffic lights are at a fixed x. */
 [data-chrome="custom"]:not([data-os="mac"]) .toolbar {
+  /* The OS draws its buttons --tbh tall, so the row is --tbh and the lower
+   * edge sits under it, not under the buttons. */
+  box-sizing: content-box;
   padding-left: calc(env(titlebar-area-x, 0px) + 16px);
   padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 14px);
 }
@@ -352,6 +355,10 @@
  * outline-offset, so the first row never gets clipped by this element's
  * own overflow: auto. */
 .scroll {
+  /* The containing block of anything absolutely placed in the panels (their
+   * sr-only live regions), so this box clips it; otherwise it lands at the
+   * bottom of the content and the whole window scrolls too. */
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: auto;
