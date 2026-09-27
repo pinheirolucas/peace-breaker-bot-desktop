@@ -239,6 +239,22 @@ export async function getBotStatus(): Promise<BotStatus> {
   return requestEnvelope<BotStatus>(`${base}/bot/status`);
 }
 
+/** Takes the bot out of its voice channel. Answers with the status after, like GET /bot/status. */
+export async function leaveVoice(): Promise<BotStatus> {
+  const base = requireApiUrl();
+  return requestEnvelope<BotStatus>(`${base}/bot/leave`, { method: "POST" });
+}
+
+/** Moves the bot into the voice channel with this ID. Answers once it can play. */
+export async function joinVoice(channelId: string): Promise<BotStatus> {
+  const base = requireApiUrl();
+  return requestEnvelope<BotStatus>(`${base}/bot/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ channelId })
+  });
+}
+
 export async function testServer(candidateBase: string): Promise<BotStatus> {
   let response: Response;
 

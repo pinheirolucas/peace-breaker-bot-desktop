@@ -1,5 +1,5 @@
 import type { ClipDragResult, ClipPrepareResult, ClipRequest } from "../../electron/clip";
-import type { PlayingReport, PresenceSettings, PresenceSnapshot } from "../../electron/presence";
+import type { LastChannel, PlayingReport, PresenceSettings, PresenceSnapshot, VoiceResult } from "../../electron/presence";
 import type { QuickAccessAction, QuickAccessShortcutRequest } from "../../electron/quickAccess";
 import type { CardContext, MenuCommand, MenuState } from "../../electron/menuState";
 import type { GlobalModifier, ShortcutRequest, ShortcutResult } from "../../electron/shortcuts";
@@ -61,6 +61,9 @@ declare global {
       setPlaying: (report: PlayingReport | null) => void;
       setSettings: (settings: PresenceSettings) => void;
       stop: () => void;
+      leave: () => Promise<VoiceResult>;
+      rejoin: () => Promise<VoiceResult>;
+      seedLastChannel: (lastChannel: LastChannel) => void;
       onSnapshot: (listener: (snapshot: PresenceSnapshot) => void) => () => void;
     };
     instantsSettings?: {

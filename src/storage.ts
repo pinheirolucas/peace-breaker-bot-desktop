@@ -1,4 +1,4 @@
-import type { PresenceSettings } from "../electron/presence";
+import type { LastChannel, PresenceSettings } from "../electron/presence";
 import type { Server } from "../electron/discovery";
 import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
@@ -93,3 +93,6 @@ export { clearPersisted };
 
 /** The last three clips played, newest first, by url: the command palette's "Recentes". Not a setting: Restaurar configurações leaves it. */
 export const useRecentClipsState = createPersistedState<string[]>("recentClips");
+
+/** The last voice channel the bot was seen in, so it can be called back. Not a setting: Restaurar configurações leaves it. */
+export const useLastVoiceChannelState = createPersistedState<LastChannel | null>("lastVoiceChannel");

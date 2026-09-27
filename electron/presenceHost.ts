@@ -14,6 +14,7 @@ import {
   defaultPresenceSettings,
   effectiveSettings,
   emptyPresence,
+  forgetsChannel,
   mergePlaying,
   presenceReduce,
   presenceSnapshotChannel,
@@ -21,7 +22,15 @@ import {
   trayState,
   trayTitle
 } from "./presence";
-import type { PlayingReport, PresenceAction, PresenceSettings, PresenceSnapshot, StatusTone } from "./presence";
+import type {
+  LastChannel,
+  PlayingReport,
+  PresenceAction,
+  PresenceSettings,
+  PresenceSnapshot,
+  StatusTone,
+  VoiceResult
+} from "./presence";
 import { dotColors, dotPng } from "./statusDot";
 import { jumpListTasks, trayMenu } from "./trayMenu";
 import type { TrayAction } from "./trayMenu";
@@ -29,6 +38,8 @@ import type { TrayAction } from "./trayMenu";
 /** How often the bot's voice-connection status is asked for, once for the whole app. */
 export const pollMs = 8000;
 const pollTimeoutMs = 5000;
+/** The bot waits up to 10s for Discord's voice handshake before it answers a join. */
+const joinTimeoutMs = 15000;
 
 export interface PresenceHostDeps {
   /** The folder the tray PNGs are in (build/tray). */
@@ -148,10 +159,81 @@ export function createPresenceHost(deps: PresenceHostDeps) {
     deps.sendAll(menuCommandChannel, { type: "stop" });
   }
 
+  // ---- the voice channel, from any surface ----
+
+  let joining: Promise<VoiceResult> | null = null;
+
+  /** Posts to the bot and folds the status it answers with straight into the store, ahead of the next poll. */
+  async function voiceCall(route: string, body: unknown, timeoutMs: number): Promise<VoiceResult> {
+    const server = snapshot.server;
+    if (!server) return { ok: false, offline: true };
+
+    const generation = pollGeneration;
+    let response: Response;
+
+    try {
+      response = await net.fetch(`${server}${route}`, {
+        method: "POST",
+        ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+    } catch {
+      if (generation === pollGeneration) dispatch({ type: "poll", bot: null, silent: true });
+      return { ok: false, offline: true };
+    }
+
+    let envelope: { data?: unknown; label?: unknown } = {};
+    try {
+      envelope = (await response.json()) as typeof envelope;
+    } catch {
+      // No body, or not the envelope: judged below like any other failure.
+    }
+
+    const bot = botFrom(envelope.data);
+    if (response.ok && bot) {
+      if (generation === pollGeneration) dispatch({ type: "poll", bot, silent: false });
+      return { ok: true };
+    }
+
+    const label = typeof envelope.label === "string" ? envelope.label : null;
+    return { ok: false, offline: false, label };
+  }
+
+  function leave(): Promise<VoiceResult> {
+    return voiceCall("/bot/leave", undefined, pollTimeoutMs);
+  }
+
+  /** Joins the remembered channel. Nothing a renderer sends can name another one. */
+  function rejoin(): Promise<VoiceResult> {
+    if (joining) return joining;
+
+    const target = snapshot.lastChannel;
+    if (!target) return Promise.resolve({ ok: false, offline: false, label: null });
+
+    joining = voiceCall("/bot/join", { channelId: target.channelId }, joinTimeoutMs)
+      .then((result) => {
+        if (!result.ok && !result.offline && forgetsChannel(result.label) && snapshot.lastChannel?.channelId === target.channelId) {
+          dispatch({ type: "forget-channel" });
+        }
+        return result;
+      })
+      .finally(() => {
+        joining = null;
+      });
+
+    return joining;
+  }
+
+  function seedLastChannel(lastChannel: LastChannel): void {
+    dispatch({ type: "seed-channel", lastChannel });
+  }
+
   // ---- views ----
 
   const handlers = (): Record<TrayAction | "open-settings" | "quit", () => void> => ({
     stop,
+    leave: () => void leave(),
+    rejoin: () => void rejoin(),
     "open-quick-access": () => deps.openQuickAccess?.(),
     "open-app": deps.openApp,
     "open-settings": deps.openSettings,
@@ -286,6 +368,9 @@ export function createPresenceHost(deps: PresenceHostDeps) {
     forget,
     setSettings,
     stop,
+    leave,
+    rejoin,
+    seedLastChannel,
     run,
     /** Rebuilds every view: the language changed. */
     render,

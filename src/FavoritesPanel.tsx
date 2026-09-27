@@ -41,6 +41,7 @@ import { apiErrorMessage } from "./i18n/apiError";
 import RenameForm from "./RenameForm";
 import SaveForm from "./SaveForm";
 import SnackbarContext from "./SnackbarContext";
+import VoiceContext from "./VoiceContext";
 import { getContent } from "./service";
 import type { BotStatus } from "./service";
 import { useInstantsState } from "./storage";
@@ -121,6 +122,7 @@ export default function FavoritesPanel({
   const [audioUrl, isAudioPlaying, playAudio, stopAudio] = useAudioPlayer();
   const [discordUrl, isDiscordPlaying, playDiscord, stopDiscord] = useDiscordPlayer();
   const { openSnackbar, closeSnackbar } = useContext(SnackbarContext);
+  const { botAway } = useContext(VoiceContext);
   const [instants, setInstants] = useInstantsState([]);
 
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
@@ -223,7 +225,12 @@ export default function FavoritesPanel({
   async function handlePlayOnDiscord(instant: Instant) {
     names.current.set(instant.url, instant.name);
     const error = await playDiscord(instant.url);
-    if (error) {
+    if (!error) return;
+
+    const away = botAway(error);
+    if (away) {
+      openSnackbar(away);
+    } else {
       showNotFound(instant, apiErrorMessage(t, error));
     }
   }

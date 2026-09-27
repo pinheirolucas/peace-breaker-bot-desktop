@@ -68,6 +68,28 @@
     "notResponding": "isn't responding",
     "settings": "Server settings…"
   },
+  "voice": {
+    "leave": "Take the bot out of #{{channelName}}",
+    "leaveUnnamed": "Take the bot out of its channel",
+    "rejoin": "Call the bot to #{{channelName}}",
+    "rejoinUnnamed": "Call the bot to its last channel",
+    "rejoinWhere": "{{guildName}} · last channel",
+    "rejoinWhereUnnamed": "Last channel",
+    "rejoinNone": "Call the bot",
+    "rejoinNoneHint": "Send !join on Discord once and the app will remember the channel",
+    "left": "The bot left #{{channelName}}. Peace restored.",
+    "leftUnnamed": "The bot left its channel. Peace restored.",
+    "rejoining": "Calling the bot to #{{channelName}}…",
+    "rejoiningUnnamed": "Calling the bot to its last channel…",
+    "rejoined": "The bot’s back in #{{channelName}}.",
+    "rejoinedUnnamed": "The bot’s back in its last channel.",
+    "rejoinAction": "Call to #{{channelName}}",
+    "rejoinActionUnnamed": "Call the bot",
+    "away": "The bot isn’t in a voice channel.",
+    "undo": "Undo",
+    "leaveWords": "leave kick disconnect channel voice bot sair tirar desconectar",
+    "rejoinWords": "join rejoin call back channel voice bot chamar voltar entrar"
+  },
   "save": {
     "title": "Add an instant",
     "description": "Paste a myinstants.com sound's link and give it a name you'll recognize.",
@@ -330,7 +352,11 @@
       "copy": "Copy Address",
       "copyAddress": "Copy Server Address",
       "refresh": "Search Again",
-      "add": "Add Server…"
+      "add": "Add Server…",
+      "leave": "Take the Bot Out of #{{channelName}}",
+      "leaveUnnamed": "Take the Bot Out of Its Channel",
+      "rejoin": "Call the Bot to #{{channelName}}",
+      "rejoinUnnamed": "Call the Bot to Its Last Channel"
     },
     "window": {
       "title": "Window",
@@ -742,6 +768,7 @@
     "appliedSite": "Explore now uses {{site}}",
     "globalOnToast": "Global keys on",
     "globalOffToast": "Global keys off",
-    "appliedServer": "Connected to {{address}}"
+    "appliedServer": "Connected to {{address}}",
+    "voiceSub": "Voice channel"
   }
 }

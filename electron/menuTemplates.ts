@@ -9,6 +9,8 @@ import { httpsUrl } from "./menuState";
 import type { CardContext, MenuCommand, MenuServer, MenuState } from "./menuState";
 import type { SettingsSection } from "./settings";
 import type { Translate } from "./menuI18n";
+import type { VoiceAction } from "./presence";
+import { voiceMenuItems } from "./trayMenu";
 
 export type Item = MenuItemConstructorOptions;
 
@@ -22,6 +24,8 @@ export interface MenuDeps {
   reveal: (request: { name: string; url: string }) => void;
   /** Opens Configurações, on a section when one is given. Main's own: no round trip through the renderer. */
   openSettings: (section?: SettingsSection) => void;
+  /** Leave or rejoin, from main's own presence record: no round trip through the renderer. Absent, there is no row. */
+  voice?: { action: VoiceAction; leave: () => void; rejoin: () => void };
 }
 
 export const repoUrl = "https://github.com/pinheirolucas/peace-breaker-bot-desktop";
@@ -222,7 +226,7 @@ export function gridMenu(state: MenuState, deps: MenuDeps): Item[] {
 
 // ---- server ----
 
-function serverHeader(state: MenuState, { t }: MenuDeps): Item[] {
+function serverHeader(state: MenuState, { t, voice }: MenuDeps): Item[] {
   if (!state.activeAddress) {
     return [{ label: t("server.none"), enabled: false }];
   }
@@ -241,6 +245,8 @@ function serverHeader(state: MenuState, { t }: MenuDeps): Item[] {
   } else if (state.healthy && state.botConnected && state.botChannel) {
     rows.push({ label: state.botChannel, enabled: false });
   }
+
+  if (voice) rows.push(...voiceMenuItems(voice.action, t, voice));
 
   return rows;
 }

@@ -26,7 +26,9 @@ const ICONS: Record<string, string> = {
   reorder: "M4 6h12M4 10h12M4 14h12",
   wave: "M3 10h1M6 7v6M9 4v12M12 7v6M15 9v2M17 10h0",
   moon: "M16 11.5A6.5 6.5 0 0 1 8.5 4a6.5 6.5 0 1 0 7.5 7.5Z",
-  check: "M4.5 10.5l3.5 3.5 7.5-8"
+  check: "M4.5 10.5l3.5 3.5 7.5-8",
+  leave: "M12 3h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3M8 13l-3-3 3-3M5 10h8",
+  join: "M8 3H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3M12 13l3-3-3-3M15 10H7"
 };
 
 function Icon({ name }: { name: string }) {

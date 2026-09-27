@@ -30,8 +30,6 @@
     "POST /bot/stop"
   ],
   "knownUnused": [
-    "POST /bot/join",
-    "POST /bot/leave",
     "GET /openapi.yaml"
   ]
 }

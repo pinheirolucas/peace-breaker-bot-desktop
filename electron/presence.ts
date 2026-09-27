@@ -12,6 +12,12 @@ export const presenceServerChannel = "presence:server";
 export const presencePlayingChannel = "presence:playing";
 /** Stop whatever plays, from any surface. */
 export const presenceStopChannel = "presence:stop";
+/** Take the bot out of its voice channel. Invoked: answers with a VoiceResult. */
+export const presenceLeaveChannel = "presence:leave";
+/** Call the bot back to the remembered channel. Invoked: answers with a VoiceResult. */
+export const presenceRejoinChannel = "presence:rejoin";
+/** The main window's stored last channel, handed to main once at launch. */
+export const presenceLastChannelChannel = "presence:last-channel";
 // main -> renderer
 /** The whole record, on every change. */
 export const presenceSnapshotChannel = "presence:snapshot";
@@ -19,6 +25,14 @@ export const presenceSnapshotChannel = "presence:snapshot";
 /** What GET /bot/status answers, as the renderer's own BotStatus type. */
 export interface PresenceBot {
   connected: boolean;
+  guildName?: string;
+  channelId?: string;
+  channelName?: string;
+}
+
+/** The one voice channel the app remembers: the last one it saw the bot in. */
+export interface LastChannel {
+  channelId: string;
   guildName?: string;
   channelName?: string;
 }
@@ -43,14 +57,24 @@ export interface PresenceSnapshot {
   /** The last poll got no response at all: the server is silent. Any answer at
    *  all, an error included, clears it — the same passive rule as the window's chip. */
   silent: boolean;
+  /** Survives leaving, server switches and restarts; only a join that finds the channel gone clears it. */
+  lastChannel: LastChannel | null;
 }
 
-export const emptyPresence: PresenceSnapshot = { bot: null, playing: null, server: null, silent: false };
+export const emptyPresence: PresenceSnapshot = {
+  bot: null,
+  playing: null,
+  server: null,
+  silent: false,
+  lastChannel: null
+};
 
 export type PresenceAction =
   | { type: "server"; server: string | null }
   | { type: "poll"; bot: PresenceBot | null; silent: boolean }
-  | { type: "playing"; playing: Playing | null };
+  | { type: "playing"; playing: Playing | null }
+  | { type: "seed-channel"; lastChannel: LastChannel }
+  | { type: "forget-channel" };
 
 /**
  * A new server makes the bot status unknown again: what the last one said
@@ -63,19 +87,46 @@ export function presenceReduce(state: PresenceSnapshot, action: PresenceAction):
       return action.server === state.server
         ? state
         : { ...state, server: action.server, bot: null, silent: false };
-    case "poll":
-      return sameBot(action.bot, state.bot) && action.silent === state.silent
+    case "poll": {
+      const lastChannel = rememberedFrom(action.bot) ?? state.lastChannel;
+      return sameBot(action.bot, state.bot) &&
+        action.silent === state.silent &&
+        sameChannel(lastChannel, state.lastChannel)
         ? state
-        : { ...state, bot: action.bot, silent: action.silent };
+        : { ...state, bot: action.bot, silent: action.silent, lastChannel };
+    }
     case "playing":
       return samePlaying(action.playing, state.playing) ? state : { ...state, playing: action.playing };
+    // What the app saw itself always beats what was stored before it started.
+    case "seed-channel":
+      return state.lastChannel ? state : { ...state, lastChannel: action.lastChannel };
+    case "forget-channel":
+      return state.lastChannel ? { ...state, lastChannel: null } : state;
   }
+}
+
+function rememberedFrom(bot: PresenceBot | null): LastChannel | null {
+  if (!bot?.connected || !bot.channelId) return null;
+
+  return {
+    channelId: bot.channelId,
+    ...(bot.guildName !== undefined ? { guildName: bot.guildName } : {}),
+    ...(bot.channelName !== undefined ? { channelName: bot.channelName } : {})
+  };
+}
+
+function sameChannel(a: LastChannel | null, b: LastChannel | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.channelId === b.channelId && a.guildName === b.guildName && a.channelName === b.channelName;
 }
 
 function sameBot(a: PresenceBot | null, b: PresenceBot | null): boolean {
   if (a === null || b === null) return a === b;
   return (
-    a.connected === b.connected && a.guildName === b.guildName && a.channelName === b.channelName
+    a.connected === b.connected &&
+    a.guildName === b.guildName &&
+    a.channelId === b.channelId &&
+    a.channelName === b.channelName
   );
 }
 
@@ -139,16 +190,40 @@ function optionalText(x: unknown): string | undefined | false {
   return typeof x === "string" && x.length <= 200 ? x : false;
 }
 
+/** A Discord snowflake as the bot sends it: a string of digits. */
+function optionalSnowflake(x: unknown): string | undefined | false {
+  if (x === undefined) return undefined;
+  return typeof x === "string" && /^\d{1,25}$/.test(x) ? x : false;
+}
+
 /** The bot status out of a server's answer, or null when it is not one. Keeps only what the app reads. */
 export function botFrom(x: unknown): PresenceBot | null {
   if (!isObject(x) || typeof x.connected !== "boolean") return null;
 
   const guildName = optionalText(x.guildName);
+  const channelId = optionalSnowflake(x.channelId);
   const channelName = optionalText(x.channelName);
-  if (guildName === false || channelName === false) return null;
+  if (guildName === false || channelId === false || channelName === false) return null;
 
   return {
     connected: x.connected,
+    ...(guildName !== undefined ? { guildName } : {}),
+    ...(channelId !== undefined ? { channelId } : {}),
+    ...(channelName !== undefined ? { channelName } : {})
+  };
+}
+
+/** A remembered channel, from main or from storage, or null when it is not one. */
+export function lastChannelFrom(x: unknown): LastChannel | null {
+  if (!isObject(x)) return null;
+
+  const channelId = optionalSnowflake(x.channelId);
+  const guildName = optionalText(x.guildName);
+  const channelName = optionalText(x.channelName);
+  if (typeof channelId !== "string" || guildName === false || channelName === false) return null;
+
+  return {
+    channelId,
     ...(guildName !== undefined ? { guildName } : {}),
     ...(channelName !== undefined ? { channelName } : {})
   };
@@ -191,6 +266,7 @@ export function isPresenceSnapshot(x: unknown): x is PresenceSnapshot {
   if (!isObject(x) || typeof x.silent !== "boolean") return false;
   if (x.server !== null && serverUrl(x.server) === undefined) return false;
   if (x.bot !== null && botFrom(x.bot) === null) return false;
+  if (x.lastChannel !== null && lastChannelFrom(x.lastChannel) === null) return false;
   if (x.playing !== null) {
     if (!isObject(x.playing) || typeof x.playing.since !== "number") return false;
     if (!isPlayingReport({ mode: x.playing.mode, name: x.playing.name })) return false;
@@ -288,4 +364,51 @@ export function statusLine(snapshot: PresenceSnapshot, t: Text): string {
   return guildName && channelName
     ? t("server.inVoice", { guildName, channelName })
     : t("presence.connected");
+}
+
+/** What leave or rejoin came to: done, no answer at all, or the bot's error label (null when it sent none). */
+export type VoiceResult = { ok: true } | { ok: false; offline: true } | { ok: false; offline: false; label: string | null };
+
+export function isVoiceResult(x: unknown): x is VoiceResult {
+  if (!isObject(x) || typeof x.ok !== "boolean") return false;
+  if (x.ok) return true;
+  if (x.offline === true) return true;
+  return x.offline === false && (x.label === null || (typeof x.label === "string" && x.label.length <= 100));
+}
+
+/** A join that answers these means the channel itself is gone, so remembering it helps no one. */
+export function forgetsChannel(label: string | null): boolean {
+  return label === "channel_not_found" || label === "not_voice_channel";
+}
+
+/**
+ * The one row every surface puts next to the bot's channel. Leave while the
+ * bot may be in one (unknown included: leaving is idempotent, and its answer
+ * tells the truth); rejoin when it is confirmed out and a channel is
+ * remembered; "none" when it is out and nothing is; null with no server.
+ */
+export type VoiceAction =
+  | { kind: "leave"; channelName?: string }
+  | { kind: "rejoin"; channelName?: string; guildName?: string }
+  | { kind: "none" }
+  | null;
+
+export function voiceAction(
+  server: string | null,
+  bot: { connected: boolean; channelName?: string } | null,
+  lastChannel: LastChannel | null
+): VoiceAction {
+  if (server === null) return null;
+
+  if (bot?.connected !== false) {
+    return bot?.connected && bot.channelName ? { kind: "leave", channelName: bot.channelName } : { kind: "leave" };
+  }
+
+  if (!lastChannel) return { kind: "none" };
+
+  return {
+    kind: "rejoin",
+    ...(lastChannel.channelName !== undefined ? { channelName: lastChannel.channelName } : {}),
+    ...(lastChannel.guildName !== undefined ? { guildName: lastChannel.guildName } : {})
+  };
 }

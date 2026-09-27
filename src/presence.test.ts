@@ -199,6 +199,8 @@ describe("tray menu", () => {
     "open-app": vi.fn(),
     "open-settings": vi.fn(),
     refresh: vi.fn(),
+    leave: vi.fn(),
+    rejoin: vi.fn(),
     quit: vi.fn()
   });
   const labels = (items: { label?: string; type?: string }[]) =>
@@ -215,6 +217,7 @@ describe("tray menu", () => {
       "Abrir acesso rápido",
       "-",
       "Parar reprodução",
+      "Tirar o bot de #geral",
       "Procurar servidor novamente",
       "-",
       "Sair"
@@ -231,6 +234,7 @@ describe("tray menu", () => {
       "Configurações…",
       "-",
       "Parar reprodução",
+      "Tirar o bot do canal",
       "Procurar servidor novamente",
       "-",
       "Sair"
@@ -327,6 +331,8 @@ describe("the tray menu's status dot", () => {
     "open-app": vi.fn(),
     "open-settings": vi.fn(),
     refresh: vi.fn(),
+    leave: vi.fn(),
+    rejoin: vi.fn(),
     quit: vi.fn()
   });
   const cases: [string, PresenceSnapshot, "ok" | "warn" | "down" | "unknown"][] = [

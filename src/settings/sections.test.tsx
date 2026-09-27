@@ -604,7 +604,7 @@ describe("Barra de menus e Bandeja", () => {
 
   it("writes the stored settings and reports nothing to the main process", async () => {
     window.instantsPlatform = { os: "mac", chrome: "custom", setChrome: vi.fn() };
-    window.instantsPresence = { setServer: vi.fn(), setPlaying: vi.fn(), setSettings: vi.fn(), stop: vi.fn(), onSnapshot: () => () => undefined };
+    window.instantsPresence = { setServer: vi.fn(), setPlaying: vi.fn(), setSettings: vi.fn(), stop: vi.fn(), leave: vi.fn(), rejoin: vi.fn(), seedLastChannel: vi.fn(), onSnapshot: () => () => undefined };
     render(<PresenceSection onOpenKeys={vi.fn()} />);
 
     await userEvent.click(screen.getByRole("switch", { name: "Mostrar na barra de menus" }));

@@ -346,3 +346,23 @@ export function DatabaseIcon({ size = 18, ...rest }: IconProps) {
     </svg>
   );
 }
+
+export function LeaveIcon({ size = 15, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+      <path d="m9 16-4-4 4-4" />
+      <path d="M5 12h10" />
+    </svg>
+  );
+}
+
+export function JoinIcon({ size = 15, ...rest }: IconProps) {
+  return (
+    <svg {...base(size)} {...stroke} {...rest}>
+      <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
+      <path d="m15 16 4-4-4-4" />
+      <path d="M19 12H9" />
+    </svg>
+  );
+}
