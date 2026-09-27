@@ -24,7 +24,7 @@ Desktop UI (Vite + React 19 + Electron 44) for Peace Breaker Bot: browse and fav
 - New backend surface or a big UI choice: publish the design as an artifact first, iterate there, implement after the go-ahead. UI alternatives go in separate PRs or stories; close the ones not picked.
 - Backend changes land first; the desktop PR that uses them follows and references it.
 - Comments only where the code can't say it: a one-line doc on exported members; none in tests; reasoning goes in the PR body.
-- Releases go through the Cut Release workflow, rc → final, only when the user asks (`/cut-release`). Agents never tag, publish or trigger workflows.
+- Releases go through the Cut Release workflow, rc → final, only when the user asks. Agents never tag, publish or trigger workflows.
 
 ## Update together
 
@@ -34,7 +34,7 @@ Desktop UI (Vite + React 19 + Electron 44) for Peace Breaker Bot: browse and fav
 
 ## Tooling
 
-- Skills in `.claude/skills/`: `add-api-call`, `add-ipc-channel`, `add-component`, and `cut-release` (user-invoked only).
+- Skills in `.claude/skills/`: `add-ipc-channel` and `add-component`.
 - `.claude/settings.json` allows the routine commands and denies force-push, tags, releases and workflow runs. A Stop hook runs `pnpm typecheck` once per turn that changed TypeScript.
 - CI also fails on retired product and provider names (pattern in `.github/workflows/ci.yaml`).
 
