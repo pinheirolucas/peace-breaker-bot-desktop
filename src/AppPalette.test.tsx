@@ -105,7 +105,7 @@ describe("opening", () => {
 
   it("opens from inside the search field", async () => {
     render(<App />);
-    const search = screen.getByRole("searchbox", { name: "Procurar um som" });
+    const search = screen.getByRole("searchbox", { name: "Buscar som" });
     search.focus();
 
     fireEvent.keyDown(search, { key: "k", ctrlKey: true });
@@ -217,12 +217,12 @@ describe("sounds", () => {
 
     const row = screen.getAllByRole("option")[0];
     expect(within(row).getByText("só aqui")).toBeInTheDocument();
-    expect(screen.getByText("bot fora de um canal de voz")).toBeInTheDocument();
+    expect(screen.getByText("bot fora do canal de voz")).toBeInTheDocument();
 
     await user.keyboard("{Enter}");
     expect(playOnDiscord).not.toHaveBeenCalled();
     expect(palette()).not.toBeNull();
-    expect(screen.getByText("O bot não está em um canal. ⇧ Enter toca só aqui.")).toBeInTheDocument();
+    expect(screen.getByText("O bot não está em um canal. ⇧ Enter reproduz só aqui.")).toBeInTheDocument();
 
     await user.keyboard("{Shift>}{Enter}{/Shift}");
     await waitFor(() => expect(getContent).toHaveBeenCalled());
@@ -244,7 +244,7 @@ describe("sounds", () => {
   it("leaves the sounds out in Organizar, and offers the way out first", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Mais ações de adição" }));
+    await user.click(screen.getByRole("button", { name: "Mais opções para adicionar" }));
     await user.click(screen.getByRole("menuitem", { name: "Organizar" }));
     open();
     await screen.findByRole("dialog", { name: "Paleta de comandos" });
@@ -265,7 +265,7 @@ describe("sounds", () => {
     open();
     await screen.findByRole("dialog", { name: "Paleta de comandos" });
 
-    expect(screen.getByRole("group", { name: "Tocando agora" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Reproduzindo agora" })).toBeInTheDocument();
     expect(screen.getAllByRole("option", { selected: true })[0]).toHaveTextContent("Parar o som");
     await user.keyboard("{Enter}");
     await waitFor(() => expect(stopPlayingOnDiscord).toHaveBeenCalled());
@@ -295,7 +295,7 @@ describe("sounds", () => {
     await user.keyboard("{Enter}");
 
     expect(await screen.findByRole("tab", { name: /Explorar/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("searchbox", { name: "Procurar um som" })).toHaveValue("zzz");
+    expect(screen.getByRole("searchbox", { name: "Buscar som" })).toHaveValue("zzz");
   });
 });
 

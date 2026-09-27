@@ -34,7 +34,7 @@ describe("ServerChip", () => {
     render(<ServerChip address="localhost:9001" healthy botStatus={{ connected: false }} />);
 
     const button = screen.getByRole("button", {
-      name: "localhost:9001 · bot fora de um canal de voz"
+      name: "localhost:9001 · bot fora do canal de voz"
     });
     expect(button.querySelector(".dot")).toHaveAttribute("data-healthy", "true");
     expect(button.querySelector(".dot")).toHaveAttribute("data-bot-away", "true");

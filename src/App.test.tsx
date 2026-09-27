@@ -107,7 +107,7 @@ function toasts() {
 }
 
 function searchBox() {
-  return screen.getByRole("searchbox", { name: "Procurar um som" });
+  return screen.getByRole("searchbox", { name: "Buscar som" });
 }
 
 // The Explorar filter is one icon whose name is not its content, in either
@@ -432,7 +432,7 @@ describe("snackbar precedence while offline", () => {
 
   it("keeps the connection toast when a panel reports its own error after it", async () => {
     vi.mocked(getInstants).mockRejectedValueOnce(
-      new Error("Erro desconhecido, tente novamente mais tarde")
+      new Error("Algo deu errado. Tente de novo daqui a pouco.")
     );
 
     const bridge = installBridge();
@@ -449,7 +449,7 @@ describe("snackbar precedence while offline", () => {
     });
 
     expect(toasts().getByText("Não foi possível conectar a 10.0.0.133:9001")).toBeInTheDocument();
-    expect(screen.queryByText("Erro desconhecido, tente novamente mais tarde")).not.toBeInTheDocument();
+    expect(screen.queryByText("Algo deu errado. Tente de novo daqui a pouco.")).not.toBeInTheDocument();
 
     vi.mocked(getInstants).mockResolvedValue({ instants: [], pages: 0 });
   });
@@ -538,7 +538,7 @@ describe("shell", () => {
     render(<App />);
 
     await userEvent.keyboard("?");
-    expect(await screen.findByRole("dialog", { name: "Atalhos do teclado" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Atalhos de teclado" })).toBeInTheDocument();
 
     await userEvent.keyboard("?");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -551,7 +551,7 @@ describe("shell", () => {
     );
     render(<App />);
 
-    expect(searchBox()).toHaveAttribute("placeholder", "Buscar em 1 favorito");
+    expect(searchBox()).toHaveAttribute("placeholder", "Buscar no seu favorito");
 
     await userEvent.click(screen.getByRole("tab", { name: "Explorar" }));
 
@@ -602,7 +602,7 @@ describe("shell", () => {
     render(<App />);
 
     await user.type(searchBox(), "xuxa");
-    await user.click(await screen.findByRole("button", { name: "Procurar “xuxa” no MyInstants" }));
+    await user.click(await screen.findByRole("button", { name: "Buscar “xuxa” no Explorar" }));
 
     expect(screen.getByRole("tab", { name: "Explorar" })).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "xuxa", "br"));
@@ -789,7 +789,7 @@ describe("catalogue region", () => {
     expect(filterButton()).toHaveAttribute("data-changed", "true");
 
     await user.click(filterButton());
-    await user.click(screen.getByRole("menuitem", { name: "Restaurar padrão" }));
+    await user.click(screen.getByRole("menuitem", { name: "Restaurar padrões" }));
 
     await waitFor(() => expect(getInstants).toHaveBeenLastCalledWith(1, "", "br"));
     // An open menu is modal: what is behind it is hidden from the tree.
@@ -882,7 +882,7 @@ describe("provider picker", () => {
 
     expect(screen.queryByRole("menuitem", { name: "Brasil" })).toBeNull();
     // Still open, and now offering a way back to the default site.
-    expect(screen.getByRole("menuitem", { name: "Restaurar padrão" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Restaurar padrões" })).toBeInTheDocument();
   });
 
   it("restores the stored provider on the next launch", async () => {
@@ -1017,7 +1017,7 @@ describe("Organizar", () => {
   afterEach(() => localStorage.clear());
 
   async function openAddMenu(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(screen.getByRole("button", { name: "Mais ações de adição" }));
+    await user.click(screen.getByRole("button", { name: "Mais opções para adicionar" }));
   }
 
   it("is not offered with no favourites at all", async () => {
@@ -1040,12 +1040,12 @@ describe("Organizar", () => {
     await openAddMenu(user);
     await user.click(screen.getByRole("menuitem", { name: /Organizar/ }));
 
-    expect(screen.getByRole("button", { name: "Concluir" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pronto" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Adicionar" })).toBeNull();
     expect(screen.queryByRole("searchbox")).toBeNull();
     expect(screen.getByText("Arraste para reordenar · ⌨ define a tecla", { selector: ".toolbar__hint" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Concluir" }));
+    await user.click(screen.getByRole("button", { name: "Pronto" }));
 
     expect(screen.getByRole("button", { name: "Adicionar" })).toBeInTheDocument();
     expect(screen.getByRole("searchbox")).toBeEnabled();
@@ -1064,7 +1064,7 @@ describe("Organizar", () => {
 
     await user.click(item);
 
-    expect(screen.queryByRole("button", { name: "Concluir" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Pronto" })).toBeNull();
   });
 
   it("leaves the mode when the tab changes", async () => {
@@ -1077,7 +1077,7 @@ describe("Organizar", () => {
     await user.click(screen.getByRole("tab", { name: "Favoritos" }));
 
     expect(screen.getByRole("button", { name: "Adicionar" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Concluir" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Pronto" })).toBeNull();
   });
 });
 
@@ -1094,7 +1094,7 @@ describe("Adicionar menu", () => {
     expect(screen.getByRole("menuitem", { name: "Aparência" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
 
-    await user.click(screen.getByRole("button", { name: "Mais ações de adição" }));
+    await user.click(screen.getByRole("button", { name: "Mais opções para adicionar" }));
     await user.click(screen.getByRole("menuitem", { name: "Importar" }));
 
     expect(await screen.findByRole("dialog", { name: "Importar instants" })).toBeInTheDocument();
@@ -1126,7 +1126,7 @@ describe("Configurações doors", () => {
     return within(await screen.findByRole("menu"));
   }
 
-  it("ends the overflow menu with Aparência, Configurações… and Atalhos do teclado, and nothing else", async () => {
+  it("ends the overflow menu with Aparência, Configurações… and Atalhos de teclado, and nothing else", async () => {
     bridge();
     const user = userEvent.setup();
     render(<App />);
@@ -1136,7 +1136,7 @@ describe("Configurações doors", () => {
     expect(menu.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
       "Aparência",
       "Configurações…Ctrl,",
-      "Atalhos do teclado?"
+      "Atalhos de teclado?"
     ]);
   });
 
@@ -1240,7 +1240,7 @@ describe("Configurações doors", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click((await openMore(user)).getByRole("menuitem", { name: /Atalhos do teclado/ }));
+    await user.click((await openMore(user)).getByRole("menuitem", { name: /Atalhos de teclado/ }));
     await user.click(await screen.findByRole("button", { name: "Atalhos globais em Configurações…" }));
 
     expect(settings.open).toHaveBeenCalledWith("keys");
@@ -1251,7 +1251,7 @@ describe("Configurações doors", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Mais ações de adição" }));
+    await user.click(screen.getByRole("button", { name: "Mais opções para adicionar" }));
 
     expect(screen.getByRole("menuitem", { name: "Importar" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Exportar" })).toBeInTheDocument();
@@ -1298,7 +1298,7 @@ describe("Tight window", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.queryByRole("button", { name: "Mais ações de adição" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mais opções para adicionar" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Adicionar" })).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Mais opções" }));

@@ -64,7 +64,7 @@ export const Fields: StoryObj = {
       <Unit caption="Search · rest">
         <SearchField
           style={{ width: 260 }}
-          placeholder="Procurar um som…"
+          placeholder="Buscar som…"
           shortcut={shortcutParts(globals.os ?? "mac", "F")}
         />
       </Unit>

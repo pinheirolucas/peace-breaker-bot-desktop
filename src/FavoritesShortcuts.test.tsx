@@ -199,7 +199,7 @@ describe("clip keys in Favoritos", () => {
     const dialog = screen.getByRole("dialog", { name: "Atalho para “Sem tecla”" });
 
     await user.keyboard("b");
-    expect(within(dialog).getByText(/B já toca “Bruxaria”/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/B já reproduz “Bruxaria”/)).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     const stored = JSON.parse(localStorage.getItem("instants")!) as Instant[];

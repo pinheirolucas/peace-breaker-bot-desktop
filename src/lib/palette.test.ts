@@ -4,8 +4,8 @@ import type { PaletteCandidates, PaletteItem, PaletteLabels } from "./palette";
 
 const labels: PaletteLabels = {
   recents: "Recentes",
-  recentsNote: "do mais novo",
-  playing: "Tocando agora",
+  recentsNote: "mais recentes primeiro",
+  playing: "Reproduzindo agora",
   sounds: "Sons",
   soundsNote: (shown, total) => `${shown} de ${total}`,
   explore: "Explorar",
@@ -87,14 +87,14 @@ describe("arrange", () => {
       ["recents", ["s:Vine boom", "s:Airhorn", "s:Bonk"]],
       ["actions", ["add", "organize", "explore-tab", "settings"]]
     ]);
-    expect(groups[0].note).toBe("do mais novo");
+    expect(groups[0].note).toBe("mais recentes primeiro");
   });
 
   it("puts Parar o som first while a sound plays", () => {
     const playing = item("stop", "Parar o som", { kind: "stop" });
     const groups = arrange("", candidates({ playing }), labels);
 
-    expect(groups[0]).toMatchObject({ id: "playing", title: "Tocando agora", items: [playing] });
+    expect(groups[0]).toMatchObject({ id: "playing", title: "Reproduzindo agora", items: [playing] });
     // It is found by name too, but only when it matches.
     expect(arrange("zzz", candidates({ playing }), labels).find((g) => g.id === "playing")).toBeUndefined();
     expect(arrange("parar", candidates({ playing }), labels)[0].id).toBe("playing");

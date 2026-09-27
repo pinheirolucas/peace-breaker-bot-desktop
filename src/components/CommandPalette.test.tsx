@@ -160,7 +160,7 @@ describe("CommandPalette", () => {
     await user.keyboard("{Enter}");
     expect(run).not.toHaveBeenCalled();
     expect(props.onOpenChange).not.toHaveBeenCalled();
-    expect(screen.getByText("O bot não está em um canal. ⇧ Enter toca só aqui.")).toBeInTheDocument();
+    expect(screen.getByText("O bot não está em um canal. ⇧ Enter reproduz só aqui.")).toBeInTheDocument();
     expect(screen.getByText("só aqui")).toBeInTheDocument();
 
     await user.keyboard("{Shift>}{Enter}{/Shift}");
@@ -171,11 +171,11 @@ describe("CommandPalette", () => {
     const user = userEvent.setup();
     setup();
 
-    expect(screen.getByText("tocar no Discord")).toBeInTheDocument();
-    expect(screen.getByText("tocar aqui")).toBeInTheDocument();
+    expect(screen.getByText("reproduzir no Discord")).toBeInTheDocument();
+    expect(screen.getByText("reproduzir aqui")).toBeInTheDocument();
 
     await user.keyboard("{ArrowUp}");
-    expect(screen.queryByText("tocar no Discord")).toBeNull();
+    expect(screen.queryByText("reproduzir no Discord")).toBeNull();
     expect(screen.getByText("executar")).toBeInTheDocument();
   });
 

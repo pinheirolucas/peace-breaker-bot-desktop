@@ -40,7 +40,7 @@ describe("FilterMenu footer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Filtrar por site e região" }));
 
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent);
-    expect(items.slice(-2)).toEqual(["Restaurar padrão", "Mais em Configurações…"]);
+    expect(items.slice(-2)).toEqual(["Restaurar padrões", "Mais em Configurações…"]);
 
     await userEvent.click(screen.getByRole("menuitem", { name: "Mais em Configurações…" }));
     expect(onOpenSettings).toHaveBeenCalledTimes(1);
@@ -51,7 +51,7 @@ describe("FilterMenu footer", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Filtrar por site e região" }));
 
-    expect(screen.queryByRole("menuitem", { name: "Restaurar padrão" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Restaurar padrões" })).toBeNull();
     expect(screen.getByRole("menuitem", { name: "Mais em Configurações…" })).toBeInTheDocument();
   });
 

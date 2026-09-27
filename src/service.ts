@@ -1,6 +1,6 @@
 import type { Instant } from "./storage";
 
-const genericErrorMessage = "Erro desconhecido, tente novamente mais tarde";
+const genericErrorMessage = "Algo deu errado. Tente de novo daqui a pouco.";
 
 /**
  * Every backend reply is an envelope. Success carries `data`; most

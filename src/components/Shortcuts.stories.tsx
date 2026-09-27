@@ -12,7 +12,7 @@ import type { PlatformId } from "../themes";
 import ShortcutDialog from "./ShortcutDialog";
 import ShortcutSheet from "./ShortcutSheet";
 
-const meta: Meta = { title: "Components/Atalhos do teclado" };
+const meta: Meta = { title: "Components/Atalhos de teclado" };
 export default meta;
 
 const noop = () => undefined;
@@ -250,7 +250,7 @@ export const MenuEntry: StoryObj = {
     >
       <MenuItem primary="Aparência" />
       <MenuItem primary="Configurações…" hint={shortcutParts(platformOf(globals.os), ",")} />
-      <MenuItem primary="Atalhos do teclado" hint={["?"]} />
+      <MenuItem primary="Atalhos de teclado" hint={["?"]} />
     </Menu>
   )
 };

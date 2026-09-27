@@ -73,9 +73,9 @@ describe("ShortcutSheet", () => {
 
     const legend = within(screen.getByRole("list", { name: "Legenda" }));
     expect(legend.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
-      "Atoca no Discord",
-      "ShiftAtoca só aqui",
-      "Escpara"
+      "Areproduz no Discord",
+      "ShiftAreproduz só aqui",
+      "Escinterrompe"
     ]);
     expect(screen.queryByText("Shift + tecla toca só aqui.")).toBeNull();
   });
@@ -94,7 +94,7 @@ describe("ShortcutSheet", () => {
 
     const app = within(screen.getByRole("region", { name: "No app" }));
     expect(app.getAllByRole("heading", { level: 4 }).map((h) => h.textContent)).toEqual([
-      "Tocar",
+      "Reproduzir",
       "Navegar",
       "Adicionar",
       "O app"
@@ -108,14 +108,14 @@ describe("ShortcutSheet", () => {
       <ShortcutSheet open onOpenChange={vi.fn()} instants={instants} os="win" status={{ registered: [], failed: [] }} onOrganize={vi.fn()} />
     );
     expect(screen.queryByText("Visualizar")).toBeNull();
-    expect(screen.queryByText("Recarregar a listagem")).toBeNull();
+    expect(screen.queryByText("Recarregar a lista")).toBeNull();
     expect(screen.queryByText("Abrir Configurações")).toBeNull();
     unmount();
 
     installMenuBridge();
     renderSheet();
 
-    const reload = screen.getByText("Recarregar a listagem").closest("li")!;
+    const reload = screen.getByText("Recarregar a lista").closest("li")!;
     expect(within(reload).getByText("Visualizar")).toBeInTheDocument();
     expect(within(screen.getByText("Abrir Configurações").closest("li")!).getByText("Arquivo")).toBeInTheDocument();
   });
@@ -144,7 +144,7 @@ describe("ShortcutSheet", () => {
 
     await user.clear(field);
     await user.type(field, "zzz");
-    expect(screen.getByRole("status")).toHaveTextContent("Nenhum atalho com “zzz”");
+    expect(screen.getByRole("status")).toHaveTextContent("Nenhum atalho encontrado para “zzz”");
   });
 
   it("starts on the filter, and / returns to it from elsewhere in the sheet", async () => {
@@ -217,7 +217,7 @@ describe("ShortcutSheet", () => {
     localStorage.setItem("globalShortcuts", JSON.stringify({ enabled: true, modifier: null }));
     renderSheet({ status: { registered: [], failed: [{ key: "v", reason: "unsupported" }] } });
 
-    expect(screen.getByText("Seu ambiente não permite atalhos fora do app")).toBeInTheDocument();
+    expect(screen.getByText("Seu sistema não permite atalhos fora do app")).toBeInTheDocument();
   });
 
   it("closes itself before entering Organizar", async () => {

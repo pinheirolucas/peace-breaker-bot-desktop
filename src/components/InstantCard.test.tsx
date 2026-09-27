@@ -209,7 +209,7 @@ describe("InstantCard bot-not-connected gate", () => {
   it("swaps the Discord button's label and disables it when the bot isn't in a channel", () => {
     const { button } = renderCard({ botStatus: { connected: false } });
 
-    const discordButton = button("Bot fora de um canal de voz");
+    const discordButton = button("O bot não está em nenhum canal de voz");
     expect(discordButton).toBeDisabled();
   });
 

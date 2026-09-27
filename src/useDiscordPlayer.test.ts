@@ -167,7 +167,7 @@ describe("useDiscordPlayer", () => {
   });
 
   it("returns the error itself when the backend call rejects, for the caller to translate", async () => {
-    const error = new ApiError("instant_not_found", "O instant enviado não foi encontrado");
+    const error = new ApiError("instant_not_found", "Não encontramos esse instant");
     vi.mocked(playOnDiscord).mockRejectedValue(error);
 
     const { result } = renderHook(() => useDiscordPlayer());
