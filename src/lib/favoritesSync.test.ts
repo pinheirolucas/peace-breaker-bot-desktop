@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Instant } from "../storage";
-import { emptySync, serverSync, switchOwner, withServerSync } from "./favoritesSync";
+import { describeSync, emptySync, serverSync, switchOwner, withServerSync } from "./favoritesSync";
+import type { FavoritesSync } from "./favoritesSync";
 
 const a: Instant = { name: "A", url: "https://x.test/a.mp3" };
 const b: Instant = { name: "B", url: "https://x.test/b.mp3" };
@@ -51,5 +52,42 @@ describe("server records", () => {
 
   it("records nothing before an owner is known", () => {
     expect(withServerSync(emptySync, home, { revision: 1, base: [] })).toBe(emptySync);
+  });
+});
+
+describe("describeSync", () => {
+  const synced: FavoritesSync = {
+    currentOwner: "lucas",
+    owners: { lucas: { list: [], servers: { [home]: { revision: 3, base: [a], updatedAt: "2026-09-27T14:03:11Z" } } } },
+    status: { apiUrl: home, state: "synced" }
+  };
+
+  it("says nothing without a server, or before the bot has answered", () => {
+    expect(describeSync(synced, [a], null)).toBeNull();
+    expect(describeSync(emptySync, [a], home)).toBeNull();
+  });
+
+  it("names the owner and the bot when in step", () => {
+    expect(describeSync(synced, [a], home)).toEqual({ state: "synced", owner: "lucas", apiUrl: home, updatedAt: "2026-09-27T14:03:11Z" });
+  });
+
+  it("counts the changes waiting, and whether the bot is offline", () => {
+    expect(describeSync(synced, [a, b], home)).toEqual({ state: "waiting", count: 1, apiUrl: home, offline: false });
+    const offline: FavoritesSync = { ...synced, status: { apiUrl: home, state: "offline" } };
+    expect(describeSync(offline, [], home)).toEqual({ state: "waiting", count: 1, apiUrl: home, offline: true });
+  });
+
+  it("says an old bot can't sync", () => {
+    expect(describeSync({ ...emptySync, status: { apiUrl: home, state: "unsupported" } }, [a], home)).toEqual({ state: "unsupported", apiUrl: home });
+  });
+
+  it("passes on why the bot refused", () => {
+    const stopped: FavoritesSync = { ...synced, status: { apiUrl: home, state: "stopped", label: "invalid_favorites", message: "bad" } };
+    expect(describeSync(stopped, [a, b], home)).toEqual({ state: "stopped", label: "invalid_favorites", message: "bad" });
+  });
+
+  it("ignores a status about another bot", () => {
+    const other: FavoritesSync = { ...synced, status: { apiUrl: "http://10.0.0.9:9001/api/v1", state: "unsupported" } };
+    expect(describeSync(other, [a], home)?.state).toBe("synced");
   });
 });

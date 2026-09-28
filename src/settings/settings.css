@@ -198,6 +198,10 @@
 .stat span { display: block; margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--muted); }
 .stat .btn { margin-left: auto; }
 .dot[data-none] { background: var(--muted); }
+.stat + .grp { margin-top: 10px; }
+.dot[data-tone="wait"] { background: var(--warn); }
+.dot[data-tone="off"] { background: var(--muted); }
+.dot[data-tone="stop"] { background: var(--danger); }
 
 .mbar {
   display: flex;

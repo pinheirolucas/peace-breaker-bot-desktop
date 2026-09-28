@@ -571,7 +571,7 @@
       "shortcutElsewhere": "O atalho global que abre o acesso rápido fica em"
     },
     "data": {
-      "lede": "Tudo fica neste computador. Exportar e importar é a única forma de levar seus favoritos para outro.",
+      "lede": "Seus favoritos sincronizam com o bot selecionado e acompanham o dono dele em todos os bots que ele usa. Exportar salva um arquivo de backup.",
       "favorites": "Favoritos",
       "exportHint": "Salva um arquivo JSON com favoritos, teclas e configurações.",
       "exportAction": "Exportar…",
@@ -585,7 +585,19 @@
       "confirmTitle": "Voltar tudo ao padrão?",
       "confirmBody": "Idioma, paleta, servidor, catálogo, atalhos e ícone. Favoritos ficam como estão.",
       "confirmAction": "Restaurar",
-      "restored": "Configurações restauradas"
+      "restored": "Configurações restauradas",
+      "sync": {
+        "synced": "Sincronizado",
+        "syncedBody": "Favoritos de {{owner}}, com {{server}}.",
+        "syncedWhen": "Favoritos de {{owner}}, com {{server}}. Última alteração {{when}}.",
+        "waiting_one": "{{count}} alteração pendente",
+        "waiting_other": "{{count}} alterações pendentes",
+        "waitingOffline": "{{server}} não está respondendo. A sincronização continua quando ele voltar.",
+        "waitingSending": "Enviando para {{server}}…",
+        "unsupported": "Sincronização indisponível",
+        "unsupportedBody": "Atualize o bot em {{server}} para sincronizar os favoritos.",
+        "stopped": "Sincronização parada"
+      }
     },
     "search": {
       "language": {

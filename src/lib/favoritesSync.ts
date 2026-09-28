@@ -1,4 +1,6 @@
 import type { Instant } from "../storage";
+import { sanitizeKeys } from "./clipKeys";
+import { countChanges } from "./favoritesMerge";
 
 /** The last list one bot and this client agreed on. */
 export interface ServerSync {
@@ -71,4 +73,30 @@ export function withServerSync(sync: FavoritesSync, apiUrl: string, entry: Serve
   else delete servers[apiUrl];
 
   return { ...sync, owners: { ...sync.owners, [owner]: { ...record, servers } } };
+}
+
+/** What Configurações › Dados says about sync with the active bot. */
+export type SyncRow =
+  | { state: "synced"; owner: string; apiUrl: string; updatedAt?: string }
+  | { state: "waiting"; count: number; apiUrl: string; offline: boolean }
+  | { state: "unsupported"; apiUrl: string }
+  | { state: "stopped"; label: string | null; message: string };
+
+/** Null until the active bot has answered once. */
+export function describeSync(sync: FavoritesSync, instants: Instant[], apiUrl: string | null): SyncRow | null {
+  if (apiUrl === null) return null;
+
+  const status = sync.status?.apiUrl === apiUrl ? sync.status : undefined;
+  if (status?.state === "unsupported") return { state: "unsupported", apiUrl };
+  if (status?.state === "stopped") return { state: "stopped", label: status.label, message: status.message };
+
+  const entry = serverSync(sync, apiUrl);
+  if (!entry || sync.currentOwner === null) return null;
+
+  const count = countChanges(entry.base, sanitizeKeys(instants));
+  if (count > 0) return { state: "waiting", count, apiUrl, offline: status?.state === "offline" };
+
+  return entry.updatedAt === undefined
+    ? { state: "synced", owner: sync.currentOwner, apiUrl }
+    : { state: "synced", owner: sync.currentOwner, apiUrl, updatedAt: entry.updatedAt };
 }

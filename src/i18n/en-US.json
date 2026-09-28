@@ -571,7 +571,7 @@
       "shortcutElsewhere": "The global shortcut that opens quick access is in"
     },
     "data": {
-      "lede": "Everything stays on this computer. Exporting and importing is the only way to take your favorites to another.",
+      "lede": "Your favorites sync with the selected bot and follow its owner to every bot they run. Exporting saves a backup file.",
       "favorites": "Favorites",
       "exportHint": "Saves a JSON file with your favorites, keys and settings.",
       "exportAction": "Export…",
@@ -585,7 +585,19 @@
       "confirmTitle": "Reset everything to defaults?",
       "confirmBody": "Language, palette, server, catalog, shortcuts and icon. Favorites stay as they are.",
       "confirmAction": "Restore",
-      "restored": "Settings restored"
+      "restored": "Settings restored",
+      "sync": {
+        "synced": "Synced",
+        "syncedBody": "{{owner}}'s favorites, with {{server}}.",
+        "syncedWhen": "{{owner}}'s favorites, with {{server}}. Last changed {{when}}.",
+        "waiting_one": "{{count}} change waiting",
+        "waiting_other": "{{count}} changes waiting",
+        "waitingOffline": "{{server}} isn't answering. Sync picks up when it's back.",
+        "waitingSending": "Sending to {{server}}…",
+        "unsupported": "Sync unavailable",
+        "unsupportedBody": "Update the bot on {{server}} to sync favorites.",
+        "stopped": "Sync stopped"
+      }
     },
     "search": {
       "language": {

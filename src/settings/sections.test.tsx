@@ -614,6 +614,48 @@ describe("Barra de menus e Bandeja", () => {
   });
 });
 
+describe("Dados › sync", () => {
+  const home = "http://10.0.0.2:9001/api/v1";
+
+  it("names the owner, the bot and when the list last changed", () => {
+    const updatedAt = new Date(Date.now() - 120000).toISOString();
+    render(<DataPane sync={{ state: "synced", owner: "lucas", apiUrl: home, updatedAt }} onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />);
+
+    const status = within(screen.getByRole("status"));
+    expect(status.getByText("Sincronizado")).toBeInTheDocument();
+    expect(status.getByText("Favoritos de lucas, com 10.0.0.2:9001. Última alteração há 2 minutos.")).toBeInTheDocument();
+  });
+
+  it("counts changes waiting for an offline bot", () => {
+    render(<DataPane sync={{ state: "waiting", count: 3, apiUrl: home, offline: true }} onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />);
+
+    expect(screen.getByText("3 alterações pendentes")).toBeInTheDocument();
+    expect(screen.getByText("10.0.0.2:9001 não está respondendo. A sincronização continua quando ele voltar.")).toBeInTheDocument();
+  });
+
+  it("asks for a bot update when the bot can't sync", () => {
+    render(<DataPane sync={{ state: "unsupported", apiUrl: home }} onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />);
+
+    expect(screen.getByText("Sincronização indisponível")).toBeInTheDocument();
+    expect(screen.getByText("Atualize o bot em 10.0.0.2:9001 para sincronizar os favoritos.")).toBeInTheDocument();
+  });
+
+  it("translates why the bot refused the list", () => {
+    render(
+      <DataPane sync={{ state: "stopped", label: "favorites_too_large", message: "too large" }} onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />
+    );
+
+    expect(screen.getByText("Sincronização parada")).toBeInTheDocument();
+    expect(screen.getByText("A lista de favoritos é grande demais para o bot salvar")).toBeInTheDocument();
+  });
+
+  it("shows no row before a bot has answered", () => {
+    render(<DataPane onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />);
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+});
+
 describe("Dados e backup", () => {
   it("exports and imports, the same two doors Adicionar has", async () => {
     const onExport = vi.fn();
