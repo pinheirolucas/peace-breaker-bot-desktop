@@ -136,7 +136,8 @@
     "organizeDone": "Done",
     "organizeHint": "Drag to reorder · ⌨ sets a key",
     "organizeBlockedPlaying": "Stop the sound to organize",
-    "organizeBlockedSearch": "Clear the search to organize"
+    "organizeBlockedSearch": "Clear the search to organize",
+    "syncMerged": "Favorites merged with {{server}}"
   },
   "myinstants": {
     "loadingSummary": "loading…",

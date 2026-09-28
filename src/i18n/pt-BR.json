@@ -136,7 +136,8 @@
     "organizeDone": "Pronto",
     "organizeHint": "Arraste para reordenar · ⌨ define a tecla",
     "organizeBlockedPlaying": "Pare o som para organizar",
-    "organizeBlockedSearch": "Limpe a busca para organizar"
+    "organizeBlockedSearch": "Limpe a busca para organizar",
+    "syncMerged": "Favoritos mesclados com {{server}}"
   },
   "myinstants": {
     "loadingSummary": "carregando…",
