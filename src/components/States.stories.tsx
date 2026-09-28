@@ -4,6 +4,7 @@ import { CardSkeleton } from "./CardSkeleton";
 import { DropZone } from "./DropZone";
 import { EmptyState } from "./EmptyState";
 import { OfflineBanner } from "./OfflineBanner";
+import { SyncStatusRow } from "../settings/DataSection";
 
 const meta: Meta = { title: "Components/States" };
 export default meta;
@@ -58,6 +59,37 @@ export const DropZones: StoryObj = {
       <DropZone state="over" title="" />
       <DropZone state="ok" title="instants-2026-09-10.json" hint="34 instants no arquivo" />
       <DropZone state="bad" title="" />
+    </div>
+  )
+};
+
+const bot = "http://10.0.0.2:9001/api/v1";
+const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60000).toISOString();
+
+/** Configurações › Dados, one row per state. The dot is the state at a glance; the second line says what to do. */
+export const FavoritesSync: StoryObj = {
+  name: "Sincronização de favoritos",
+  render: () => (
+    <div style={{ display: "grid", gap: 10, maxWidth: 560 }}>
+      <SyncStatusRow row={{ state: "synced", owner: "pinheirolucas", apiUrl: bot, updatedAt: minutesAgo(2) }} />
+      <SyncStatusRow row={{ state: "waiting", count: 3, apiUrl: bot, offline: true }} />
+      <SyncStatusRow row={{ state: "waiting", count: 1, apiUrl: bot, offline: false }} />
+      <SyncStatusRow row={{ state: "unsupported", apiUrl: bot }} />
+      <SyncStatusRow row={{ state: "stopped", label: "invalid_favorites", message: "That favorites list isn't valid" }} />
+    </div>
+  )
+};
+
+/** Text that could outgrow the row: a long owner and address, no save time yet, and a label this build doesn't know, which falls back to the bot's own message. */
+export const FavoritesSyncEdges: StoryObj = {
+  name: "Sincronização de favoritos · limites",
+  render: () => (
+    <div style={{ display: "grid", gap: 10, maxWidth: 360 }}>
+      <SyncStatusRow
+        row={{ state: "synced", owner: "um.dono.com.um.nome.bem.comprido", apiUrl: "http://studio-pc-do-lucas.local:19001/api/v1", updatedAt: minutesAgo(60 * 26) }}
+      />
+      <SyncStatusRow row={{ state: "synced", owner: "pinheirolucas", apiUrl: bot }} />
+      <SyncStatusRow row={{ state: "stopped", label: "some_future_label", message: "The bot said no, in English" }} />
     </div>
   )
 };

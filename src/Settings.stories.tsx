@@ -288,7 +288,8 @@ export const DataSyncStopped = story("Dados · sincronização parada", {
   section: "data",
   scenario: { sync: { state: "stopped", label: "favorites_too_large", message: "That favorites list is too large to save" } }
 });
-export const DataNoServer = story("Dados · sem servidor", { section: "data", scenario: { sync: null } });
+/** No server to sync with: the row is left out, not shown empty. */
+export const DataNoServer = story("Dados · sem servidor", { section: "data", scenario: { server: "noServer", sync: null } });
 
 export const UpdateAvailable = story("Geral · atualização disponível", {
   section: "general",

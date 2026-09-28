@@ -164,6 +164,8 @@ export const Toasts: StoryObj = {
         message="Chamando o bot para #geral…" />
       <Toast open onOpenChange={() => {}} duration={Infinity}
         message="O bot não está em um canal de voz." actionLabel="Chamar para #geral" onAction={() => {}} />
+      <Toast open onOpenChange={() => {}} duration={Infinity}
+        message="Favoritos mesclados com 10.0.0.2:9001" />
     </ToastProvider>
   )
 };
