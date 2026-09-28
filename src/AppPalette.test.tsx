@@ -31,7 +31,9 @@ vi.mock("./service", async (importOriginal) => ({
   stopPlayingOnDiscord: vi.fn(),
   getBotStatus: vi.fn(),
   getInstants: vi.fn(() => Promise.resolve({ instants: [], pages: 0 })),
-  getProviders: vi.fn(() => Promise.resolve(providers))
+  getProviders: vi.fn(() => Promise.resolve(providers)),
+  getFavorites: vi.fn(() => new Promise(() => {})),
+  putFavorites: vi.fn(() => new Promise(() => {}))
 }));
 
 class FakeAudio extends EventTarget {
