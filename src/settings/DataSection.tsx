@@ -15,27 +15,33 @@ const units: [Intl.RelativeTimeFormatUnit, number][] = [
   ["minute", 60]
 ];
 
-/** "2 minutes ago", in the app's language; under a minute is "now". */
-export function timeAgo(iso: string, language: string, now = Date.now()): string | null {
+/** Seconds since `iso`, never negative: the bot's clock may run ahead of this one. Null when unreadable. */
+export function secondsSince(iso: string, now = Date.now()): number | null {
   const seconds = Math.round((now - Date.parse(iso)) / 1000);
-  if (Number.isNaN(seconds)) return null;
+  return Number.isNaN(seconds) ? null : Math.max(0, seconds);
+}
 
+/** "2 minutes ago", in the app's language, for a minute or more. */
+export function timeAgo(seconds: number, language: string): string {
   const format = new Intl.RelativeTimeFormat(language, { numeric: "auto" });
-  const [unit, size] = units.find(([, size]) => Math.abs(seconds) >= size) ?? ["second", 0];
-  return format.format(size === 0 ? 0 : -Math.floor(seconds / size), unit);
+  const [unit, size] = units.find(([, size]) => seconds >= size) ?? ["minute", 60];
+  return format.format(-Math.floor(seconds / size), unit);
 }
 
 function syncText(row: SyncRow, t: TFunction, language: string): { tone: string; title: string; body: string } {
   switch (row.state) {
     case "synced": {
       const server = formatApiUrl(row.apiUrl);
-      const when = row.updatedAt ? timeAgo(row.updatedAt, language) : null;
+      const seconds = row.updatedAt ? secondsSince(row.updatedAt) : null;
       return {
         tone: "ok",
         title: t("settings.data.sync.synced"),
-        body: when
-          ? t("settings.data.sync.syncedWhen", { owner: row.owner, server, when })
-          : t("settings.data.sync.syncedBody", { owner: row.owner, server })
+        body:
+          seconds === null
+            ? t("settings.data.sync.syncedBody", { owner: row.owner, server })
+            : seconds < 60
+              ? t("settings.data.sync.syncedJustNow", { owner: row.owner, server })
+              : t("settings.data.sync.syncedWhen", { owner: row.owner, server, when: timeAgo(seconds, language) })
       };
     }
     case "waiting":

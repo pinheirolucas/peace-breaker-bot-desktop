@@ -571,7 +571,7 @@
       "shortcutElsewhere": "The global shortcut that opens quick access is in"
     },
     "data": {
-      "lede": "Your favorites sync with the selected bot and follow its owner to every bot they run. Exporting saves a backup file.",
+      "lede": "Your favorites sync with the selected bot and carry over to every bot with the same owner. Exporting saves a backup file.",
       "favorites": "Favorites",
       "exportHint": "Saves a JSON file with your favorites, keys and settings.",
       "exportAction": "Export…",
@@ -590,6 +590,7 @@
         "synced": "Synced",
         "syncedBody": "{{owner}}'s favorites, with {{server}}.",
         "syncedWhen": "{{owner}}'s favorites, with {{server}}. Last changed {{when}}.",
+        "syncedJustNow": "{{owner}}'s favorites, with {{server}}. Last changed just now.",
         "waiting_one": "{{count}} change waiting",
         "waiting_other": "{{count}} changes waiting",
         "waitingOffline": "{{server}} isn't answering. Sync picks up when it's back.",
@@ -680,6 +681,10 @@
         "title": "Import favorites",
         "hint": "Merge or replace"
       },
+      "sync": {
+        "title": "Favorites sync",
+        "hint": "With the selected bot"
+      },
       "reset": {
         "title": "Restore settings",
         "hint": "Put everything back to default"
@@ -755,7 +760,7 @@
       "explore": "explore site country catalog catalogue region",
       "keys": "shortcuts keys global quick access",
       "presence": "menu bar tray icon quick access background",
-      "data": "data backup export import restore"
+      "data": "data backup export import restore sync"
     },
     "paletteRow": "Palette",
     "paletteSub": "Appearance · live preview",

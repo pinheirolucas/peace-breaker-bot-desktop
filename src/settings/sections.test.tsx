@@ -6,7 +6,7 @@ import { defaultPresenceSettings } from "../../electron/presence";
 import type { PresenceSettings } from "../../electron/presence";
 import i18n from "../i18n";
 import { resetSettings, settingsKeys } from "../storage";
-import { DataPane } from "./DataSection";
+import { DataPane, secondsSince } from "./DataSection";
 import { ExplorePane } from "./ExploreSection";
 import GeneralSection, { GeneralPane } from "./GeneralSection";
 import KeysSection, { KeysPane } from "./KeysSection";
@@ -626,6 +626,20 @@ describe("Dados › sync", () => {
     expect(status.getByText("Favoritos de lucas, com 10.0.0.2:9001. Última alteração há 2 minutos.")).toBeInTheDocument();
   });
 
+  it("says just now for a change under a minute old", () => {
+    const updatedAt = new Date(Date.now() - 20000).toISOString();
+    render(<DataPane sync={{ state: "synced", owner: "lucas", apiUrl: home, updatedAt }} onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />);
+
+    expect(screen.getByText("Favoritos de lucas, com 10.0.0.2:9001. Última alteração agora há pouco.")).toBeInTheDocument();
+  });
+
+  it("never dates a change in the future when the bot's clock runs ahead", () => {
+    const updatedAt = new Date(Date.now() + 120000).toISOString();
+    render(<DataPane sync={{ state: "synced", owner: "lucas", apiUrl: home, updatedAt }} onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />);
+
+    expect(screen.getByText("Favoritos de lucas, com 10.0.0.2:9001. Última alteração agora há pouco.")).toBeInTheDocument();
+  });
+
   it("counts changes waiting for an offline bot", () => {
     render(<DataPane sync={{ state: "waiting", count: 3, apiUrl: home, offline: true }} onExport={vi.fn()} onImport={vi.fn()} onReset={vi.fn()} />);
 
@@ -746,3 +760,15 @@ describe("resetSettings", () => {
     expect(screen.getByRole("switch", { name: "Mostrar na barra de menus" })).not.toBeChecked();
   });
 });
+
+describe("secondsSince", () => {
+  it("never goes below zero", () => {
+    expect(secondsSince("2026-09-27T14:05:00Z", Date.parse("2026-09-27T14:03:00Z"))).toBe(0);
+    expect(secondsSince("2026-09-27T14:03:00Z", Date.parse("2026-09-27T14:05:00Z"))).toBe(120);
+  });
+
+  it("is null for a time it can't read", () => {
+    expect(secondsSince("not a date")).toBeNull();
+  });
+});
+

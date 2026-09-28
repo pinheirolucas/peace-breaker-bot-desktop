@@ -571,7 +571,7 @@
       "shortcutElsewhere": "O atalho global que abre o acesso rápido fica em"
     },
     "data": {
-      "lede": "Seus favoritos sincronizam com o bot selecionado e acompanham o dono dele em todos os bots que ele usa. Exportar salva um arquivo de backup.",
+      "lede": "Seus favoritos sincronizam com o bot selecionado e valem em todos os bots do mesmo dono. Exportar salva um arquivo de backup.",
       "favorites": "Favoritos",
       "exportHint": "Salva um arquivo JSON com favoritos, teclas e configurações.",
       "exportAction": "Exportar…",
@@ -590,6 +590,7 @@
         "synced": "Sincronizado",
         "syncedBody": "Favoritos de {{owner}}, com {{server}}.",
         "syncedWhen": "Favoritos de {{owner}}, com {{server}}. Última alteração {{when}}.",
+        "syncedJustNow": "Favoritos de {{owner}}, com {{server}}. Última alteração agora há pouco.",
         "waiting_one": "{{count}} alteração pendente",
         "waiting_other": "{{count}} alterações pendentes",
         "waitingOffline": "{{server}} não está respondendo. A sincronização continua quando ele voltar.",
@@ -680,6 +681,10 @@
         "title": "Importar favoritos",
         "hint": "Mesclar ou substituir"
       },
+      "sync": {
+        "title": "Sincronização de favoritos",
+        "hint": "Sincronizar com o bot selecionado"
+      },
       "reset": {
         "title": "Restaurar configurações",
         "hint": "Voltar tudo ao padrão"
@@ -755,7 +760,7 @@
       "explore": "explorar site pais catalogo regiao",
       "keys": "atalhos teclas globais acesso rapido",
       "presence": "barra de menus bandeja icone acesso rapido segundo plano",
-      "data": "dados backup exportar importar restaurar"
+      "data": "dados backup exportar importar restaurar sincronizar sincronizacao"
     },
     "paletteRow": "Paleta",
     "paletteSub": "Aparência · prévia ao vivo",

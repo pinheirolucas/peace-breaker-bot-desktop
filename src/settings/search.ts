@@ -43,6 +43,7 @@ export function searchEntries(t: Translate, os: PlatformId): SearchEntry[] {
     entry(os === "mac" ? "nameBeside" : "background", "presence"),
     entry("export", "data"),
     entry("import", "data"),
+    entry("sync", "data"),
     entry("reset", "data")
   ];
 }

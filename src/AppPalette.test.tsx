@@ -317,6 +317,15 @@ describe("actions and settings", () => {
     expect(settings.open).toHaveBeenCalledWith("server");
   });
 
+  it("finds Dados by sync", async () => {
+    const user = userEvent.setup();
+    await opened();
+
+    await user.type(field(), ">sincronizar");
+
+    expect(screen.getByRole("option", { name: /Configurações › Dados e backup/ })).toBeInTheDocument();
+  });
+
   it("has one row per section in the sidebar's order, and Abrir Configurações on Ctrl+,", async () => {
     const user = userEvent.setup();
     await opened();

@@ -80,7 +80,7 @@ export const FavoritesSync: StoryObj = {
   )
 };
 
-/** Text that could outgrow the row: a long owner and address, no save time yet, and a label this build doesn't know, which falls back to the bot's own message. */
+/** Text that could outgrow the row: a long owner and address, no save time yet, a bot whose clock runs three minutes ahead (just now, never in the future), and a label this build doesn't know, which falls back to the bot's own message. */
 export const FavoritesSyncEdges: StoryObj = {
   name: "Sincronização de favoritos · limites",
   render: () => (
@@ -89,6 +89,7 @@ export const FavoritesSyncEdges: StoryObj = {
         row={{ state: "synced", owner: "um.dono.com.um.nome.bem.comprido", apiUrl: "http://studio-pc-do-lucas.local:19001/api/v1", updatedAt: minutesAgo(60 * 26) }}
       />
       <SyncStatusRow row={{ state: "synced", owner: "pinheirolucas", apiUrl: bot }} />
+      <SyncStatusRow row={{ state: "synced", owner: "pinheirolucas", apiUrl: bot, updatedAt: minutesAgo(-3) }} />
       <SyncStatusRow row={{ state: "stopped", label: "some_future_label", message: "The bot said no, in English" }} />
     </div>
   )
