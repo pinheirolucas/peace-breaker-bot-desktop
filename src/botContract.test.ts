@@ -12,7 +12,7 @@ const sources = import.meta.glob(["./**/*.{ts,tsx}", "../electron/**/*.ts", "!./
 function calledPaths(): Set<string> {
   const paths = new Set<string>();
   for (const text of Object.values(sources)) {
-    for (const match of text.matchAll(/\$\{\w+\}(\/(?:bot|instants|providers)[^`?]*)/g)) {
+    for (const match of text.matchAll(/\$\{\w+\}(\/(?:bot|instants|providers|favorites)[^`?]*)/g)) {
       paths.add(normalize(match[1]));
     }
   }

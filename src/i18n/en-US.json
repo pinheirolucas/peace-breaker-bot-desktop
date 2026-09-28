@@ -210,7 +210,12 @@
     "owner_not_in_voice": "The bot's owner isn't in a voice channel the bot can see",
     "owner_unknown": "The bot hasn't seen its owner yet. Send it any message on Discord, then try again.",
     "not_voice_channel": "That channel isn't a voice channel",
-    "voice_join_failed": "The bot couldn't connect to that voice channel"
+    "voice_join_failed": "The bot couldn't connect to that voice channel",
+    "invalid_favorites": "The bot refused the favorites list: an item's name, link or key isn't valid",
+    "favorites_conflict": "The favorites changed on the bot in the meantime. Try again.",
+    "owner_mismatch": "Those favorites belong to someone other than this bot's owner",
+    "favorites_too_large": "The favorites list is too large for the bot to save",
+    "favorites_unavailable": "The bot couldn't read or save its favorites. Check its data folder."
   },
   "rename": {
     "title": "Rename sound",

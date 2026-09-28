@@ -210,7 +210,12 @@
     "owner_not_in_voice": "O dono do bot não está em um canal de voz que o bot consiga ver",
     "owner_unknown": "O bot ainda não conhece o dono. Mande qualquer mensagem para ele no Discord e tente de novo.",
     "not_voice_channel": "Esse canal não é um canal de voz",
-    "voice_join_failed": "O bot não conseguiu se conectar a esse canal de voz"
+    "voice_join_failed": "O bot não conseguiu se conectar a esse canal de voz",
+    "invalid_favorites": "O bot recusou a lista de favoritos: o nome, o link ou a tecla de um item não é válido",
+    "favorites_conflict": "Os favoritos mudaram no bot enquanto isso. Tente de novo.",
+    "owner_mismatch": "Esses favoritos são de outra pessoa, não do dono deste bot",
+    "favorites_too_large": "A lista de favoritos é grande demais para o bot salvar",
+    "favorites_unavailable": "O bot não conseguiu ler nem salvar os favoritos. Confira a pasta de dados dele."
   },
   "rename": {
     "title": "Renomear som",
