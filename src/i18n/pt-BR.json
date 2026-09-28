@@ -136,7 +136,8 @@
     "organizeDone": "Pronto",
     "organizeHint": "Arraste para reordenar · ⌨ define a tecla",
     "organizeBlockedPlaying": "Pare o som para organizar",
-    "organizeBlockedSearch": "Limpe a busca para organizar"
+    "organizeBlockedSearch": "Limpe a busca para organizar",
+    "syncMerged": "Favoritos mesclados com {{server}}"
   },
   "myinstants": {
     "loadingSummary": "carregando…",
@@ -210,7 +211,12 @@
     "owner_not_in_voice": "O dono do bot não está em um canal de voz que o bot consiga ver",
     "owner_unknown": "O bot ainda não conhece o dono. Mande qualquer mensagem para ele no Discord e tente de novo.",
     "not_voice_channel": "Esse canal não é um canal de voz",
-    "voice_join_failed": "O bot não conseguiu se conectar a esse canal de voz"
+    "voice_join_failed": "O bot não conseguiu se conectar a esse canal de voz",
+    "invalid_favorites": "O bot recusou a lista de favoritos: o nome, o link ou a tecla de um item não é válido",
+    "favorites_conflict": "Os favoritos mudaram no bot enquanto isso. Tente de novo.",
+    "owner_mismatch": "Esses favoritos são de outra pessoa, não do dono deste bot",
+    "favorites_too_large": "A lista de favoritos é grande demais para o bot salvar",
+    "favorites_unavailable": "O bot não conseguiu ler nem salvar os favoritos. Confira a pasta de dados dele."
   },
   "rename": {
     "title": "Renomear som",
@@ -565,7 +571,7 @@
       "shortcutElsewhere": "O atalho global que abre o acesso rápido fica em"
     },
     "data": {
-      "lede": "Tudo fica neste computador. Exportar e importar é a única forma de levar seus favoritos para outro.",
+      "lede": "Seus favoritos sincronizam com o bot selecionado e valem em todos os bots do mesmo dono. Exportar salva um arquivo de backup.",
       "favorites": "Favoritos",
       "exportHint": "Salva um arquivo JSON com favoritos, teclas e configurações.",
       "exportAction": "Exportar…",
@@ -579,7 +585,20 @@
       "confirmTitle": "Voltar tudo ao padrão?",
       "confirmBody": "Idioma, paleta, servidor, catálogo, atalhos e ícone. Favoritos ficam como estão.",
       "confirmAction": "Restaurar",
-      "restored": "Configurações restauradas"
+      "restored": "Configurações restauradas",
+      "sync": {
+        "synced": "Sincronizado",
+        "syncedBody": "Favoritos de {{owner}}, com {{server}}.",
+        "syncedWhen": "Favoritos de {{owner}}, com {{server}}. Última alteração {{when}}.",
+        "syncedJustNow": "Favoritos de {{owner}}, com {{server}}. Última alteração agora há pouco.",
+        "waiting_one": "{{count}} alteração pendente",
+        "waiting_other": "{{count}} alterações pendentes",
+        "waitingOffline": "{{server}} não está respondendo. A sincronização continua quando ele voltar.",
+        "waitingSending": "Enviando para {{server}}…",
+        "unsupported": "Sincronização indisponível",
+        "unsupportedBody": "Atualize o bot em {{server}} para sincronizar os favoritos.",
+        "stopped": "Sincronização parada"
+      }
     },
     "search": {
       "language": {
@@ -662,6 +681,10 @@
         "title": "Importar favoritos",
         "hint": "Mesclar ou substituir"
       },
+      "sync": {
+        "title": "Sincronização de favoritos",
+        "hint": "Sincronizar com o bot selecionado"
+      },
       "reset": {
         "title": "Restaurar configurações",
         "hint": "Voltar tudo ao padrão"
@@ -737,7 +760,7 @@
       "explore": "explorar site pais catalogo regiao",
       "keys": "atalhos teclas globais acesso rapido",
       "presence": "barra de menus bandeja icone acesso rapido segundo plano",
-      "data": "dados backup exportar importar restaurar"
+      "data": "dados backup exportar importar restaurar sincronizar sincronizacao"
     },
     "paletteRow": "Paleta",
     "paletteSub": "Aparência · prévia ao vivo",

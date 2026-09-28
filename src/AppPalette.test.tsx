@@ -31,7 +31,9 @@ vi.mock("./service", async (importOriginal) => ({
   stopPlayingOnDiscord: vi.fn(),
   getBotStatus: vi.fn(),
   getInstants: vi.fn(() => Promise.resolve({ instants: [], pages: 0 })),
-  getProviders: vi.fn(() => Promise.resolve(providers))
+  getProviders: vi.fn(() => Promise.resolve(providers)),
+  getFavorites: vi.fn(() => new Promise(() => {})),
+  putFavorites: vi.fn(() => new Promise(() => {}))
 }));
 
 class FakeAudio extends EventTarget {
@@ -315,6 +317,15 @@ describe("actions and settings", () => {
 
     expect(palette()).toBeNull();
     expect(settings.open).toHaveBeenCalledWith("server");
+  });
+
+  it("finds Dados by sync", async () => {
+    const user = userEvent.setup();
+    await opened();
+
+    await user.type(field(), ">sincronizar");
+
+    expect(screen.getByRole("option", { name: /Configurações › Dados e backup/ })).toBeInTheDocument();
   });
 
   it("has one row per section in the sidebar's order, and Abrir Configurações on Ctrl+,", async () => {

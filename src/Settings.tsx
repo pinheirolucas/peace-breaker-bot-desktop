@@ -28,7 +28,7 @@ import ImportForm from "./ImportForm";
 import { exportToJSON } from "./state";
 import { resetSettings } from "./storage";
 import type { PlatformId } from "./themes";
-import { DataPane } from "./settings/DataSection";
+import DataSection from "./settings/DataSection";
 import ExploreSection from "./settings/ExploreSection";
 import GeneralSection from "./settings/GeneralSection";
 import KeysSection from "./settings/KeysSection";
@@ -275,7 +275,7 @@ export default function Settings() {
     keys: <KeysSection />,
     presence: <PresenceSection onOpenKeys={() => setSection("keys")} />,
     data: (
-      <DataPane
+      <DataSection
         onExport={exportToJSON}
         onImport={() => setImportOpen(true)}
         onReset={() => {

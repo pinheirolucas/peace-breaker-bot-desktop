@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { settingsKeys } from "./storage";
 
-const notSettings = ["instants", "recentClips", "lastVoiceChannel"];
+const notSettings = ["instants", "favoritesSync", "recentClips", "lastVoiceChannel"];
 
 const sources = import.meta.glob(["./**/*.{ts,tsx}", "!./**/*.test.*", "!./**/*.stories.*"], {
   query: "?raw",
@@ -31,5 +31,6 @@ describe("stored keys", () => {
 
   it("never resets the favourites", () => {
     expect(settingsKeys).not.toContain("instants");
+    expect(settingsKeys).not.toContain("favoritesSync");
   });
 });

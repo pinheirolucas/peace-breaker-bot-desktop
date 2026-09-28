@@ -75,6 +75,7 @@ import type { ColorMode } from "./themes";
 import { isLanguageId } from "./i18n/detect";
 import { useQuickAccessShortcut } from "./hooks/useQuickAccessShortcut";
 import { useBotStatusState } from "./useBotStatus";
+import { useFavoritesSync } from "./useFavoritesSync";
 import useVoiceChannel, { useVoiceToasts } from "./useVoiceChannel";
 import VoiceContext from "./VoiceContext";
 import { usePresenceSettings, useReportPlaying, useReportPresenceSettings } from "./hooks/usePresence";
@@ -416,6 +417,12 @@ export default function App() {
   const showToast = useCallback((options: SnackbarOptions) => {
     setToast((current) => ({ ...options, open: true, key: current.key + 1 }));
   }, []);
+
+  const favoritesMerged = useCallback(
+    (url: string) => showToast({ message: t("favorites.syncMerged", { server: formatApiUrl(url) }) }),
+    [showToast, t]
+  );
+  useFavoritesSync(activeUrl, healthy, favoritesMerged);
 
   // Quick access's shortcut is registered only while it is on and quick access is;
   // a combination another app holds snaps the switch back and says so.

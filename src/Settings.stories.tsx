@@ -10,6 +10,7 @@ import type { SettingsPane } from "../electron/settings";
 import { SettingsShell } from "./Settings";
 import type { BotStatus, ProviderInfo } from "./service";
 import { DataPane } from "./settings/DataSection";
+import type { SyncRow } from "./lib/favoritesSync";
 import { ExplorePane } from "./settings/ExploreSection";
 import { GeneralPane } from "./settings/GeneralSection";
 import { KeysPane } from "./settings/KeysSection";
@@ -65,6 +66,8 @@ type Scenario = {
   presence?: Partial<PresenceSettings>;
   quickAccessShortcut?: boolean;
   confirming?: boolean;
+  /** What Dados says about sync. */
+  sync?: SyncRow | null;
   /** Which tray glyph the preview shows. */
   glyph?: TrayState;
   onOpenAppearance?: () => void;
@@ -186,7 +189,15 @@ function Window({ os, desktop, section: initial, query: initialQuery = "", compa
         onOpenKeys={() => setSection("keys")}
       />
     ),
-    data: <DataPane onExport={noop} onImport={noop} onReset={noop} defaultConfirming={scenario.confirming} />
+    data: (
+      <DataPane
+        sync={scenario.sync === undefined ? syncedRow() : scenario.sync}
+        onExport={noop}
+        onImport={noop}
+        onReset={noop}
+        defaultConfirming={scenario.confirming}
+      />
+    )
   };
 
   return (
@@ -213,6 +224,10 @@ function Window({ os, desktop, section: initial, query: initialQuery = "", compa
       />
     </div>
   );
+}
+
+function syncedRow(): SyncRow {
+  return { state: "synced", owner: "pinheirolucas", apiUrl: estudio.apiUrl, updatedAt: new Date(Date.now() - 120000).toISOString() };
 }
 
 type Args = Omit<WindowProps, "os" | "desktop">;
@@ -261,6 +276,20 @@ export const Data = story("Dados e backup", { section: "data" });
 // ---- state ----
 
 export const DataConfirm = story("Dados · confirmar restauração", { section: "data", scenario: { confirming: true } });
+export const DataSyncWaiting = story("Dados · alterações pendentes", {
+  section: "data",
+  scenario: { sync: { state: "waiting", count: 3, apiUrl: estudio.apiUrl, offline: true } }
+});
+export const DataSyncUnsupported = story("Dados · bot sem sincronização", {
+  section: "data",
+  scenario: { sync: { state: "unsupported", apiUrl: estudio.apiUrl } }
+});
+export const DataSyncStopped = story("Dados · sincronização parada", {
+  section: "data",
+  scenario: { sync: { state: "stopped", label: "favorites_too_large", message: "That favorites list is too large to save" } }
+});
+/** No server to sync with: the row is left out, not shown empty. */
+export const DataNoServer = story("Dados · sem servidor", { section: "data", scenario: { server: "noServer", sync: null } });
 
 export const UpdateAvailable = story("Geral · atualização disponível", {
   section: "general",

@@ -2,6 +2,7 @@ import type { LastChannel, PresenceSettings } from "../electron/presence";
 import type { Server } from "../electron/discovery";
 import type { GlobalModifier } from "../electron/shortcuts";
 import type { LanguageId } from "./i18n/detect";
+import type { FavoritesSync } from "./lib/favoritesSync";
 import { clearPersisted, createPersistedState } from "./lib/persisted";
 import { migrateQuickAccessStorage } from "./lib/quickAccessCompat";
 import type { Region } from "./regions";
@@ -96,3 +97,6 @@ export const useRecentClipsState = createPersistedState<string[]>("recentClips")
 
 /** The last voice channel the bot was seen in, so it can be called back. Not a setting: Restaurar configurações leaves it. */
 export const useLastVoiceChannelState = createPersistedState<LastChannel | null>("lastVoiceChannel");
+
+/** Each bot owner's favourites and what every bot last agreed on. Not a setting: Restaurar configurações leaves it. */
+export const useFavoritesSyncState = createPersistedState<FavoritesSync>("favoritesSync");

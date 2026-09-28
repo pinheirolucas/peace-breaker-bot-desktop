@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach, vi } from "vitest";
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 import type { JsonBodyType } from "msw";
@@ -11,6 +11,8 @@ import {
   getInstants,
   getProviders,
   getBotStatus,
+  getFavorites,
+  putFavorites,
   getApiUrl,
   setApiUrl,
   resetApiUrl,
@@ -944,5 +946,53 @@ describe("testServer", () => {
 
     unsubscribeHealth();
     unsubscribeError();
+  });
+});
+
+describe("favorites", () => {
+  const list = { owner: "pinheirolucas", revision: 3, instants: [{ name: "Bruh", url: "https://x.test/b.mp3", key: "b" }] };
+
+  it("reads the owner's list", async () => {
+    server.use(http.get(`${apiUrl}/favorites`, () => success(list)));
+
+    await expect(getFavorites()).resolves.toEqual(list);
+  });
+
+  it("puts the list with the owner and the revision it starts from", async () => {
+    let body;
+    server.use(
+      http.put(`${apiUrl}/favorites`, async ({ request }) => {
+        body = await request.json();
+        return success({ ...list, revision: 4 });
+      })
+    );
+
+    await expect(putFavorites("pinheirolucas", 3, list.instants)).resolves.toMatchObject({ revision: 4 });
+    expect(body).toEqual({ owner: "pinheirolucas", baseRevision: 3, instants: list.instants });
+  });
+
+  it("carries the label and status of a refusal", async () => {
+    server.use(
+      http.put(`${apiUrl}/favorites`, () => errorAtStatus(409, { label: "favorites_conflict", message: "changed" }))
+    );
+
+    await expect(putFavorites("pinheirolucas", 1, [])).rejects.toMatchObject({ label: "favorites_conflict", status: 409 });
+  });
+
+  it("reports an old bot's plain 404 by status", async () => {
+    server.use(http.get(`${apiUrl}/favorites`, () => new HttpResponse("404 page not found", { status: 404 })));
+
+    await expect(getFavorites()).rejects.toMatchObject({ label: null, status: 404 });
+  });
+
+  it("marks the server down on a network failure without raising the connection error", async () => {
+    const onError = vi.fn();
+    const off = onConnectionError(onError);
+    server.use(http.get(`${apiUrl}/favorites`, () => HttpResponse.error()));
+
+    await expect(getFavorites()).rejects.toMatchObject({ status: null });
+    expect(isHealthy()).toBe(false);
+    expect(onError).not.toHaveBeenCalled();
+    off();
   });
 });

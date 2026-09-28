@@ -18,7 +18,9 @@ interface Envelope<T> {
 export class ApiError extends Error {
   constructor(
     public readonly label: string | null,
-    message: string
+    message: string,
+    /** The HTTP status, or null when no response arrived. */
+    public readonly status: number | null = null
   ) {
     super(message);
     this.name = "ApiError";
@@ -159,9 +161,10 @@ export function resetApiUrl(): void {
  *  nothing to fetch, so that is folded into the same "connection failure"
  *  signal a real unreachable server produces, rather than attempting a
  *  request against a nonsensical URL. */
-function requireApiUrl(): string {
+function requireApiUrl(quiet = false): string {
   if (apiUrl === null) {
-    markConnectionFailure();
+    if (quiet) markHealth(false);
+    else markConnectionFailure();
     throw new ApiError(null, genericErrorMessage);
   }
 
@@ -172,13 +175,15 @@ function requireApiUrl(): string {
  *  into the same ApiError path as a 200 with no `data` — the try/catch around
  *  the fetch itself covers only a genuine network failure, so neither case
  *  gets rewritten into the generic fallback. */
-async function requestEnvelope<T>(url: string, init?: RequestInit): Promise<T> {
+async function requestEnvelope<T>(url: string, init?: RequestInit, quiet = false): Promise<T> {
   let response: Response;
 
   try {
     response = await fetch(url, init);
   } catch {
-    markConnectionFailure();
+    // A background request still marks the server down, but raises no toast.
+    if (quiet) markHealth(false);
+    else markConnectionFailure();
     throw new ApiError(null, genericErrorMessage);
   }
 
@@ -192,7 +197,7 @@ async function requestEnvelope<T>(url: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok || !body.data) {
-    throw new ApiError(body.label ?? null, body.message || genericErrorMessage);
+    throw new ApiError(body.label ?? null, body.message || genericErrorMessage, response.status);
   }
 
   return body.data;
@@ -270,7 +275,7 @@ export async function testServer(candidateBase: string): Promise<BotStatus> {
   } catch {}
 
   if (!response.ok || !body.data) {
-    throw new ApiError(body.label ?? null, body.message || genericErrorMessage);
+    throw new ApiError(body.label ?? null, body.message || genericErrorMessage, response.status);
   }
 
   return body.data;
@@ -312,4 +317,32 @@ export interface ProviderInfo {
 export async function getProviders(): Promise<ProviderInfo[]> {
   const base = requireApiUrl();
   return requestEnvelope<ProviderInfo[]>(`${base}/providers`);
+}
+
+/** The bot owner's favourites as one bot holds them. `owner` is the key a client stores its copy under. */
+export interface Favorites {
+  owner: string;
+  revision: number;
+  updatedAt?: string;
+  instants: Instant[];
+}
+
+/** Background sync: a failure marks the server down without the connection toast. */
+export async function getFavorites(): Promise<Favorites> {
+  const base = requireApiUrl(true);
+  return requestEnvelope<Favorites>(`${base}/favorites`, undefined, true);
+}
+
+/** Replaces the owner's list if `baseRevision` is still current. Background, like getFavorites. */
+export async function putFavorites(owner: string, baseRevision: number, instants: Instant[]): Promise<Favorites> {
+  const base = requireApiUrl(true);
+  return requestEnvelope<Favorites>(
+    `${base}/favorites`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner, baseRevision, instants })
+    },
+    true
+  );
 }

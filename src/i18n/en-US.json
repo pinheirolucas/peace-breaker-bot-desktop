@@ -136,7 +136,8 @@
     "organizeDone": "Done",
     "organizeHint": "Drag to reorder · ⌨ sets a key",
     "organizeBlockedPlaying": "Stop the sound to organize",
-    "organizeBlockedSearch": "Clear the search to organize"
+    "organizeBlockedSearch": "Clear the search to organize",
+    "syncMerged": "Favorites merged with {{server}}"
   },
   "myinstants": {
     "loadingSummary": "loading…",
@@ -210,7 +211,12 @@
     "owner_not_in_voice": "The bot's owner isn't in a voice channel the bot can see",
     "owner_unknown": "The bot hasn't seen its owner yet. Send it any message on Discord, then try again.",
     "not_voice_channel": "That channel isn't a voice channel",
-    "voice_join_failed": "The bot couldn't connect to that voice channel"
+    "voice_join_failed": "The bot couldn't connect to that voice channel",
+    "invalid_favorites": "The bot refused the favorites list: an item's name, link or key isn't valid",
+    "favorites_conflict": "The favorites changed on the bot in the meantime. Try again.",
+    "owner_mismatch": "Those favorites belong to someone other than this bot's owner",
+    "favorites_too_large": "The favorites list is too large for the bot to save",
+    "favorites_unavailable": "The bot couldn't read or save its favorites. Check its data folder."
   },
   "rename": {
     "title": "Rename sound",
@@ -565,7 +571,7 @@
       "shortcutElsewhere": "The global shortcut that opens quick access is in"
     },
     "data": {
-      "lede": "Everything stays on this computer. Exporting and importing is the only way to take your favorites to another.",
+      "lede": "Your favorites sync with the selected bot and carry over to every bot with the same owner. Exporting saves a backup file.",
       "favorites": "Favorites",
       "exportHint": "Saves a JSON file with your favorites, keys and settings.",
       "exportAction": "Export…",
@@ -579,7 +585,20 @@
       "confirmTitle": "Reset everything to defaults?",
       "confirmBody": "Language, palette, server, catalog, shortcuts and icon. Favorites stay as they are.",
       "confirmAction": "Restore",
-      "restored": "Settings restored"
+      "restored": "Settings restored",
+      "sync": {
+        "synced": "Synced",
+        "syncedBody": "{{owner}}'s favorites, with {{server}}.",
+        "syncedWhen": "{{owner}}'s favorites, with {{server}}. Last changed {{when}}.",
+        "syncedJustNow": "{{owner}}'s favorites, with {{server}}. Last changed just now.",
+        "waiting_one": "{{count}} change waiting",
+        "waiting_other": "{{count}} changes waiting",
+        "waitingOffline": "{{server}} isn't answering. Sync picks up when it's back.",
+        "waitingSending": "Sending to {{server}}…",
+        "unsupported": "Sync unavailable",
+        "unsupportedBody": "Update the bot on {{server}} to sync favorites.",
+        "stopped": "Sync stopped"
+      }
     },
     "search": {
       "language": {
@@ -662,6 +681,10 @@
         "title": "Import favorites",
         "hint": "Merge or replace"
       },
+      "sync": {
+        "title": "Favorites sync",
+        "hint": "With the selected bot"
+      },
       "reset": {
         "title": "Restore settings",
         "hint": "Put everything back to default"
@@ -737,7 +760,7 @@
       "explore": "explore site country catalog catalogue region",
       "keys": "shortcuts keys global quick access",
       "presence": "menu bar tray icon quick access background",
-      "data": "data backup export import restore"
+      "data": "data backup export import restore sync"
     },
     "paletteRow": "Palette",
     "paletteSub": "Appearance · live preview",

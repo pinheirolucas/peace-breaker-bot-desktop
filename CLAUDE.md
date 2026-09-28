@@ -47,6 +47,7 @@ Source of truth: `../peace-breaker-bot/pkg/server/v1/openapi.yaml` (also served 
 - Health is passive: unhealthy only when `fetch` rejects. Playback buttons stay live while offline, because a click that gets an answer is how the app notices the server is back.
 - `GET /bot/status` is polled every 8s; under Electron the main process polls once and broadcasts to every window. `BotStatus | null`: null means unknown, never `{connected: false}`; gate only on `connected === false`. `POST /bot/play` answering 409 `bot_not_connected` is the real enforcement.
 - `GET /providers` → `null` means unknown. An unknown persisted provider key falls back to `myinstants` silently. Region is sent only for providers with `supportsRegion`; the backend validates it (`invalid_region`).
+- Favourites sync (`useFavoritesSync`, main window only) talks only to the selected bot. The list belongs to the bot's `owner`: `favoritesSync` keeps one list per owner and, per bot, the last list both agreed on (the merge base). `instants` always holds the current owner's list, and one owner's list is never pushed to another's bot. Sync requests are quiet: they mark health but never toast. A label-less 404 means an old bot (sync off); `invalid_favorites` and `favorites_too_large` stop pushes and never touch local data.
 
 ## Architecture
 

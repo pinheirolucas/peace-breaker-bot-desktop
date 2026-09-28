@@ -4,13 +4,18 @@
     "bot_not_connected",
     "bot_not_ready",
     "channel_not_found",
+    "favorites_conflict",
+    "favorites_too_large",
+    "favorites_unavailable",
     "http_request",
     "instant_not_found",
     "invalid_body",
+    "invalid_favorites",
     "invalid_region",
     "invalid_url",
     "name_link_not_matched",
     "not_voice_channel",
+    "owner_mismatch",
     "owner_not_in_voice",
     "owner_unknown",
     "provider_not_found",
@@ -20,6 +25,7 @@
   ],
   "routes": [
     "GET /bot/status",
+    "GET /favorites",
     "GET /instants",
     "GET /instants/{url}/content",
     "GET /openapi.yaml",
@@ -27,7 +33,8 @@
     "POST /bot/join",
     "POST /bot/leave",
     "POST /bot/play",
-    "POST /bot/stop"
+    "POST /bot/stop",
+    "PUT /favorites"
   ],
   "knownUnused": [
     "GET /openapi.yaml"

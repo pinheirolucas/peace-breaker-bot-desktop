@@ -53,7 +53,9 @@ vi.mock("./service", async (importOriginal) => ({
   playOnDiscord: vi.fn(),
   stopPlayingOnDiscord: vi.fn(),
   getInstants: vi.fn(() => Promise.resolve({ instants: [], pages: 0 })),
-  getProviders: vi.fn(() => Promise.resolve(defaultProviders))
+  getProviders: vi.fn(() => Promise.resolve(defaultProviders)),
+  getFavorites: vi.fn(() => new Promise(() => {})),
+  putFavorites: vi.fn(() => new Promise(() => {}))
 }));
 
 const macbook = {
