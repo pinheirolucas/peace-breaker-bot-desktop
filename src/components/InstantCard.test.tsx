@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import InstantCard, { cardState } from "./InstantCard";
@@ -37,6 +37,13 @@ function renderCard(props: Partial<InstantCardProps> = {}) {
   return { ...handlers, card, button };
 }
 
+function middleClick(el: HTMLElement) {
+  fireEvent.mouseDown(el, { button: 1 });
+  fireEvent(el, new MouseEvent("auxclick", { bubbles: true, cancelable: true, button: 1 }));
+}
+
+afterEach(() => localStorage.clear());
+
 describe("InstantCard", () => {
   it("names the card and its heading after the clip", () => {
     renderCard();
@@ -45,36 +52,75 @@ describe("InstantCard", () => {
     expect(screen.getByRole("heading", { name: "Primeiro" })).toBeInTheDocument();
   });
 
-  it("makes the card body the play control, named after the clip", async () => {
-    const { button, onPlay } = renderCard();
+  it("sends to Discord on a click, by default", async () => {
+    const { button, onPlay, onPlayOnDiscord } = renderCard();
 
     await userEvent.click(button("Primeiro"));
 
-    expect(onPlay).toHaveBeenCalledWith(instant);
+    expect(onPlayOnDiscord).toHaveBeenCalledWith(instant);
+    expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  it("plays here on a middle click, Shift + click and Shift + Enter, and says so", async () => {
+    const user = userEvent.setup();
+    const onSecondary = vi.fn();
+    const { button, onPlay, onPlayOnDiscord } = renderCard({ onSecondary });
+
+    middleClick(button("Primeiro"));
+    await user.keyboard("{Shift>}");
+    await user.click(button("Primeiro"));
+    await user.keyboard("{/Shift}");
+    button("Primeiro").focus();
+    await user.keyboard("{Shift>}{Enter}{/Shift}");
+
+    expect(onPlay).toHaveBeenCalledTimes(3);
+    expect(onPlayOnDiscord).not.toHaveBeenCalled();
+    expect(onSecondary).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps the middle press from scrolling or pasting", () => {
+    const { button } = renderCard();
+
+    expect(fireEvent.mouseDown(button("Primeiro"), { button: 1 })).toBe(false);
+    expect(fireEvent.mouseDown(button("Primeiro"), { button: 0 })).toBe(true);
+  });
+
+  it("swaps the two when the click is set to play here", async () => {
+    localStorage.setItem("mainPlayback", JSON.stringify("local"));
+    const { button, onPlay, onPlayOnDiscord } = renderCard();
+
+    await userEvent.click(button("Primeiro"));
+    middleClick(button("Primeiro"));
+
+    expect(onPlay).toHaveBeenCalledTimes(1);
+    expect(onPlayOnDiscord).toHaveBeenCalledTimes(1);
+    expect(button("Primeiro")).toHaveAttribute("title", "Reproduzir aqui · clique do meio: reproduzir no Discord");
+  });
+
+  it("names both presses in the body's tooltip", () => {
+    const { button } = renderCard();
+
+    expect(button("Primeiro")).toHaveAttribute("title", "Reproduzir no Discord · clique do meio: reproduzir aqui");
   });
 
   // The old card wrapped each icon button in a span that took the tooltip's
   // label, so the buttons themselves announced as a bare "button". Every
   // one of these now has a name of its own.
-  it("gives every button an accessible name, body first", () => {
+  it("gives every button an accessible name, body first, and has no send button", () => {
     const { card } = renderCard();
 
     const buttons = within(card).getAllByRole("button");
-    expect(buttons).toHaveLength(4);
+    expect(buttons).toHaveLength(3);
     expect(buttons[0]).toHaveAccessibleName("Primeiro");
-    expect(buttons[1]).toHaveAccessibleName("Reproduzir no Discord");
-    expect(buttons[2]).toHaveAccessibleName("Parar");
-    expect(buttons[3]).toHaveAccessibleName("Remover");
+    expect(buttons[1]).toHaveAccessibleName("Parar");
+    expect(buttons[2]).toHaveAccessibleName("Remover");
   });
 
-  it("hands the instant to send-to-Discord and wires stop", async () => {
-    const user = userEvent.setup();
-    const { button, onPlayOnDiscord, onStop } = renderCard({ playback: "discord" });
+  it("wires stop", async () => {
+    const { button, onStop } = renderCard({ playback: "discord" });
 
-    await user.click(button("Reproduzir no Discord"));
-    await user.click(button("Parar"));
+    await userEvent.click(button("Parar"));
 
-    expect(onPlayOnDiscord).toHaveBeenCalledWith(instant);
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
@@ -101,14 +147,13 @@ describe("InstantCard", () => {
   });
 });
 
-// The footer matrix from the design canvas. The two playback paths are
-// mutually exclusive, so while one runs the other leaves every card.
+// The two playback paths are mutually exclusive, so while one runs the other
+// is refused on every card; the body is disabled only when both are.
 describe("InstantCard state matrix", () => {
   interface Case {
     when: string;
     props: { playback: Playback; otherPlaying: boolean };
-    play: boolean;
-    discord: boolean;
+    body: boolean;
     stop: boolean;
     trail: boolean;
     live: boolean;
@@ -120,33 +165,32 @@ describe("InstantCard state matrix", () => {
     {
       when: "nothing is playing",
       props: { playback: "idle", otherPlaying: false },
-      play: true, discord: true, stop: false, trail: true, live: false, dim: false
+      body: true, stop: false, trail: true, live: false, dim: false
     },
     {
       when: "this card plays locally",
       props: { playback: "local", otherPlaying: false },
-      play: true, discord: false, stop: true, trail: false, live: true, dim: false, chip: "Reproduzindo"
+      body: true, stop: true, trail: false, live: true, dim: false, chip: "Reproduzindo"
     },
     {
       when: "this card plays on Discord",
       props: { playback: "discord", otherPlaying: false },
-      play: false, discord: true, stop: true, trail: false, live: true, dim: false, chip: "No Discord"
+      body: true, stop: true, trail: false, live: true, dim: false, chip: "No Discord"
     },
     {
       when: "another card is playing",
       props: { playback: "idle", otherPlaying: true },
-      play: false, discord: false, stop: false, trail: true, live: false, dim: true
+      body: false, stop: false, trail: true, live: false, dim: true
     }
   ];
 
-  it.each(cases)("when $when", ({ props, play, discord, stop, trail, live, dim, chip }) => {
+  it.each(cases)("when $when", ({ props, body, stop, trail, live, dim, chip }) => {
     const { card, button } = renderCard(props);
 
     const expectEnabled = (el: HTMLElement, enabled: boolean) =>
       enabled ? expect(el).toBeEnabled() : expect(el).toBeDisabled();
 
-    expectEnabled(button("Primeiro"), play);
-    expectEnabled(button("Reproduzir no Discord"), discord);
+    expectEnabled(button("Primeiro"), body);
     expectEnabled(button("Parar"), stop);
     expectEnabled(button("Remover"), trail);
     expect(card).toHaveAttribute("data-live", String(live));
@@ -159,12 +203,25 @@ describe("InstantCard state matrix", () => {
     }
   });
 
+  it("re-sends a clip already on Discord, and refuses to play it here meanwhile", async () => {
+    const onRefuse = vi.fn();
+    const { button, onPlay, onPlayOnDiscord } = renderCard({ playback: "discord", onRefuse });
+
+    await userEvent.click(button("Primeiro"));
+    middleClick(button("Primeiro"));
+
+    expect(onPlayOnDiscord).toHaveBeenCalledWith(instant);
+    expect(onPlay).not.toHaveBeenCalled();
+    expect(onRefuse).toHaveBeenCalledWith(instant, "busy");
+  });
+
   it("agrees with cardState, which is the single source of the rules", () => {
     expect(cardState("idle", true, null)).toEqual({
       live: false,
       dim: true,
       playDisabled: true,
       discordDisabled: true,
+      bodyDisabled: true,
       botGated: false,
       stopDisabled: true,
       trailDisabled: false
@@ -172,27 +229,27 @@ describe("InstantCard state matrix", () => {
   });
 });
 
-// The bot-not-in-voice gate is a second, independent reason the
-// send-to-Discord button can be disabled. The exact condition matters: only
-// a confirmed `connected: false` gates it — `null` ("unknown": still
-// loading, or an old/unreachable backend) must fall through to whatever
-// today's busy/otherPlaying rule already says, unchanged.
+// Only a confirmed `connected: false` gates Discord — `null` ("unknown":
+// still loading, or an old/unreachable backend) must fall through to the
+// busy rule, unchanged.
 describe("InstantCard bot-not-connected gate", () => {
   it("cardState disables Discord on an idle card when the bot is confirmed not connected", () => {
     const state = cardState("idle", false, { connected: false });
 
     expect(state.discordDisabled).toBe(true);
     expect(state.botGated).toBe(true);
+    expect(state.bodyDisabled).toBe(false);
   });
 
   // Regression guard: this would pass if the condition were written as
   // `!botStatus?.connected` instead of `botStatus?.connected === false`.
-  it("cardState with an unknown bot status matches today's pre-existing behaviour exactly", () => {
+  it("cardState with an unknown bot status gates nothing", () => {
     expect(cardState("idle", false, null)).toEqual({
       live: false,
       dim: false,
       playDisabled: false,
       discordDisabled: false,
+      bodyDisabled: false,
       botGated: false,
       stopDisabled: true,
       trailDisabled: false
@@ -206,23 +263,31 @@ describe("InstantCard bot-not-connected gate", () => {
     expect(state.botGated).toBe(false);
   });
 
-  it("swaps the Discord button's label and disables it when the bot isn't in a channel", () => {
-    const { button } = renderCard({ botStatus: { connected: false } });
+  it("refuses a click for Discord while the bot is out of its channel, and never plays here instead", async () => {
+    const onRefuse = vi.fn();
+    const { button, onPlay, onPlayOnDiscord } = renderCard({ botStatus: { connected: false }, onRefuse });
 
-    const discordButton = button("O bot não está em nenhum canal de voz");
-    expect(discordButton).toBeDisabled();
+    await userEvent.click(button("Primeiro"));
+
+    expect(onRefuse).toHaveBeenCalledWith(instant, "bot");
+    expect(onPlay).not.toHaveBeenCalled();
+    expect(onPlayOnDiscord).not.toHaveBeenCalled();
   });
 
-  it("keeps the ordinary label and enabled state when the bot status is unknown", () => {
-    const { button } = renderCard({ botStatus: null });
+  it("still plays here on a middle click while the bot is out of its channel", () => {
+    const { button, onPlay } = renderCard({ botStatus: { connected: false } });
 
-    expect(button("Reproduzir no Discord")).toBeEnabled();
+    middleClick(button("Primeiro"));
+
+    expect(onPlay).toHaveBeenCalledWith(instant);
   });
 
-  it("keeps the ordinary label and enabled state when the bot is connected", () => {
-    const { button } = renderCard({ botStatus: { connected: true } });
+  it("sends while the bot status is unknown", async () => {
+    const { button, onPlayOnDiscord } = renderCard({ botStatus: null });
 
-    expect(button("Reproduzir no Discord")).toBeEnabled();
+    await userEvent.click(button("Primeiro"));
+
+    expect(onPlayOnDiscord).toHaveBeenCalledWith(instant);
   });
 });
 
@@ -235,7 +300,7 @@ describe("InstantCard under en-US", () => {
     await i18n.changeLanguage("en-US");
     const { card } = renderCard({ playback: "discord" });
 
-    expect(within(card).getByRole("button", { name: "Play on Discord" })).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "Primeiro" })).toHaveAttribute("title", "Play on Discord · middle click: play here");
     expect(within(card).getByRole("button", { name: "Stop" })).toBeInTheDocument();
     expect(within(card).getByText("On Discord")).toBeInTheDocument();
   });
@@ -260,7 +325,7 @@ describe("InstantCard in Organizar", () => {
     expect(screen.getByRole("article", { name: "Primeiro" })).toBeInTheDocument();
   });
 
-  it("swaps send and stop for rename, and keeps the trailing action", async () => {
+  it("swaps stop for rename, and keeps the trailing action", async () => {
     const { button, onTrail } = renderCard({ organize });
     const user = userEvent.setup();
 

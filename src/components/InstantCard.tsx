@@ -1,8 +1,9 @@
 import { useId } from "react";
-import type { ButtonHTMLAttributes, CSSProperties, MouseEvent, ReactNode, Ref } from "react";
+import type { ButtonHTMLAttributes, CSSProperties, KeyboardEvent, MouseEvent, ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { GripIcon, KeyboardIcon, PencilIcon, SendIcon, StopIcon } from "../icons";
+import { GripIcon, KeyboardIcon, PencilIcon, StopIcon } from "../icons";
 import { useClipDrag } from "../hooks/useClipDrag";
+import { otherPlayback, useMainPlayback } from "../hooks/useMainPlayback";
 import type { ClipDragState } from "../hooks/useClipDrag";
 import { menuBridge } from "../hooks/useMenuBridge";
 import { overlayOpen } from "../lib/clipKeys";
@@ -27,7 +28,7 @@ export interface CardAction {
 /**
  * Organizar mode. The clip-name button stops playing and becomes the drag
  * handle, so the stretched hit, the footer's z-index and the one focus stop
- * per card all carry over. Send and stop leave the footer; rename joins it.
+ * per card all carry over. Stop leaves the footer; rename joins it.
  */
 export interface OrganizeProps {
   /** 1-based, for the handle's name and the drag chip. */
@@ -65,11 +66,16 @@ export interface InstantCardProps {
   /** Some other card in the same panel is playing. */
   otherPlaying: boolean;
   /** null means unknown — still loading, or an old/unreachable backend —
-   *  and must never gate the send-to-Discord button the same way a
+   *  and must never gate playing on Discord the same way a
    *  confirmed `connected: false` does. See useBotStatus. */
   botStatus: BotStatus | null;
   onPlay: (instant: Instant) => void;
   onPlayOnDiscord: (instant: Instant) => void;
+  /** A press the card refused: "bot" while the bot is known to be out of its
+   *  channel (the caller explains), "busy" while something else plays. */
+  onRefuse?: (instant: Instant, reason: "bot" | "busy") => void;
+  /** A middle click, Shift + click or Shift + Enter: the other way to play, whatever came of it. */
+  onSecondary?: () => void;
   onStop: () => void;
   /** The panel's own action: remove in Favoritos, favourite in MyInstants.
    *  The quick access has none: editing is window work. */
@@ -78,30 +84,30 @@ export interface InstantCardProps {
   organize?: OrganizeProps;
   /** Absent, the card has no right-click menu. */
   menu?: CardMenuInfo;
-  /** Favoritos only: the look the card briefly takes when its key is pressed or refused. */
+  /** The look the card briefly takes when its key is pressed, or a press is refused. */
   shortcut?: { flash?: "press" | "refuse" };
   /** Quick access's first search match: Enter plays it. */
   match?: boolean;
   /** Forces a drag-out state, for stories and tests; the pointer normally drives it. */
   dragState?: ClipDragState;
   /** Quick access's card: the body is the only control, so there is no
-   *  footer (send, stop) and the card is shorter. cardState still gates the
-   *  body exactly as it does in the window. */
+   *  footer (stop) and the card is shorter. cardState still gates the body
+   *  exactly as it does in the window. */
   bare?: boolean;
 }
 
 /**
- * The whole footer state matrix, in one place. Ported from the design
- * canvas's prototype logic. The two playback paths are mutually exclusive:
+ * What every control may do, in one place. The two playback paths are
+ * mutually exclusive, and the card body reaches both (a plain press the main
+ * one, a middle click or Shift the other):
  *
- *   - the body plays locally. It is inert while anything else plays and
- *     while this card plays on Discord, but stays live to replay a clip
- *     already playing locally here;
- *   - send-to-Discord mirrors it, and is additionally gated while the bot
- *     is confirmed to have no voice connection (`botStatus?.connected ===
+ *   - playing here is refused while anything else plays and while this card
+ *     plays on Discord, but stays live to replay a clip already playing here;
+ *   - Discord mirrors it, and is additionally gated while the bot is
+ *     confirmed to have no voice connection (`botStatus?.connected ===
  *     false` — never `!botStatus?.connected`, which would also gate on
- *     `null`, the "still loading / unreachable" state that must fall
- *     through to today's rule instead);
+ *     `null`, the "still loading / unreachable" state);
+ *   - the body is disabled only when both are refused;
  *   - stop exists only on the card that is playing;
  *   - a playing card locks its own trailing action.
  */
@@ -115,6 +121,7 @@ export function cardState(playback: Playback, otherPlaying: boolean, botStatus: 
     dim: otherPlaying && !live,
     playDisabled: busy && playback !== "local",
     discordDisabled: (busy && playback !== "discord") || botGated,
+    bodyDisabled: busy && playback === "idle",
     botGated,
     stopDisabled: !live,
     trailDisabled: live
@@ -122,12 +129,12 @@ export function cardState(playback: Playback, otherPlaying: boolean, botStatus: 
 }
 
 /**
- * What a click on a quick access card's body does, in one place so the card
- * and Enter-on-search cannot disagree. `mode` is the quickAccessClick
- * setting: "local" listens here and is never gated by the bot; "discord"
- * sends, and is refused while the bot is confirmed to be out of its channel
- * (`"bot"`, which the caller explains) or while something else plays
- * (`"busy"`, silent). An unknown status (null) never blocks.
+ * What a press on a card's body does, in one place so a click, Enter and
+ * quick access's Enter-on-search cannot disagree. `mode` is where the press
+ * plays: "local" is never gated by the bot; "discord" is refused while the
+ * bot is confirmed to be out of its channel (`"bot"`, which the caller
+ * explains) or while something else plays (`"busy"`). An unknown status
+ * (null) never blocks.
  */
 export function bodyClick(
   mode: "local" | "discord",
@@ -149,6 +156,8 @@ export default function InstantCard({
   botStatus,
   onPlay,
   onPlayOnDiscord,
+  onRefuse,
+  onSecondary,
   onStop,
   trail,
   organize,
@@ -161,7 +170,9 @@ export default function InstantCard({
   const { t } = useTranslation();
   const headingId = useId();
   const state = cardState(playback, otherPlaying, botStatus);
-  const discordLabel = state.botGated ? t("card.discordUnavailable") : t("card.playOnDiscord");
+  const [main] = useMainPlayback();
+  const other = otherPlayback(main);
+  const tooltip = main === "discord" ? t("card.tooltipDiscord") : t("card.tooltipLocal");
   const dragging = organize?.drag === "overlay";
   const clipKey = instant.key;
   const drag = useClipDrag({ name: instant.name, url: instant.url }, !organize);
@@ -169,6 +180,19 @@ export default function InstantCard({
   // The keycap and the playing chip share a corner.
   const showKeycap = Boolean(clipKey) && !match && (organize ? true : !state.live);
   const showEmptyKeycap = !clipKey && Boolean(organize) && !organize?.drag;
+
+  function press(mode: "local" | "discord") {
+    const what = bodyClick(mode, playback, otherPlaying, botStatus);
+
+    if (what === "play") onPlay(instant);
+    else if (what === "discord") onPlayOnDiscord(instant);
+    else onRefuse?.(instant, what);
+  }
+
+  function pressOther() {
+    press(other);
+    onSecondary?.();
+  }
 
   // The menu is built by the main process, which cannot tell which card was
   // hit: this sends cardState's own answers, so it never offers what a
@@ -193,6 +217,7 @@ export default function InstantCard({
         trailDisabled: state.trailDisabled
       },
       key: clipKey ?? null,
+      main,
       organizing: Boolean(organize),
       favorite: menu.favorite,
       providerName: menu.providerName,
@@ -216,7 +241,7 @@ export default function InstantCard({
       aria-label={organize ? instant.name : undefined}
       data-live={state.live}
       data-dim={state.dim}
-      data-inert={state.playDisabled}
+      data-inert={state.bodyDisabled}
       data-organize={organize ? true : undefined}
       data-bare={bare && !organize ? true : undefined}
       data-drag={organize?.drag}
@@ -272,13 +297,30 @@ export default function InstantCard({
           <button
             type="button"
             className="phit"
-            title={t("card.play")}
+            title={tooltip}
             data-act="play"
+            data-main={main}
             aria-keyshortcuts={
-              clipKey ? `${clipKey.toUpperCase()} Shift+${clipKey.toUpperCase()}` : undefined
+              clipKey
+                ? `Enter Shift+Enter ${clipKey.toUpperCase()} Shift+${clipKey.toUpperCase()}`
+                : "Enter Shift+Enter"
             }
-            disabled={state.playDisabled}
-            onClick={() => onPlay(instant)}
+            disabled={state.bodyDisabled}
+            onClick={(event) => (event.shiftKey ? pressOther() : press(main))}
+            // A middle press would start autoscroll (Windows) or paste the primary selection (Linux).
+            onMouseDown={(event) => {
+              if (event.button === 1) event.preventDefault();
+            }}
+            onAuxClick={(event) => {
+              if (event.button !== 1) return;
+              event.preventDefault();
+              pressOther();
+            }}
+            onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
+              if (event.key !== "Enter" || !event.shiftKey) return;
+              event.preventDefault();
+              pressOther();
+            }}
           >
             {instant.name}
           </button>
@@ -331,17 +373,6 @@ export default function InstantCard({
             </>
           ) : (
             <>
-              <button
-                type="button"
-                className="pb"
-                aria-label={discordLabel}
-                title={discordLabel}
-                data-act="discord"
-                disabled={state.discordDisabled}
-                onClick={() => onPlayOnDiscord(instant)}
-              >
-                <SendIcon />
-              </button>
               <button
                 type="button"
                 className="pb"

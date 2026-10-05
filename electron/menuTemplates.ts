@@ -55,6 +55,21 @@ function group(...groups: Item[][]): Item[] {
 
 // ---- card ----
 
+/** Reproduzir o som selecionado, here and on Discord: the main way first, on Enter; the other on Shift+Enter. */
+function focusedItems(state: MenuState, editing: boolean, { t, send, platform }: MenuDeps): Item[] {
+  const discordMain = state.mainPlayback === "discord";
+  const here = shownInBar(platform, t("menu.playback.playFocused"), discordMain ? "Shift+Enter" : "Enter", {
+    enabled: state.focusedCard && !editing,
+    click: () => send({ type: "play-focused" })
+  });
+  const discord = shownInBar(platform, t("menu.playback.sendFocused"), discordMain ? "Enter" : "Shift+Enter", {
+    enabled: state.focusedCard && !editing && state.botConnected !== false,
+    click: () => send({ type: "send-focused" })
+  });
+
+  return discordMain ? [discord, here] : [here, discord];
+}
+
 export function cardMenu(ctx: CardContext, { t, send, copy, openExternal, reveal }: MenuDeps): Item[] {
   const act = (action: Parameters<typeof cardCommand>[1]) => () => send(cardCommand(ctx, action));
   const clipKey = ctx.key?.toUpperCase();
@@ -87,8 +102,10 @@ export function cardMenu(ctx: CardContext, { t, send, copy, openExternal, reveal
     );
   }
 
-  // Order: play, links, housekeeping. The first group is cardState, verbatim.
+  // Order: play, links, housekeeping. The first group is cardState, verbatim,
+  // with the main way to play first and on the bare key.
   const play: Item[] = [];
+  const keyFor = (mode: "local" | "discord") => clipKey && (mode === ctx.main ? clipKey : `Shift+${clipKey}`);
 
   if (ctx.playback !== "idle") {
     play.push(
@@ -100,23 +117,23 @@ export function cardMenu(ctx: CardContext, { t, send, copy, openExternal, reveal
     );
   }
 
-  play.push(
-    shown(
-      ctx.playback === "local" ? t("menu.card.playAgain") : t("menu.card.play"),
-      clipKey && `Shift+${clipKey}`,
-      { enabled: !state.playDisabled, click: act("play") }
-    )
+  const here = shown(
+    ctx.playback === "local" ? t("menu.card.playAgain") : t("menu.card.play"),
+    keyFor("local"),
+    { enabled: !state.playDisabled, click: act("play") }
   );
+  const discord =
+    ctx.playback === "discord"
+      ? []
+      : [
+          shown(t("menu.card.discord"), keyFor("discord"), {
+            enabled: !state.discordDisabled,
+            sublabel: state.botGated ? t("menu.card.botAway") : undefined,
+            click: act("discord")
+          })
+        ];
 
-  if (ctx.playback !== "discord") {
-    play.push(
-      shown(t("menu.card.discord"), clipKey, {
-        enabled: !state.discordDisabled,
-        sublabel: state.botGated ? t("menu.card.botAway") : undefined,
-        click: act("discord")
-      })
-    );
-  }
+  play.push(...(ctx.main === "discord" ? [...discord, here] : [here, ...discord]));
 
   const housekeeping: Item[] = favorites
     ? [
@@ -455,11 +472,7 @@ export function menuBar(state: MenuState, deps: MenuDeps, env: BarEnv): Item[] {
     submenu: [
       shownInBar(platform, t("menu.playback.stop"), "Esc", { enabled: state.playing !== null, click: () => send({ type: "stop" }) }),
       separator,
-      shownInBar(platform, t("menu.playback.playFocused"), "Enter", { enabled: state.focusedCard && !editing, click: () => send({ type: "play-focused" }) }),
-      shownInBar(platform, t("menu.playback.sendFocused"), "Shift+Enter", {
-        enabled: state.focusedCard && !editing && state.botConnected !== false,
-        click: () => send({ type: "send-focused" })
-      }),
+      ...focusedItems(state, editing, deps),
       separator,
       {
         label: t("menu.playback.globalKeys"),
@@ -532,6 +545,7 @@ export function initialMenuState(language: MenuState["language"]): MenuState {
     hasQuery: false,
     organizeBlocked: null,
     focusedCard: false,
+    mainPlayback: "discord",
     blocked: false,
     language,
     activeAddress: null,

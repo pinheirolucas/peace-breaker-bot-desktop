@@ -1,4 +1,5 @@
 import * as RadixDialog from "@radix-ui/react-dialog";
+import { useMainPlayback } from "../hooks/useMainPlayback";
 import { shiftPart, usePlatform } from "../hooks/usePlatform";
 import { Keys } from "./Key";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -84,6 +85,7 @@ export default function CommandPalette({
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const os = usePlatform();
+  const [mainPlayback] = useMainPlayback();
   const [query, setQuery] = useState(initialQuery);
   const [view, setView] = useState<View>(initialView);
   const [selected, setSelected] = useState(0);
@@ -217,7 +219,12 @@ export default function CommandPalette({
     hints.push({ keys: ["↵"], text: t("palette.hintUse") }, { keys: ["⌫"], text: t("palette.hintBack") }, { keys: ["esc"], text: t("palette.hintCancel") });
   } else {
     if (active?.kind === "sound") {
-      hints.push({ keys: ["↵"], text: t("palette.hintDiscord"), dim: active.refused }, { keys: [shiftPart(os), "↵"], text: t("palette.hintLocal") });
+      const discord = t("palette.hintDiscord");
+      const local = t("palette.hintLocal");
+      hints.push(
+        { keys: ["↵"], text: mainPlayback === "discord" ? discord : local, dim: active.refused },
+        { keys: [shiftPart(os), "↵"], text: mainPlayback === "discord" ? local : discord }
+      );
     } else if (active?.kind === "explore") {
       hints.push({ keys: ["↵"], text: t("palette.hintExplore") });
     } else if (active?.kind === "stop") {

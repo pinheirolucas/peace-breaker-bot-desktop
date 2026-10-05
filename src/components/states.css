@@ -71,8 +71,18 @@
   background: color-mix(in oklch, var(--danger) 12%, transparent);
   margin-bottom: 16px;
 }
+/* A note, not a fault: the line and the ground are neutral. */
+.banner[data-tone="info"] {
+  border-color: var(--line);
+  background: var(--panel);
+  flex-wrap: wrap;
+}
+/* The text takes what is left and wraps; at Tight the actions drop under it. */
+.banner[data-tone="info"] > span:first-child { flex: 1 1 220px; min-width: 0; }
 .banner b { display: block; font-size: 12.5px; font-weight: 700; }
 .banner span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+/* After .banner span, which would otherwise make the actions a block. */
+.banner .bacts { margin: 0 0 0 auto; display: flex; flex: none; gap: 6px; }
 .banner .bb {
   margin-left: auto;
   flex: none;

@@ -6,6 +6,7 @@ import { Keys } from "../components/Key";
 import { SegmentedChoice } from "../components/Segmented";
 import { Switch } from "../components/Switch";
 import { useGlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
+import { useMainPlayback } from "../hooks/useMainPlayback";
 import type { GlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
 import { usePresenceSettings } from "../hooks/usePresence";
 import { useQuickAccessShortcutSettings } from "../hooks/useQuickAccessShortcut";
@@ -27,6 +28,7 @@ export interface KeysPaneProps {
 
 export function KeysPane({ os, globalKeys, quickAccess, quickAccessOn, conflict, onClearConflict }: KeysPaneProps) {
   const { t } = useTranslation();
+  const [mainPlayback] = useMainPlayback();
   const comboOptions = (suffix: string) => (modifiers: GlobalModifier[]) =>
     modifiers.map((value) => ({
       value,
@@ -117,11 +119,11 @@ export function KeysPane({ os, globalKeys, quickAccess, quickAccessOn, conflict,
           <div>
             <Keys quiet parts={[t("settings.keys.keyWord")]} />
           </div>
-          <span>{t("settings.keys.playDiscord")}</span>
+          <span>{mainPlayback === "discord" ? t("settings.keys.playDiscord") : t("settings.keys.playLocal")}</span>
           <div>
             <Keys quiet parts={[shiftPart(os), t("settings.keys.keyWord")]} />
           </div>
-          <span>{t("settings.keys.playLocal")}</span>
+          <span>{mainPlayback === "discord" ? t("settings.keys.playLocal") : t("settings.keys.playDiscord")}</span>
           <div>
             <Keys quiet parts={["Esc"]} />
           </div>

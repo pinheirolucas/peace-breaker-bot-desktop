@@ -20,6 +20,9 @@ import type { Instant } from "./storage";
 import useAudioPlayer from "./useAudioPlayer";
 import useDiscordPlayer from "./useDiscordPlayer";
 
+/** How long a refused card shakes: the shake's own length. */
+const REFUSE_MS = 320;
+
 interface Listing {
   instants?: Instant[];
   pages?: number;
@@ -79,7 +82,9 @@ export default function MyInstantsPanel({
   const [discordUrl, isDiscordPlaying, playDiscord, stopDiscord] = useDiscordPlayer();
   const [favorites, setFavorites] = useInstantsState([]);
   const { openSnackbar } = useContext(SnackbarContext);
-  const { botAway } = useContext(VoiceContext);
+  const { botAway, awayNow } = useContext(VoiceContext);
+  const [refused, setRefused] = useState<{ url: string; n: number } | null>(null);
+  const refusedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Held in a ref so the listing effect does not refire whenever the
   // provider hands down a new function identity.
@@ -196,6 +201,16 @@ export default function MyInstantsPanel({
       openSnackbar(botAway(error) ?? { message: apiErrorMessage(t, error) });
     }
   }
+
+  // A click the card refused shakes it, and says why when the bot is out of its channel.
+  function handleRefuse(instant: Instant, reason: "bot" | "busy") {
+    clearTimeout(refusedTimer.current);
+    setRefused((current) => ({ url: instant.url, n: (current?.n ?? 0) + 1 }));
+    refusedTimer.current = setTimeout(() => setRefused(null), REFUSE_MS);
+    if (reason === "bot") openSnackbar(awayNow());
+  }
+
+  useEffect(() => () => clearTimeout(refusedTimer.current), []);
 
   async function handleStop() {
     if (isAudioPlaying) {
@@ -320,7 +335,9 @@ export default function MyInstantsPanel({
               botStatus={botStatus}
               onPlay={handlePlay}
               onPlayOnDiscord={handlePlayOnDiscord}
+              onRefuse={handleRefuse}
               onStop={handleStop}
+              shortcut={{ flash: refused?.url === instant.url ? "refuse" : undefined }}
               menu={{
                 surface: "explore",
                 index: instants.indexOf(instant),

@@ -53,6 +53,8 @@ export interface MenuState {
   organizeBlocked: "playing" | "search" | null;
   /** A card holds keyboard focus, which Tocar/Enviar no cartão em foco act on. */
   focusedCard: boolean;
+  /** Where a plain press plays (the mainPlayback setting): that row gets Enter, the other Shift+Enter. */
+  mainPlayback: "discord" | "local";
   /** A dialog or Aparência is open: window commands wait. */
   blocked: boolean;
   language: MenuLanguage;
@@ -115,6 +117,7 @@ export function isMenuState(x: unknown, platform: string): x is MenuState {
   if (x.tab !== "favorites" && x.tab !== "explore") return false;
   if (x.playing !== null && x.playing !== "local" && x.playing !== "discord") return false;
   if (x.botConnected !== null && !isBoolean(x.botConnected)) return false;
+  if (x.mainPlayback !== "discord" && x.mainPlayback !== "local") return false;
   if (!isNullableText(x.botChannel)) return false;
   if (x.organizeBlocked !== null && x.organizeBlocked !== "playing" && x.organizeBlocked !== "search") {
     return false;
@@ -181,6 +184,8 @@ export interface CardContext {
   };
   /** The favourite's key, shown on the rows it triggers. */
   key: string | null;
+  /** Where a plain press plays: its row comes first and takes the bare key. */
+  main: "discord" | "local";
   organizing: boolean;
   /** Explorar: this clip is already a favourite. */
   favorite: boolean;
@@ -200,6 +205,7 @@ export function isCardContext(x: unknown): x is CardContext {
   if (!isText(x.url, 2048) || !isText(x.name) || !isText(x.providerName, 64)) return false;
   if (x.playback !== "idle" && x.playback !== "local" && x.playback !== "discord") return false;
   if (!(x.key === null || (isText(x.key, 1) && /^[a-z0-9]$/.test(x.key)))) return false;
+  if (x.main !== "discord" && x.main !== "local") return false;
   if (!isBoolean(x.organizing) || !isBoolean(x.favorite)) return false;
 
   if (

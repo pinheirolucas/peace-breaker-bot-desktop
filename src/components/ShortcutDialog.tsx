@@ -3,6 +3,7 @@ import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
+import { useMainPlayback } from "../hooks/useMainPlayback";
 import { clipKeyFromEvent } from "../lib/clipKeys";
 import type { Instant } from "../storage";
 import "./shortcuts.css";
@@ -35,6 +36,7 @@ export default function ShortcutDialog({
   onSave
 }: ShortcutDialogProps) {
   const { t } = useTranslation();
+  const [mainPlayback] = useMainPlayback();
   const [key, setKey] = useState<string | null>(null);
   const [refused, setRefused] = useState(false);
   const url = instant?.url;
@@ -83,7 +85,7 @@ export default function ShortcutDialog({
         if (!next) onCancel();
       }}
       title={t("shortcuts.title", { name })}
-      description={t("shortcuts.prompt")}
+      description={mainPlayback === "discord" ? t("shortcuts.promptDiscord") : t("shortcuts.promptLocal")}
       footer={
         <>
           <Button variant="secondary" onClick={onCancel}>

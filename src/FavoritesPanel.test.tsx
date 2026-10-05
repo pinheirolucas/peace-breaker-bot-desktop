@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, onTestFinished, vi } from "vitest";
 import { useState } from "react";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { UserEvent } from "@testing-library/user-event";
 
@@ -40,6 +40,12 @@ function play(name: string) {
 function action(name: string, label: string) {
   return within(card(name)).getByRole("button", { name: label });
 }
+// A click sends to Discord; a middle click plays here.
+function playHere(name: string) {
+  const body = play(name);
+  fireEvent.mouseDown(body, { button: 1 });
+  fireEvent(body, new MouseEvent("auxclick", { bubbles: true, cancelable: true, button: 1 }));
+}
 
 const seeded = [
   { name: "Primeiro", url: "https://www.myinstants.com/a/" },
@@ -57,15 +63,18 @@ function renderPanel({
   instants = seeded,
   healthy = true,
   botStatus = null,
-  organizing: startOrganizing = false
+  organizing: startOrganizing = false,
+  clickHintSeen = true
 }: {
   search?: string;
   instants?: typeof seeded;
   healthy?: boolean;
   botStatus?: BotStatus | null;
   organizing?: boolean;
+  clickHintSeen?: boolean;
 } = {}) {
   localStorage.setItem("instants", JSON.stringify(instants));
+  if (clickHintSeen) localStorage.setItem("clickHintSeen", "true");
 
   const snackbar = { openSnackbar: vi.fn(), closeSnackbar: vi.fn() };
   const props = {
@@ -241,7 +250,6 @@ describe("FavoritesPanel", () => {
   });
 
   it("plays a clip locally with the content the backend hands back", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockResolvedValue({
       exists: true,
       content: "data:audio/mp3;base64,AAAA"
@@ -249,7 +257,7 @@ describe("FavoritesPanel", () => {
 
     renderPanel();
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() => {
       expect(FakeAudio.played).toEqual(["data:audio/mp3;base64,AAAA"]);
@@ -258,12 +266,11 @@ describe("FavoritesPanel", () => {
   });
 
   it("offers to remove an instant the backend no longer has", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockResolvedValue({ exists: false });
 
     const { snackbar } = renderPanel();
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
     await waitFor(() => expect(snackbar.openSnackbar).toHaveBeenCalled());
 
     const [{ message, actionLabel, onAction }] = snackbar.openSnackbar.mock.calls[0];
@@ -283,7 +290,7 @@ describe("FavoritesPanel", () => {
 
     const { snackbar } = renderPanel();
 
-    await user.click(action("Primeiro", "Reproduzir no Discord"));
+    await user.click(play("Primeiro"));
 
     await waitFor(() => {
       expect(snackbar.openSnackbar).toHaveBeenCalledWith(
@@ -299,10 +306,11 @@ describe("FavoritesPanel", () => {
 
     renderPanel();
 
-    await user.click(action("Primeiro", "Reproduzir no Discord"));
+    await user.click(play("Primeiro"));
 
-    await waitFor(() => expect(play("Primeiro")).toBeDisabled());
-    expect(within(card("Primeiro")).getByText("No Discord")).toBeInTheDocument();
+    await waitFor(() => expect(within(card("Primeiro")).getByText("No Discord")).toBeInTheDocument());
+    // The playing card's body stays live, to send again; playing it here is refused.
+    expect(play("Primeiro")).toBeEnabled();
     // Every other card steps back, not just its play control.
     expect(play("Segundo")).toBeDisabled();
     expect(card("Segundo")).toHaveAttribute("data-dim", "true");
@@ -315,7 +323,6 @@ describe("FavoritesPanel", () => {
   });
 
   it("steps the other cards back while a clip plays locally, but lets it replay", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockResolvedValue({
       exists: true,
       content: "data:audio/mp3;base64,AAAA"
@@ -323,14 +330,12 @@ describe("FavoritesPanel", () => {
 
     renderPanel();
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() => expect(card("Primeiro")).toHaveAttribute("data-live", "true"));
     expect(within(card("Primeiro")).getByText("Reproduzindo")).toBeInTheDocument();
     expect(play("Primeiro")).toBeEnabled();
     expect(play("Segundo")).toBeDisabled();
-    expect(action("Primeiro", "Reproduzir no Discord")).toBeDisabled();
-    expect(action("Segundo", "Reproduzir no Discord")).toBeDisabled();
   });
 
   it("stops Discord playback through the backend", async () => {
@@ -339,13 +344,13 @@ describe("FavoritesPanel", () => {
 
     renderPanel();
 
-    await user.click(action("Primeiro", "Reproduzir no Discord"));
+    await user.click(play("Primeiro"));
     await waitFor(() => expect(action("Primeiro", "Parar")).toBeEnabled());
 
     await user.click(action("Primeiro", "Parar"));
 
     expect(stopPlayingOnDiscord).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(play("Primeiro")).toBeEnabled());
+    await waitFor(() => expect(action("Primeiro", "Parar")).toBeDisabled());
   });
 
   // Health is passive: the app only learns the server is back when a click
@@ -357,7 +362,6 @@ describe("FavoritesPanel", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("localhost:9001 não está respondendo");
     expect(play("Primeiro")).toBeEnabled();
-    expect(action("Primeiro", "Reproduzir no Discord")).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Trocar" }));
 
@@ -365,16 +369,58 @@ describe("FavoritesPanel", () => {
   });
 });
 
+describe("FavoritesPanel's click", () => {
+  useFakeAudio();
+
+  it("refuses a click for Discord while the bot is out of its channel: the card shakes, a toast says why, nothing plays", async () => {
+    const user = userEvent.setup();
+    const { snackbar } = renderPanel({ botStatus: { connected: false } });
+
+    await user.click(play("Primeiro"));
+
+    expect(card("Primeiro")).toHaveAttribute("data-flash", "refuse");
+    expect(snackbar.openSnackbar).toHaveBeenCalledTimes(1);
+    expect(playOnDiscord).not.toHaveBeenCalled();
+    expect(getContent).not.toHaveBeenCalled();
+  });
+
+  it("says once what a click does, and how to play here", async () => {
+    const user = userEvent.setup();
+    renderPanel({ clickHintSeen: false });
+
+    expect(screen.getByText("O clique reproduz no Discord")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Entendi" }));
+
+    expect(screen.queryByText("O clique reproduz no Discord")).toBeNull();
+    expect(localStorage.getItem("clickHintSeen")).toBe("true");
+  });
+
+  it("stops saying it once the other press is used", async () => {
+    vi.mocked(getContent).mockResolvedValue({ exists: true, content: "data:audio/mp3;base64,AA" });
+    renderPanel({ clickHintSeen: false });
+
+    playHere("Primeiro");
+
+    await waitFor(() => expect(screen.queryByText("O clique reproduz no Discord")).toBeNull());
+  });
+
+  it("follows the setting when it says the click plays here", () => {
+    localStorage.setItem("mainPlayback", JSON.stringify("local"));
+    renderPanel({ clickHintSeen: false });
+
+    expect(screen.getByText("O clique reproduz aqui")).toBeInTheDocument();
+  });
+});
+
 describe("FavoritesPanel when a clip cannot be fetched", () => {
   useFakeAudio();
 
   it("shows the backend message rather than failing silently", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockRejectedValue(new Error("Nenhuma URL enviada"));
 
     const { snackbar } = renderPanel();
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() =>
       expect(snackbar.openSnackbar).toHaveBeenCalledWith({ message: "Nenhuma URL enviada" })
@@ -383,12 +429,11 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
   });
 
   it("keeps the remove action for an instant that is merely gone", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockResolvedValue({ exists: false });
 
     const { snackbar } = renderPanel();
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() => expect(snackbar.openSnackbar).toHaveBeenCalled());
     const call = snackbar.openSnackbar.mock.calls[0][0];
@@ -402,7 +447,7 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
 
     const { snackbar } = renderPanel();
 
-    await user.click(action("Primeiro", "Reproduzir no Discord"));
+    await user.click(play("Primeiro"));
 
     await waitFor(() => expect(snackbar.openSnackbar).toHaveBeenCalled());
     expect(snackbar.openSnackbar.mock.calls[0][0].message).toBe(
@@ -486,7 +531,7 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
       const dialog = within(screen.getByRole("dialog", { name: "Renomear som" }));
 
       const preview = dialog.getByRole("article", { name: "Primeiro" });
-      expect(within(preview).getByRole("button", { name: "Reproduzir no Discord" })).toBeEnabled();
+      expect(within(preview).getByRole("button", { name: "Primeiro" })).toBeEnabled();
       expect(within(preview).getByRole("button", { name: "Parar" })).toBeInTheDocument();
       expect(within(preview).getByRole("button", { name: "Remover" })).toBeEnabled();
       expect(preview.parentElement).toHaveAttribute("inert");
@@ -520,7 +565,7 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
       await user.type(dialog.getByLabelText("Nome"), "Novo nome");
 
       const preview = within(dialog.getByRole("article", { name: "Novo nome" }));
-      await user.click(preview.getByRole("button", { name: "Reproduzir no Discord" }));
+      await user.click(preview.getByRole("button", { name: "Novo nome" }));
       await user.click(preview.getByRole("button", { name: "Remover" }));
 
       expect(playOnDiscord).not.toHaveBeenCalled();
@@ -588,19 +633,18 @@ describe("FavoritesPanel when a clip cannot be fetched", () => {
 
       await user.keyboard("{Escape}");
 
-      // Back to play mode: the body plays again and send-to-Discord is back.
-      expect(within(card("Primeiro")).getByRole("button", { name: "Reproduzir no Discord" }))
-        .toBeInTheDocument();
+      // Back to play mode: the body plays again and stop is back.
+      expect(within(card("Primeiro")).getByRole("button", { name: "Primeiro" })).toBeInTheDocument();
+      expect(within(card("Primeiro")).getByRole("button", { name: "Parar" })).toBeInTheDocument();
     });
 
     it("tells the tools row whether a clip is playing", async () => {
-      const user = userEvent.setup();
       vi.mocked(getContent).mockResolvedValue({ exists: true, content: "data:audio/mp3;base64,AA" });
 
       const { onPlayingChange } = renderPanel();
       expect(onPlayingChange).toHaveBeenLastCalledWith(false);
 
-      await user.click(play("Primeiro"));
+      playHere("Primeiro");
 
       await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
     });

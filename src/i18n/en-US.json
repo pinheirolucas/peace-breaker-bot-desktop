@@ -1,8 +1,5 @@
 {
   "card": {
-    "play": "Play",
-    "playOnDiscord": "Play on Discord",
-    "discordUnavailable": "Bot isn't in a voice channel",
     "stop": "Stop",
     "playingLocal": "Playing",
     "playingDiscord": "On Discord",
@@ -10,7 +7,9 @@
     "moveHandle": "Move {{name}}, position {{pos}} of {{total}}",
     "position": "{{pos}} of {{total}}",
     "dragFailed": "Couldn't prepare the file. Try dragging again.",
-    "preparing": "Preparing file…"
+    "preparing": "Preparing file…",
+    "tooltipDiscord": "Play on Discord · middle click: play here",
+    "tooltipLocal": "Play here · middle click: play on Discord"
   },
   "common": {
     "switch": "Switch",
@@ -239,7 +238,6 @@
   },
   "shortcuts": {
     "title": "Shortcut for “{{name}}”",
-    "prompt": "Press the key that plays this sound on Discord. With Shift, it plays only here.",
     "captureLabel": "Press a letter or number",
     "waiting": "Press a letter or number",
     "plays": "{{key}} plays “{{name}}”",
@@ -283,7 +281,8 @@
       "menuApp": "Peace Breaker Bot",
       "legend": "Legend",
       "settings": "Open Settings",
-      "globalSettings": "Global shortcuts in Settings…"
+      "globalSettings": "Global shortcuts in Settings…",
+      "yourSoundsLocal": "Your sounds · here"
     },
     "global": {
       "lede": "With the app focused, the key alone plays the sound. Outside it, use the key with the modifier.",
@@ -295,7 +294,9 @@
       "failedToast_one": "{{count}} shortcut won't work outside the app",
       "failedToast_other": "{{count}} shortcuts won't work outside the app",
       "see": "See"
-    }
+    },
+    "promptDiscord": "Press the key that plays this sound on Discord. With Shift, it plays only here.",
+    "promptLocal": "Press the key that plays this sound here. With Shift, it plays on Discord."
   },
   "menu": {
     "app": {
@@ -437,7 +438,10 @@
     "searching": "Searching…",
     "inUse": "in use",
     "noneBody": "Check that the bot is running and that this computer is on the same network as it.",
-    "connectionNote": "Switching applies at once. Servers are found on the local network."
+    "connectionNote": "Switching applies at once. Servers are found on the local network.",
+    "clickHint": "Click: {{main}} · middle or Shift: {{other}}",
+    "discord": "Discord",
+    "here": "here"
   },
   "settings": {
     "title": "Settings",
@@ -466,7 +470,7 @@
       "data": "Data and backup"
     },
     "general": {
-      "lede": "The app's language and updates.",
+      "lede": "The app's language, playback and updates.",
       "language": "Language",
       "languageTitle": "Interface language",
       "languageHint": "“Automatic” uses your system language.",
@@ -481,7 +485,13 @@
       "available": "Version {{version}} is available.",
       "failed": "Couldn't check for updates.",
       "checkNow": "Check now",
-      "checking": "Checking…"
+      "checking": "Checking…",
+      "playback": "Playback",
+      "clickTitle": "A click plays",
+      "clickDiscord": "On Discord",
+      "clickLocal": "Here",
+      "clickHintDiscord": "Middle click, or Shift-click, plays here. Keys, the palette and quick access follow the same rule.",
+      "clickHintLocal": "Middle click, or Shift-click, plays on Discord. Keys, the palette and quick access follow the same rule."
     },
     "server": {
       "lede": "The bot that receives the sounds. The app finds it on the network by itself; you can pick another or enter an address.",
@@ -564,11 +574,8 @@
       "style": "Style",
       "styleLabel": "Quick access style",
       "styleHint": "Favorites shows the sounds. Connection shows only the server, to connect and search.",
-      "click": "When clicking a sound",
-      "clickHint": "Favorites style only. Default: listen here.",
-      "clickLocal": "Listen here",
-      "clickDiscord": "Play on Discord",
-      "shortcutElsewhere": "The global shortcut that opens quick access is in"
+      "shortcutElsewhere": "The global shortcut that opens quick access is in",
+      "clickElsewhere": "What a click does is set in"
     },
     "data": {
       "lede": "Your favorites sync with the selected bot and carry over to every bot with the same owner. Exporting saves a backup file.",
@@ -608,6 +615,10 @@
       "updates": {
         "title": "Updates",
         "hint": "Check whether there is a new version"
+      },
+      "click": {
+        "title": "A click plays",
+        "hint": "On Discord or here, middle click"
       },
       "palette": {
         "title": "Palette",
@@ -663,7 +674,7 @@
       },
       "quickAccess": {
         "title": "Quick access",
-        "hint": "Style and what a click on a sound does"
+        "hint": "Favorites or connection style"
       },
       "nameBeside": {
         "title": "Sound's name beside the icon",
@@ -786,5 +797,13 @@
     "globalOffToast": "Global keys off",
     "appliedServer": "Connected to {{address}}",
     "voiceSub": "Voice channel"
+  },
+  "clickHint": {
+    "titleDiscord": "A click plays on Discord",
+    "bodyDiscord": "To listen here, middle-click or Shift-click.",
+    "titleLocal": "A click plays here",
+    "bodyLocal": "To play on Discord, middle-click or Shift-click.",
+    "change": "Change",
+    "dismiss": "Got it"
   }
 }

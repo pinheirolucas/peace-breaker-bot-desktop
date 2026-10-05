@@ -45,6 +45,7 @@ function card(
       trailDisabled: state.trailDisabled
     },
     key: null,
+    main: "discord",
     organizing: false,
     favorite: false,
     providerName: "MyInstants",
@@ -70,12 +71,12 @@ describe("card menu", () => {
     });
   });
 
-  it("idle: play, send, links, then rename and remove last", () => {
+  it("idle: the main way to play first, then the other, links, then rename and remove last", () => {
     const menu = cardMenu(card("idle"), deps());
 
     expect(labels(menu)).toEqual([
-      "Reproduzir aqui",
       "Reproduzir no Discord",
+      "Reproduzir aqui",
       "-",
       "Copiar link do áudio",
       "Mostrar na pasta",
@@ -95,10 +96,18 @@ describe("card menu", () => {
     expect(find(cardMenu(card("idle"), deps()), "Reproduzir aqui").accelerator).toBeUndefined();
   });
 
+  it("puts playing here first, on the bare key, when the click is set to play here", () => {
+    const menu = cardMenu(card("idle", { key: "a", main: "local" }), deps());
+
+    expect(labels(menu).slice(0, 2)).toEqual(["Reproduzir aqui", "Reproduzir no Discord"]);
+    expect(find(menu, "Reproduzir aqui")).toMatchObject({ accelerator: "A" });
+    expect(find(menu, "Reproduzir no Discord")).toMatchObject({ accelerator: "Shift+A" });
+  });
+
   it("playing here: Parar with Esc, replay, Discord off, remove locked", () => {
     const menu = cardMenu(card("local", { key: "a" }), deps());
 
-    expect(labels(menu).slice(0, 3)).toEqual(["Parar", "Reproduzir de novo", "Reproduzir no Discord"]);
+    expect(labels(menu).slice(0, 3)).toEqual(["Parar", "Reproduzir no Discord", "Reproduzir de novo"]);
     expect(find(menu, "Parar")).toMatchObject({ accelerator: "Esc", enabled: true });
     expect(find(menu, "Reproduzir de novo").enabled).toBe(true);
     expect(find(menu, "Reproduzir no Discord").enabled).toBe(false);
@@ -156,8 +165,8 @@ describe("card menu", () => {
   it("Explorar: the star toggle is named for its action, and Abrir names the provider", () => {
     const off = cardMenu(card("idle", { surface: "explore", favorite: false }), deps());
     expect(labels(off)).toEqual([
-      "Reproduzir aqui",
       "Reproduzir no Discord",
+      "Reproduzir aqui",
       "-",
       "Adicionar aos favoritos",
       "-",
@@ -204,7 +213,7 @@ describe("card menu", () => {
 
   it("speaks the language it is given", () => {
     const menu = cardMenu(card("idle"), deps("darwin", "en-US"));
-    expect(labels(menu)[0]).toBe("Play Here");
+    expect(labels(menu)[0]).toBe("Play on Discord");
   });
 });
 
@@ -511,6 +520,22 @@ describe("menu bar", () => {
     expect(find(items({ focusedCard: true, botConnected: null }), "Reproduzir o som selecionado no Discord").enabled).toBe(true);
     expect(find(items({ focusedCard: true, botConnected: false }), "Reproduzir o som selecionado no Discord").enabled).toBe(false);
     expect(find(items({ focusedCard: true }), "Reproduzir o som selecionado").registerAccelerator).toBe(false);
+  });
+
+  it("Reprodução: the main way to play the selected sound comes first, on Enter", () => {
+    const items = (patch: Partial<MenuState>) => sub(top("darwin", patch), "Reprodução");
+    const here = "Reproduzir o som selecionado";
+    const discord = "Reproduzir o som selecionado no Discord";
+
+    const byDefault = items({}).map((item) => item.label);
+    expect(byDefault.indexOf(discord)).toBeLessThan(byDefault.indexOf(here));
+    expect(find(items({}), discord).accelerator).toBe("Enter");
+    expect(find(items({}), here).accelerator).toBe("Shift+Enter");
+
+    const swapped = items({ mainPlayback: "local" }).map((item) => item.label);
+    expect(swapped.indexOf(here)).toBeLessThan(swapped.indexOf(discord));
+    expect(find(items({ mainPlayback: "local" }), here).accelerator).toBe("Enter");
+    expect(find(items({ mainPlayback: "local" }), discord).accelerator).toBe("Shift+Enter");
   });
 
   it("mirrors the global keys switch, and Atalhos globais… opens Configurações on Atalhos", () => {

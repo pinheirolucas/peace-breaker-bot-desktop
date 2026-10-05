@@ -22,10 +22,12 @@ export interface PresencePaneProps {
   onChange: (settings: PresenceSettings) => void;
   /** Jumps to Atalhos, where quick access's global shortcut lives. */
   onOpenKeys: () => void;
+  /** Jumps to Geral, where what a click does is set. */
+  onOpenGeneral?: () => void;
 }
 
 /** Barra de menus on macOS, Bandeja everywhere else: the tray icon, quick access, and how they behave. */
-export function PresencePane({ os, desktop, available, settings, glyph = "connected", onChange, onOpenKeys }: PresencePaneProps) {
+export function PresencePane({ os, desktop, available, settings, glyph = "connected", onChange, onOpenKeys, onOpenGeneral }: PresencePaneProps) {
   const { t } = useTranslation();
   const mac = os === "mac";
   const effective = effectiveSettings(settings);
@@ -123,26 +125,19 @@ export function PresencePane({ os, desktop, available, settings, glyph = "connec
             ]}
           />
         </PrefRow>
-        <PrefRow
-          sub
-          stack
-          dim={!quickAccessOn || settings.quickAccessStyle !== "favorites"}
-          title={t("settings.presence.click")}
-          hint={t("settings.presence.clickHint")}
-        >
-          <SegmentedChoice
-            aria-label={t("settings.presence.click")}
-            value={settings.quickAccessClick}
-            onChange={(quickAccessClick) => patch({ quickAccessClick })}
-            options={[
-              { value: "local", label: t("settings.presence.clickLocal") },
-              { value: "discord", label: t("settings.presence.clickDiscord") }
-            ]}
-          />
-        </PrefRow>
       </Group>
 
-      <p className="slede" style={{ marginTop: 14 }}>
+      {onOpenGeneral && (
+        <p className="slede" style={{ marginTop: 14 }}>
+          {t("settings.presence.clickElsewhere")}{" "}
+          <Button variant="ghost" style={{ height: "auto", padding: 0 }} onClick={onOpenGeneral}>
+            {t("settings.sections.general")}
+          </Button>
+          .
+        </p>
+      )}
+
+      <p className="slede" style={{ marginTop: onOpenGeneral ? 6 : 14 }}>
         {t("settings.presence.shortcutElsewhere")}{" "}
         <Button variant="ghost" style={{ height: "auto", padding: 0 }} onClick={onOpenKeys}>
           {t("settings.sections.keys")}
@@ -155,10 +150,11 @@ export function PresencePane({ os, desktop, available, settings, glyph = "connec
 
 export interface PresenceSectionProps {
   onOpenKeys: () => void;
+  onOpenGeneral?: () => void;
 }
 
 /** Writes the stored settings; the main window is the one that reports them to the main process. */
-export default function PresenceSection({ onOpenKeys }: PresenceSectionProps) {
+export default function PresenceSection({ onOpenKeys, onOpenGeneral }: PresenceSectionProps) {
   const presence = usePresenceSettings();
   const snapshot = usePresenceSnapshot();
 
@@ -172,6 +168,7 @@ export default function PresenceSection({ onOpenKeys }: PresenceSectionProps) {
       glyph={snapshot ? trayState(snapshot) : "off"}
       onChange={presence.setSettings}
       onOpenKeys={onOpenKeys}
+      onOpenGeneral={onOpenGeneral}
     />
   );
 }

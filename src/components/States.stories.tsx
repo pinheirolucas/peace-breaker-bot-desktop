@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "./Button";
 import { CardSkeleton } from "./CardSkeleton";
+import { ClickHint } from "./ClickHint";
 import { DropZone } from "./DropZone";
 import { EmptyState } from "./EmptyState";
 import { OfflineBanner } from "./OfflineBanner";
@@ -48,6 +49,16 @@ export const ServerSilent: StoryObj = {
       <div style={{ ...grid, opacity: 0.4 }}>
         {[0, 1, 2].map((i) => <CardSkeleton key={i} index={i} />)}
       </div>
+    </div>
+  )
+};
+
+/** Said once over Favoritos, under the offline banner: what a click does, and the other press. */
+export const ClickNote: StoryObj = {
+  render: () => (
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }}>
+      <ClickHint main="discord" onChange={() => {}} onDismiss={() => {}} />
+      <ClickHint main="local" onChange={() => {}} onDismiss={() => {}} />
     </div>
   )
 };

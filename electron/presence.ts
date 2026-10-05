@@ -278,7 +278,6 @@ export function isPresenceSnapshot(x: unknown): x is PresenceSnapshot {
 export const presenceSettingsChannel = "presence:settings";
 
 export type QuickAccessStyle = "favorites" | "connection";
-export type QuickAccessClick = "local" | "discord";
 
 /**
  * Persisted by the renderer (src/storage.ts) and pushed up on change; main
@@ -290,8 +289,6 @@ export interface PresenceSettings {
   /** Painel rápido. */
   quickAccess: boolean;
   quickAccessStyle: QuickAccessStyle;
-  /** What a click on a card's body does in quick access. */
-  quickAccessClick: QuickAccessClick;
   /** macOS: the clip's name beside the glyph. */
   title: boolean;
   /** Windows and Linux: closing the window keeps the app running. */
@@ -302,7 +299,6 @@ export const defaultPresenceSettings: PresenceSettings = {
   tray: false,
   quickAccess: false,
   quickAccessStyle: "favorites",
-  quickAccessClick: "local",
   title: false,
   background: false
 };
@@ -314,7 +310,6 @@ export function isPresenceSettings(x: unknown): x is PresenceSettings {
     typeof x.tray === "boolean" &&
     typeof x.quickAccess === "boolean" &&
     (x.quickAccessStyle === "favorites" || x.quickAccessStyle === "connection") &&
-    (x.quickAccessClick === "local" || x.quickAccessClick === "discord") &&
     typeof x.title === "boolean" &&
     typeof x.background === "boolean"
   );
