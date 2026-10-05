@@ -9,9 +9,11 @@ export function isQuickAccessWindow(search: string): boolean {
 
 const settingFields = [
   ["panel", "quickAccess"],
-  ["panelStyle", "quickAccessStyle"],
-  ["panelClick", "quickAccessClick"]
+  ["panelStyle", "quickAccessStyle"]
 ] as const;
+
+/** Quick access's own click setting, under both of its names: what a click does is now mainPlayback, for every window. */
+const droppedFields = ["panelClick", "quickAccessClick"] as const;
 
 const movedKeys = [
   ["panelShortcut", "quickAccessShortcut"],
@@ -51,6 +53,13 @@ export function migrateQuickAccessStorage(storage: Pick<Storage, "getItem" | "se
 
       if (!(newField in settings)) settings[newField] = settings[oldField];
       delete settings[oldField];
+      changed = true;
+    }
+
+    for (const field of droppedFields) {
+      if (!(field in settings)) continue;
+
+      delete settings[field];
       changed = true;
     }
 

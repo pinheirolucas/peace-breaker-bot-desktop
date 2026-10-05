@@ -18,10 +18,18 @@ describe("migrateQuickAccessStorage", () => {
       tray: true,
       quickAccess: true,
       quickAccessStyle: "connection",
-      quickAccessClick: "discord",
       title: false,
       background: true
     });
+  });
+
+  it("drops quick access's own click setting, which the window's mainPlayback replaced", () => {
+    window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccess: true, quickAccessStyle: "favorites", quickAccessClick: "discord", title: false, background: false }));
+
+    migrateQuickAccessStorage(window.localStorage);
+
+    expect(get("presence")).not.toHaveProperty("quickAccessClick");
+    expect(get("presence")).toMatchObject({ tray: true, quickAccess: true });
   });
 
   it("moves the shortcut and the seen-hint keys", () => {

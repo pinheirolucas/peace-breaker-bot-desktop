@@ -23,6 +23,7 @@ import {
   sortableKeyboardCoordinates
 } from "@dnd-kit/sortable";
 import { Button } from "./components/Button";
+import { ClickHint } from "./components/ClickHint";
 import { EmptyState } from "./components/EmptyState";
 import InstantCard, { cardState } from "./components/InstantCard";
 import type { Playback } from "./components/InstantCard";
@@ -32,6 +33,7 @@ import SortableInstantCard from "./components/SortableInstantCard";
 import { useClipShortcuts } from "./hooks/useClipShortcuts";
 import type { ClipMode } from "./hooks/useClipShortcuts";
 import { useGlobalShortcuts, useGlobalShortcutSettings } from "./hooks/useGlobalShortcuts";
+import { useMainPlayback } from "./hooks/useMainPlayback";
 import { useMenuCommands } from "./hooks/useMenuBridge";
 import { comboLabel, usePlatform } from "./hooks/usePlatform";
 import { assignKey } from "./lib/clipKeys";
@@ -44,7 +46,7 @@ import SnackbarContext from "./SnackbarContext";
 import VoiceContext from "./VoiceContext";
 import { getContent } from "./service";
 import type { BotStatus } from "./service";
-import { useInstantsState } from "./storage";
+import { useClickHintSeenState, useInstantsState } from "./storage";
 import type { Instant } from "./storage";
 import useAudioPlayer from "./useAudioPlayer";
 import useDiscordPlayer from "./useDiscordPlayer";
@@ -89,6 +91,8 @@ export interface FavoritesPanelProps {
   onGlobalSetupFailed?: (count: number) => void;
   /** Filled with this panel's controls, for the command palette. */
   controlsRef?: MutableRefObject<FavoritesControls | null>;
+  /** Opens Configurações › Geral, from the note that says what a click does. */
+  onOpenGeneral?: () => void;
 }
 
 const FLASH_MS = { press: 120, refuse: 320 } as const;
@@ -112,7 +116,8 @@ export default function FavoritesPanel({
   active = true,
   onGlobalStatus,
   onGlobalSetupFailed,
-  controlsRef
+  controlsRef,
+  onOpenGeneral
 }: FavoritesPanelProps) {
   const { t } = useTranslation();
   const os = usePlatform();
@@ -122,8 +127,10 @@ export default function FavoritesPanel({
   const [audioUrl, isAudioPlaying, playAudio, stopAudio] = useAudioPlayer();
   const [discordUrl, isDiscordPlaying, playDiscord, stopDiscord] = useDiscordPlayer();
   const { openSnackbar, closeSnackbar } = useContext(SnackbarContext);
-  const { botAway } = useContext(VoiceContext);
+  const { botAway, awayNow } = useContext(VoiceContext);
   const [instants, setInstants] = useInstantsState([]);
+  const [mainPlayback] = useMainPlayback();
+  const [clickHintSeen, setClickHintSeen] = useClickHintSeenState(false);
 
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [overUrl, setOverUrl] = useState<string | null>(null);
@@ -291,6 +298,12 @@ export default function FavoritesPanel({
     return "played";
   }
 
+  // A click the card refused: it shakes, as for a key, and says why when the bot is out of its channel.
+  function handleRefuse(instant: Instant, reason: "bot" | "busy") {
+    flashCard(instant.url, "refuse");
+    if (reason === "bot") openSnackbar(awayNow());
+  }
+
   function stopFromKeyboard(): boolean {
     if (!anyPlaying) return false;
 
@@ -322,7 +335,7 @@ export default function FavoritesPanel({
   useGlobalShortcuts({
     keys: instants.flatMap(({ key }) => (key ? [key] : [])),
     onFire: (key) => {
-      if (triggerClip(key, "discord") !== "bot-away") return;
+      if (triggerClip(key, mainPlayback) !== "bot-away") return;
 
       // Only "bot not in a channel" is worth a notification while unfocused.
       const now = Date.now();
@@ -624,6 +637,8 @@ export default function FavoritesPanel({
               botStatus={botStatus}
               onPlay={handlePlay}
               onPlayOnDiscord={handlePlayOnDiscord}
+              onRefuse={handleRefuse}
+              onSecondary={() => setClickHintSeen(true)}
               onStop={handleStop}
               menu={cardMenu(instant)}
               shortcut={{ flash: flash?.url === instant.url ? flash.kind : undefined }}
@@ -642,6 +657,16 @@ export default function FavoritesPanel({
   return (
     <>
       {!healthy && <OfflineBanner address={serverAddress} onSwitch={onSwitchServer} />}
+      {!clickHintSeen && !organizing && instants.length > 0 && (
+        <ClickHint
+          main={mainPlayback}
+          onChange={() => {
+            setClickHintSeen(true);
+            onOpenGeneral?.();
+          }}
+          onDismiss={() => setClickHintSeen(true)}
+        />
+      )}
       {content}
       <SaveForm open={addOpen} onCancel={() => onAddOpenChange(false)} onSave={handleSave} />
       <span className="sr-only" aria-live="polite">

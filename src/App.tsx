@@ -32,6 +32,7 @@ import {
 } from "./hooks/useMenuBridge";
 import { useAppearance } from "./hooks/useAppearance";
 import { useLanguage } from "./hooks/useLanguage";
+import { otherPlayback, useMainPlayback } from "./hooks/useMainPlayback";
 import { useNativeChrome } from "./hooks/useNativeChrome";
 import {
   comboParts,
@@ -168,6 +169,7 @@ export default function App() {
   const favoritesPlayback = favoritesNow?.mode ?? null;
   const explorePlayback = exploreNow?.mode ?? null;
   const focusedCard = useFocusedCard();
+  const [mainPlayback] = useMainPlayback();
 
   // Each tab says what plays; the tray, its menus and quick access's strip
   // show whichever started last, so main is told with the clip's name.
@@ -495,7 +497,10 @@ export default function App() {
   }, [showToast, t]);
 
   const voiceToasts = useVoiceToasts(voice, showToast, activeUrl ? formatApiUrl(activeUrl) : null);
-  const voiceContext = useMemo(() => ({ botAway: voiceToasts.botAway }), [voiceToasts.botAway]);
+  const voiceContext = useMemo(
+    () => ({ botAway: voiceToasts.botAway, awayNow: voiceToasts.awayNow }),
+    [voiceToasts.botAway, voiceToasts.awayNow]
+  );
 
   const openSnackbar = useCallback(
     (options: SnackbarOptions) => {
@@ -621,10 +626,10 @@ export default function App() {
       tag: away ? t("palette.onlyHere") : undefined,
       tagTone: away ? "warn" : undefined,
       dim: away || anyPlaying,
-      refused: away,
+      refused: away && mainPlayback === "discord",
       run: (secondary) => {
         // The card's own checks: a sound it would refuse is refused here too.
-        const result = favoritesControls.current?.play(clip.url, secondary ? "local" : "discord");
+        const result = favoritesControls.current?.play(clip.url, secondary ? otherPlayback(mainPlayback) : mainPlayback);
         if (result === "bot-away") showToast({ message: t("shortcuts.botAway") });
         else if (result === "busy") showToast({ message: t("shortcuts.busy") });
       }
@@ -899,6 +904,7 @@ export default function App() {
     hasQuery: query !== "",
     organizeBlocked: favoritesPlaying ? "playing" : query ? "search" : null,
     focusedCard,
+    mainPlayback,
     blocked: dialogOpen,
     language,
     activeAddress: serverAddress,
@@ -976,7 +982,7 @@ export default function App() {
         }
         break;
       case "play-focused":
-        clickFocusedCard("play");
+        clickFocusedCard("local");
         break;
       case "send-focused":
         clickFocusedCard("discord");
@@ -1229,6 +1235,7 @@ export default function App() {
                       onPlaybackChange={reportFavorites}
                       active={tab === "favorites"}
                       controlsRef={favoritesControls}
+                      onOpenGeneral={() => openSettings("general")}
                       onGlobalStatus={setGlobalStatus}
                       onGlobalSetupFailed={(count) =>
                         showToast({

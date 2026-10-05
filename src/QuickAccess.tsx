@@ -11,6 +11,7 @@ import { useAppearance } from "./hooks/useAppearance";
 import { useClipShortcuts } from "./hooks/useClipShortcuts";
 import type { ClipMode } from "./hooks/useClipShortcuts";
 import { useLanguage } from "./hooks/useLanguage";
+import { otherPlayback, useMainPlayback } from "./hooks/useMainPlayback";
 import { useMenuCommands } from "./hooks/useMenuBridge";
 import { useChromeKind, useDesktop, usePlatform } from "./hooks/usePlatform";
 import { usePresenceSettings, usePresenceSnapshot, useReportPlaying } from "./hooks/usePresence";
@@ -23,7 +24,7 @@ import type { Playback } from "./components/InstantCard";
 import { getContent } from "./service";
 import SnackbarContext from "./SnackbarContext";
 import type { SnackbarOptions } from "./SnackbarContext";
-import { useInstantsState } from "./storage";
+import { useClickHintSeenState, useInstantsState } from "./storage";
 import type { Instant } from "./storage";
 import useAudioPlayer from "./useAudioPlayer";
 import useBotStatus from "./useBotStatus";
@@ -35,6 +36,9 @@ import { formatApiUrl, VoiceMenuItem } from "./ServerMenu";
 const SEARCH_MS = 2500;
 
 const hintKey = "quickAccessHintSeen";
+
+/** How long a refused card shakes: the shake's own length. */
+const REFUSE_MS = 320;
 
 function hintSeen(): boolean {
   try {
@@ -70,6 +74,10 @@ export default function QuickAccess() {
   const [pinned, setPinned] = useState(false);
   const [searching, setSearching] = useState(false);
   const [hint, setHint] = useState(() => !hintSeen());
+  const [clickHintSeen, setClickHintSeen] = useClickHintSeenState(false);
+  const [mainPlayback] = useMainPlayback();
+  const [refusedUrl, setRefusedUrl] = useState<string | null>(null);
+  const refusedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [toast, setToast] = useState<SnackbarOptions & { open: boolean; key: number }>({
     open: false,
     key: 0,
@@ -165,14 +173,26 @@ export default function QuickAccess() {
     if (isDiscordPlaying) await stopDiscord().catch(() => {});
   }
 
-  // The body plays here by default; the setting flips it to send, for mid-call use.
-  // A click on a card and Enter on the search both come through here, so they cannot disagree.
-  function onBody(instant: Instant) {
-    const what = bodyClick(settings.quickAccessClick, playbackOf(instant), anyPlaying, botStatus);
+  // A refused press shakes its card, and says why when the bot is out of its channel.
+  function handleRefuse(instant: Instant, reason: "bot" | "busy") {
+    clearTimeout(refusedTimer.current);
+    setRefusedUrl(null);
+    window.setTimeout(() => setRefusedUrl(instant.url));
+    refusedTimer.current = setTimeout(() => setRefusedUrl(null), REFUSE_MS);
+    if (reason === "bot") openSnackbar(voiceToasts.awayNow());
+  }
+
+  useEffect(() => () => clearTimeout(refusedTimer.current), []);
+
+  // Enter on the search presses the first match as a click would, Shift + Enter as a middle click.
+  function pressMatch(instant: Instant, secondary: boolean) {
+    const mode = secondary ? otherPlayback(mainPlayback) : mainPlayback;
+    const what = bodyClick(mode, playbackOf(instant), anyPlaying, botStatus);
 
     if (what === "play") void handlePlay(instant);
     else if (what === "discord") void handlePlayOnDiscord(instant);
-    else if (what === "bot") openSnackbar({ message: t("card.discordUnavailable") });
+    else handleRefuse(instant, what);
+    if (secondary) setClickHintSeen(true);
   }
 
   // What the tray's Stop and the strip's Stop send: main tells every window, this one included.
@@ -192,7 +212,7 @@ export default function QuickAccess() {
     window.instantsQuickAccess?.action({ type });
   }
 
-  // Favourite keys still fire from quick access: bare plays on Discord, Shift plays here.
+  // Favourite keys still fire from quick access: bare plays the main way, Shift the other.
   function triggerClip(key: string, mode: ClipMode) {
     const instant = favorites.find((item) => item.key === key);
     if (!instant) return;
@@ -327,8 +347,8 @@ export default function QuickAccess() {
           className="app quick-access"
           ref={rootRef}
           onPointerDownCapture={() => {
-            // A drag out started here: the hint has done its job.
-            if (hint) window.addEventListener("pointerup", markHintSeen, { once: true });
+            // A drag out started here while its hint showed: the hint has done its job.
+            if (hint && clickHintSeen) window.addEventListener("pointerup", markHintSeen, { once: true });
           }}
         >
           <PresenceStrip snapshot={snapshot} pinned={pinned} onStop={stopEverywhere} onPin={pin} menu={menu} />
@@ -357,13 +377,17 @@ export default function QuickAccess() {
               offline={snapshot.silent}
               onRetry={searchAgain}
               matchUrl={matchUrl}
-              hint={hint}
-              onPlay={onBody}
+              hint={!clickHintSeen ? "click" : hint ? "drag" : null}
+              onPlay={(instant) => void handlePlay(instant)}
+              onPlayOnDiscord={(instant) => void handlePlayOnDiscord(instant)}
+              onRefuse={handleRefuse}
+              onSecondary={() => setClickHintSeen(true)}
+              refusedUrl={refusedUrl}
               onOpenApp={() => action("open-app")}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && event.target === searchRef.current && filtered[0]) {
                   event.preventDefault();
-                  onBody(filtered[0]);
+                  pressMatch(filtered[0], event.shiftKey);
                 }
               }}
             />

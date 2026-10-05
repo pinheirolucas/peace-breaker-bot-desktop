@@ -11,7 +11,7 @@ const bridge = {
   drag: vi.fn()
 };
 
-function renderCard(props: { onPlay?: () => void; organize?: boolean } = {}) {
+function renderCard(props: { onPlay?: () => void; onPlayOnDiscord?: () => void; organize?: boolean } = {}) {
   const openSnackbar = vi.fn();
 
   render(
@@ -22,7 +22,7 @@ function renderCard(props: { onPlay?: () => void; organize?: boolean } = {}) {
         otherPlaying={false}
         botStatus={null}
         onPlay={props.onPlay ?? vi.fn()}
-        onPlayOnDiscord={vi.fn()}
+        onPlayOnDiscord={props.onPlayOnDiscord ?? vi.fn()}
         onStop={vi.fn()}
         trail={{ label: "Remover", icon: <span>x</span>, onClick: vi.fn() }}
         organize={
@@ -50,8 +50,8 @@ describe("dragging a card out", () => {
   });
 
   it("prepares the file on press, and a press that stays put is a click", () => {
-    const onPlay = vi.fn();
-    const { card } = renderCard({ onPlay });
+    const onPlayOnDiscord = vi.fn();
+    const { card } = renderCard({ onPlayOnDiscord });
 
     fireEvent.pointerDown(card, { button: 0, clientX: 10, clientY: 10, pointerType: "mouse" });
     expect(bridge.prepare).toHaveBeenCalledWith({ name: "Primeiro", url: instant.url });
@@ -62,13 +62,13 @@ describe("dragging a card out", () => {
     fireEvent.click(screen.getByRole("button", { name: "Primeiro" }));
 
     expect(bridge.drag).not.toHaveBeenCalled();
-    expect(onPlay).toHaveBeenCalledTimes(1);
+    expect(onPlayOnDiscord).toHaveBeenCalledTimes(1);
     expect(card).not.toHaveAttribute("data-clip");
   });
 
   it("starts the drag at 6px and swallows the click that follows", async () => {
-    const onPlay = vi.fn();
-    const { card } = renderCard({ onPlay });
+    const onPlayOnDiscord = vi.fn();
+    const { card } = renderCard({ onPlayOnDiscord });
 
     fireEvent.pointerDown(card, { button: 0, clientX: 10, clientY: 10, pointerType: "mouse" });
     await act(async () => {
@@ -79,7 +79,7 @@ describe("dragging a card out", () => {
     expect(card).toHaveAttribute("data-clip", "dragging");
 
     fireEvent.click(screen.getByRole("button", { name: "Primeiro" }));
-    expect(onPlay).not.toHaveBeenCalled();
+    expect(onPlayOnDiscord).not.toHaveBeenCalled();
   });
 
   it("says so when the file could not be prepared", async () => {
@@ -99,7 +99,7 @@ describe("dragging a card out", () => {
 
   it("does nothing from the footer", () => {
     const { card } = renderCard();
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Play on Discord" }), {
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Stop" }), {
       button: 0,
       pointerType: "mouse"
     });

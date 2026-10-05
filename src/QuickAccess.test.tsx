@@ -82,6 +82,9 @@ describe("QuickAccessFavorites", () => {
   function view(props: Partial<QuickAccessFavoritesProps> = {}) {
     const handlers = {
       onPlay: vi.fn(),
+      onPlayOnDiscord: vi.fn(),
+      onRefuse: vi.fn(),
+      onSecondary: vi.fn(),
       onOpenApp: vi.fn(),
       onRetry: vi.fn(),
       onQuery: vi.fn()
@@ -96,7 +99,8 @@ describe("QuickAccessFavorites", () => {
         botStatus={null}
         offline={false}
         matchUrl={null}
-        hint={false}
+        hint={null}
+        refusedUrl={null}
         {...handlers}
         {...props}
       />
@@ -113,11 +117,22 @@ describe("QuickAccessFavorites", () => {
     expect(onOpenApp).toHaveBeenCalled();
   });
 
-  it("plays a card's body through onPlay", async () => {
-    const { onPlay } = view();
+  it("sends a card on a click and plays it here on a middle click, like the window's", async () => {
+    const { onPlay, onPlayOnDiscord, onSecondary } = view();
+    const airhorn = within(screen.getByRole("article", { name: "Airhorn" })).getByRole("button", { name: "Airhorn" });
 
-    await userEvent.click(within(screen.getByRole("article", { name: "Airhorn" })).getByRole("button", { name: "Airhorn" }));
+    await userEvent.click(airhorn);
+    expect(onPlayOnDiscord).toHaveBeenCalledWith(instants[1]);
+
+    fireEvent.mouseDown(airhorn, { button: 1 });
+    fireEvent(airhorn, new MouseEvent("auxclick", { bubbles: true, cancelable: true, button: 1 }));
     expect(onPlay).toHaveBeenCalledWith(instants[1]);
+    expect(onSecondary).toHaveBeenCalledTimes(1);
+  });
+
+  it("shakes the card a press was refused on", () => {
+    view({ refusedUrl: instants[0].url });
+    expect(screen.getByRole("article", { name: "Vine boom" })).toHaveAttribute("data-flash", "refuse");
   });
 
   it("has the body as its only control: no send or stop on a card", () => {
@@ -137,7 +152,7 @@ describe("QuickAccessFavorites", () => {
   });
 
   it("puts the footer beside the scroller, not inside it, so only the grid scrolls", () => {
-    view({ offline: true, hint: true });
+    view({ offline: true, hint: "drag" });
 
     const body = document.querySelector(".pbody") as HTMLElement;
     const scroll = body.querySelector(".scroll") as HTMLElement;
@@ -171,8 +186,13 @@ describe("QuickAccessFavorites", () => {
   });
 
   it("shows the drag hint only when asked", () => {
-    view({ hint: true });
+    view({ hint: "drag" });
     expect(screen.getByText(/Drag a sound into any app/)).toBeInTheDocument();
+  });
+
+  it("says what a click and a middle click do, in the order the setting gives", () => {
+    view({ hint: "click" });
+    expect(screen.getByText("Click: Discord · middle or Shift: here")).toBeInTheDocument();
   });
 });
 
@@ -246,14 +266,13 @@ describe("QuickAccessConnection", () => {
 });
 
 describe("usePresenceSettings", () => {
-  it("defaults to everything off, favourites style, listen here", () => {
+  it("defaults to everything off, favourites style", () => {
     const { result } = renderHook(() => usePresenceSettings());
 
     expect(result.current.settings).toEqual({
       tray: false,
       quickAccess: false,
       quickAccessStyle: "favorites",
-      quickAccessClick: "local",
       title: false,
       background: false
     });
@@ -263,7 +282,7 @@ describe("usePresenceSettings", () => {
     window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccessStyle: "connection" }));
     const { result } = renderHook(() => usePresenceSettings());
 
-    expect(result.current.settings).toMatchObject({ tray: true, quickAccessStyle: "connection", quickAccessClick: "local" });
+    expect(result.current.settings).toMatchObject({ tray: true, quickAccessStyle: "connection", quickAccess: false });
   });
 
   it("falls back to the default style for one it does not know", () => {
@@ -365,7 +384,9 @@ describe("a click on the body, with the bot out of its channel", () => {
   function open(botConnected: boolean | "unknown", click: "local" | "discord") {
     window.localStorage.setItem("selectedServer", JSON.stringify(server));
     window.localStorage.setItem("instants", JSON.stringify([clip]));
-    window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccess: true, quickAccessClick: click }));
+    window.localStorage.setItem("presence", JSON.stringify({ tray: true, quickAccess: true }));
+    window.localStorage.setItem("mainPlayback", JSON.stringify(click));
+    window.localStorage.setItem("clickHintSeen", "true");
     playOnDiscord.mockReset();
     // An earlier test's bridge would answer for main; this one polls for itself, as a browser tab does.
     window.instantsPresence = undefined;
@@ -391,7 +412,7 @@ describe("a click on the body, with the bot out of its channel", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   // The window resolves its own language, whatever the test set for the others.
-  const why = () => i18n.t("card.discordUnavailable");
+  const why = () => i18n.t("voice.away");
   const body = () => screen.findByRole("button", { name: "Vine boom" });
 
   it("is blocked at connected: false, says why, and sends nothing", async () => {
@@ -413,6 +434,17 @@ describe("a click on the body, with the bot out of its channel", () => {
     await userEvent.type(await screen.findByRole("searchbox"), "vine{Enter}");
 
     expect(await screen.findByText(why())).toBeInTheDocument();
+    expect(playOnDiscord).not.toHaveBeenCalled();
+  });
+
+  it("plays the match here on Shift + Enter, whatever the bot", async () => {
+    open(false, "discord");
+    await body();
+    await act(async () => void (await new Promise((resolve) => setTimeout(resolve, 20))));
+
+    await userEvent.type(await screen.findByRole("searchbox"), "vine{Shift>}{Enter}{/Shift}");
+
+    expect(screen.queryByText(why())).toBeNull();
     expect(playOnDiscord).not.toHaveBeenCalled();
   });
 

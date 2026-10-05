@@ -37,7 +37,7 @@ const mac = (id: string, patch: Partial<Server> = {}): Server => ({
 
 describe("Geral", () => {
   function pane(patch: Partial<React.ComponentProps<typeof GeneralPane>> = {}) {
-    const props = { language: "auto" as const, onLanguage: vi.fn(), version: "0.1.15", update: { state: "idle" as const }, canCheck: true, onCheck: vi.fn(), ...patch };
+    const props = { mainPlayback: "discord" as const, onMainPlayback: vi.fn(), language: "auto" as const, onLanguage: vi.fn(), version: "0.1.15", update: { state: "idle" as const }, canCheck: true, onCheck: vi.fn(), ...patch };
     render(<GeneralPane {...props} />);
     return props;
   }
@@ -51,6 +51,18 @@ describe("Geral", () => {
 
     await userEvent.click(group.getByRole("radio", { name: "English" }));
     expect(props.onLanguage).toHaveBeenCalledWith("en-US");
+  });
+
+  it("chooses what a click plays, Discord first, and says what the other press does", async () => {
+    const props = pane();
+
+    const group = within(screen.getByRole("radiogroup", { name: "O clique reproduz" }));
+    expect(group.getAllByRole("radio").map((r) => r.textContent)).toEqual(["No Discord", "Aqui"]);
+    expect(group.getByRole("radio", { name: "No Discord" })).toBeChecked();
+    expect(screen.getByText(/O clique do meio, ou Shift \+ clique, reproduz aqui/)).toBeInTheDocument();
+
+    await userEvent.click(group.getByRole("radio", { name: "Aqui" }));
+    expect(props.onMainPlayback).toHaveBeenCalledWith("local");
   });
 
   it("names the version and checks on request", async () => {
@@ -508,11 +520,11 @@ describe("Barra de menus e Bandeja", () => {
   });
 
   it("applies each switch at once, keeping the rest of the settings", async () => {
-    const props = pane("win", { tray: true, quickAccessClick: "discord" });
+    const props = pane("win", { tray: true, quickAccessStyle: "connection" });
 
     await userEvent.click(screen.getByRole("switch", { name: "Acesso rápido" }));
 
-    expect(props.onChange).toHaveBeenCalledWith({ ...defaultPresenceSettings, tray: true, quickAccessClick: "discord", quickAccess: true });
+    expect(props.onChange).toHaveBeenCalledWith({ ...defaultPresenceSettings, tray: true, quickAccessStyle: "connection", quickAccess: true });
   });
 
   it("dims what depends on the icon, with the reason, and disables it", () => {
@@ -531,25 +543,22 @@ describe("Barra de menus e Bandeja", () => {
     expect(screen.getAllByText("Ligue o ícone na bandeja primeiro.").length).toBeGreaterThan(0);
   });
 
-  it("dims the style and the click until quick access is on, and the click until the style is Favoritos", () => {
-    const { unmount } = render(<div />);
-    unmount();
-    pane("win", { tray: true, quickAccess: true, quickAccessStyle: "connection" });
+  it("dims the style until quick access is on", () => {
+    pane("win", { tray: true, quickAccess: false });
 
     const style = screen.getByRole("radiogroup", { name: "Estilo do acesso rápido" }).closest(".prefrow")!;
-    const click = screen.getByRole("radiogroup", { name: "Ao clicar em um som" }).closest(".prefrow")!;
-    expect(style).not.toHaveAttribute("data-dim");
-    expect(click).toHaveAttribute("data-dim");
+    expect(style).toHaveAttribute("data-dim");
   });
 
-  it("chooses the style and what a click does", async () => {
-    const props = pane("win", { tray: true, quickAccess: true });
+  it("chooses the style, and leaves what a click does to Geral", async () => {
+    const props = pane("win", { tray: true, quickAccess: true }, { onOpenGeneral: vi.fn() });
 
     await userEvent.click(within(screen.getByRole("radiogroup", { name: "Estilo do acesso rápido" })).getByRole("radio", { name: "Conexão" }));
     expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ quickAccessStyle: "connection" }));
 
-    await userEvent.click(within(screen.getByRole("radiogroup", { name: "Ao clicar em um som" })).getByRole("radio", { name: "Reproduzir no Discord" }));
-    expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ quickAccessClick: "discord" }));
+    expect(screen.queryByRole("radiogroup", { name: "Ao clicar em um som" })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Geral" }));
+    expect(props.onOpenGeneral).toHaveBeenCalledTimes(1);
   });
 
   it("previews the real tray glyph for the state it is in, not the app mark", () => {
@@ -736,7 +745,7 @@ describe("resetSettings", () => {
   it("never names the favourites among the keys it resets", () => {
     expect(settingsKeys).not.toContain("instants");
     expect([...settingsKeys].sort()).toEqual(
-      ["colorMode", "globalShortcuts", "language", "manualServers", "presence", "provider", "quickAccessShortcut", "region", "selectedServer", "theme"].sort()
+      ["colorMode", "globalShortcuts", "language", "mainPlayback", "manualServers", "presence", "provider", "quickAccessShortcut", "region", "selectedServer", "theme"].sort()
     );
   });
 

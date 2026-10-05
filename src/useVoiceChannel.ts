@@ -124,6 +124,8 @@ export interface VoiceToasts {
   rejoin: () => void;
   /** The toast for a play the bot refused because it is out of its channel, offering to call it back; null for any other error. */
   botAway: (err: unknown) => SnackbarOptions | null;
+  /** The toast for a play refused before asking, because the bot is known to be out of its channel; offers to call it back when a channel is remembered. */
+  awayNow: () => SnackbarOptions;
 }
 
 /** Runs leave and rejoin and says how they went. Shared by the window and quick access, so both say it the same way. */
@@ -169,21 +171,29 @@ export function useVoiceToasts(voice: VoiceChannel, show: Show, address: string 
     });
   }, [failed, rejoin, show, t]);
 
+  const awayNow = useCallback((): SnackbarOptions => {
+    const { lastChannel } = latest.current;
+    if (!lastChannel) return { message: t("voice.away") };
+
+    return {
+      message: t("voice.away"),
+      actionLabel: lastChannel.channelName
+        ? t("voice.rejoinAction", { channelName: lastChannel.channelName })
+        : t("voice.rejoinActionUnnamed"),
+      onAction: () => void rejoin()
+    };
+  }, [rejoin, t]);
+
   const botAway = useCallback(
     (err: unknown): SnackbarOptions | null => {
-      const { lastChannel } = latest.current;
-      if (!(err instanceof ApiError) || err.label !== "bot_not_connected" || !lastChannel) return null;
-
-      return {
-        message: t("voice.away"),
-        actionLabel: lastChannel.channelName
-          ? t("voice.rejoinAction", { channelName: lastChannel.channelName })
-          : t("voice.rejoinActionUnnamed"),
-        onAction: () => void rejoin()
-      };
+      if (!(err instanceof ApiError) || err.label !== "bot_not_connected" || !latest.current.lastChannel) return null;
+      return awayNow();
     },
-    [rejoin, t]
+    [awayNow]
   );
 
-  return useMemo(() => ({ leave: () => void leave(), rejoin: () => void rejoin(), botAway }), [leave, rejoin, botAway]);
+  return useMemo(
+    () => ({ leave: () => void leave(), rejoin: () => void rejoin(), botAway, awayNow }),
+    [leave, rejoin, botAway, awayNow]
+  );
 }

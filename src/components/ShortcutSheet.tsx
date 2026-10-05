@@ -6,6 +6,7 @@ import { Dialog } from "./Dialog";
 import { Key, Keys } from "./Key";
 import { comboParts, shiftPart } from "../hooks/usePlatform";
 import { useGlobalShortcutSettings } from "../hooks/useGlobalShortcuts";
+import { useMainPlayback } from "../hooks/useMainPlayback";
 import { menuBridge } from "../hooks/useMenuBridge";
 import { isEditableTarget } from "../lib/clipKeys";
 import { slotFor } from "../lib/slot";
@@ -55,6 +56,9 @@ export default function ShortcutSheet({
   onOpenSettings
 }: ShortcutSheetProps) {
   const { t } = useTranslation();
+  const [mainPlayback] = useMainPlayback();
+  const mainDiscord = mainPlayback === "discord";
+  const yourSounds = mainDiscord ? t("shortcuts.sheet.yourSounds") : t("shortcuts.sheet.yourSoundsLocal");
   const global = useGlobalShortcutSettings();
   const [filter, setFilter] = useState("");
   const filterRef = useRef<HTMLInputElement>(null);
@@ -178,11 +182,11 @@ export default function ShortcutSheet({
           <ul className="ksheet__legend" aria-label={t("shortcuts.sheet.legend")}>
             <li>
               <Keys parts={["A"]} />
-              <span>{t("shortcuts.sheet.legendDiscord")}</span>
+              <span>{mainDiscord ? t("shortcuts.sheet.legendDiscord") : t("shortcuts.sheet.legendLocal")}</span>
             </li>
             <li>
               <Keys parts={[shiftPart(os), "A"]} />
-              <span>{t("shortcuts.sheet.legendLocal")}</span>
+              <span>{mainDiscord ? t("shortcuts.sheet.legendLocal") : t("shortcuts.sheet.legendDiscord")}</span>
             </li>
             <li>
               <Keys parts={["Esc"]} />
@@ -192,9 +196,9 @@ export default function ShortcutSheet({
         )}
 
         {(!query || keyed.length > 0) && (
-          <section className="ksheet__section" aria-label={t("shortcuts.sheet.yourSounds")}>
+          <section className="ksheet__section" aria-label={yourSounds}>
             <div className="ksheet__head">
-              <h3 className="ksheet__h">{t("shortcuts.sheet.yourSounds")}</h3>
+              <h3 className="ksheet__h">{yourSounds}</h3>
               <span className="ksheet__count">
                 {allKeyed.length > 0
                   ? t("shortcuts.sheet.counts", { keyed: allKeyed.length, unkeyed })

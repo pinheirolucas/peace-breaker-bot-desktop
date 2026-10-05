@@ -66,6 +66,13 @@ export const usePresenceSettingsState = createPersistedState<PresenceSettings>("
  *  apart from the favourite keys'. */
 export const useQuickAccessShortcutState = createPersistedState<GlobalShortcutsSetting>("quickAccessShortcut");
 
+/** Where a plain click, Enter, a favourite's key and the palette play a clip. A middle click or Shift plays it the other way. Read it through useMainPlayback. */
+export type MainPlayback = "discord" | "local";
+export const useMainPlaybackState = createPersistedState<MainPlayback>("mainPlayback");
+
+/** Set once the app has said what a click does now, or someone used the other press. Not a setting: Restaurar configurações leaves it. */
+export const useClickHintSeenState = createPersistedState<boolean>("clickHintSeen");
+
 /**
  * Every key Configurações › Dados › Restaurar configurações puts back to its
  * default. Deliberately not here: `instants`, the favourites and their keys —
@@ -82,7 +89,8 @@ export const settingsKeys = [
   "provider",
   "globalShortcuts",
   "quickAccessShortcut",
-  "presence"
+  "presence",
+  "mainPlayback"
 ] as const;
 
 /** Puts every setting back to its default, in this window and in the others. */

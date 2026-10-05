@@ -5,12 +5,22 @@ import { ArrowUpRightIcon, RefreshIcon } from "../icons";
 import { formatApiUrl } from "../ServerMenu";
 import type { BotStatus } from "../service";
 import type { Instant } from "../storage";
+import { otherPlayback, useMainPlayback } from "../hooks/useMainPlayback";
 import { Button } from "./Button";
 import { EmptyState } from "./EmptyState";
 import InstantCard from "./InstantCard";
 import type { Playback } from "./InstantCard";
 import { SearchField } from "./SearchField";
 import "./quickAccess.css";
+
+/** "Clique: Discord · clique do meio: aqui", in the order the setting gives. */
+function ClickLegend() {
+  const { t } = useTranslation();
+  const [main] = useMainPlayback();
+  const where = (mode: "discord" | "local") => (mode === "discord" ? t("quickAccess.discord") : t("quickAccess.here"));
+
+  return <>{t("quickAccess.clickHint", { main: where(main), other: where(otherPlayback(main)) })}</>;
+}
 
 function OpenApp({ onOpenApp }: { onOpenApp: () => void }) {
   const { t } = useTranslation();
@@ -39,11 +49,17 @@ export interface QuickAccessFavoritesProps {
   onRetry: () => void;
   /** The first match wears a ring and an Enter chip until the query changes. */
   matchUrl: string | null;
-  /** Shown until the first drag. */
-  hint: boolean;
-  /** The card body is quick access's only control: what it does (listen here or
-   *  send to the bot) is the quickAccessClick setting, resolved by the caller. */
+  /** Which note the hint line shows: what the two presses do until the other
+   *  one is used, then dragging out until the first drag, then nothing. */
+  hint: "click" | "drag" | null;
+  /** The card body is quick access's only control: a plain click plays the
+   *  main way (the mainPlayback setting), a middle or Shift click the other. */
   onPlay: (instant: Instant) => void;
+  onPlayOnDiscord: (instant: Instant) => void;
+  onRefuse: (instant: Instant, reason: "bot" | "busy") => void;
+  onSecondary: () => void;
+  /** The card that shakes for a refused press. */
+  refusedUrl: string | null;
   onOpenApp: () => void;
   onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 }
@@ -65,6 +81,10 @@ export function QuickAccessFavorites({
   matchUrl,
   hint,
   onPlay,
+  onPlayOnDiscord,
+  onRefuse,
+  onSecondary,
+  refusedUrl,
   onOpenApp,
   onKeyDown
 }: QuickAccessFavoritesProps) {
@@ -130,8 +150,11 @@ export function QuickAccessFavorites({
                 botStatus={botStatus}
                 match={instant.url === matchUrl}
                 onPlay={onPlay}
-                onPlayOnDiscord={noop}
+                onPlayOnDiscord={onPlayOnDiscord}
+                onRefuse={onRefuse}
+                onSecondary={onSecondary}
                 onStop={noop}
+                shortcut={{ flash: instant.url === refusedUrl ? "refuse" : undefined }}
                 bare
               />
             ))}
@@ -139,7 +162,9 @@ export function QuickAccessFavorites({
         )}
       </div>
 
-      {hint && total > 0 && <p className="phint">{t("quickAccess.hint")}</p>}
+      {hint && total > 0 && (
+        <p className="phint">{hint === "click" ? <ClickLegend /> : t("quickAccess.hint")}</p>
+      )}
 
       <footer className="pfooter">
         <span>{t("quickAccess.count", { count: total })}</span>

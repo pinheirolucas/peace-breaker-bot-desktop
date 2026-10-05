@@ -66,8 +66,12 @@ function Favorites({ state, ...props }: { state: PresenceSnapshot } & Partial<Qu
         offline={state.silent}
         onRetry={noop}
         matchUrl={props.matchUrl ?? null}
-        hint={props.hint ?? false}
+        hint={props.hint ?? null}
         onPlay={noop}
+        onPlayOnDiscord={noop}
+        onRefuse={noop}
+        onSecondary={noop}
+        refusedUrl={props.refusedUrl ?? null}
         onOpenApp={noop}
       />
     </Panel>
@@ -79,12 +83,21 @@ const many: Instant[] = Array.from({ length: 43 }, (_, i) => ({ name: `${clips[i
 const row = { display: "flex", flexWrap: "wrap", gap: 24, alignItems: "flex-start" } as const;
 
 /** Favoritos, the default style. Cards are the window's own components at the Tight tier's size. */
-export const FavoritosDefault: StoryObj = { name: "Favoritos · idle, with the drag hint", render: () => <Favorites state={snapshot()} hint /> };
+export const FavoritosDefault: StoryObj = { name: "Favoritos · idle, with the drag hint", render: () => <Favorites state={snapshot()} hint="drag" /> };
+
+/** Until the other press is used, the hint line says what a click and a middle click do. */
+export const FavoritosClickHint: StoryObj = { name: "Favoritos · idle, with the click hint", render: () => <Favorites state={snapshot()} hint="click" /> };
+
+/** A click for Discord while the bot is out of its channel: the card shakes. */
+export const FavoritosRefused: StoryObj = {
+  name: "Favoritos · bot away, click refused",
+  render: () => <Favorites state={snapshot({ bot: { connected: false } })} refusedUrl={clips[0].url} />
+};
 
 /** 43 favourites: only the grid scrolls. The strip, search, banner, hint and footer stay put. */
 export const FavoritosLongList: StoryObj = {
   name: "Favoritos · 43 favorites, only the grid scrolls",
-  render: () => <Favorites state={snapshot({ silent: true })} instants={many} total={many.length} hint />
+  render: () => <Favorites state={snapshot({ silent: true })} instants={many} total={many.length} hint="drag" />
 };
 
 /** Two favourites: the footer still sits at the bottom of the 520px window. */

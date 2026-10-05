@@ -273,7 +273,7 @@ export default function Settings() {
     server: <ServerSection />,
     explore: <ExploreSection />,
     keys: <KeysSection />,
-    presence: <PresenceSection onOpenKeys={() => setSection("keys")} />,
+    presence: <PresenceSection onOpenKeys={() => setSection("keys")} onOpenGeneral={() => setSection("general")} />,
     data: (
       <DataSection
         onExport={exportToJSON}

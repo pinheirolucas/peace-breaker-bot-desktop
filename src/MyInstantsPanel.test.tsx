@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import MyInstantsPanel from "./MyInstantsPanel";
@@ -37,6 +37,12 @@ function play(name: string) {
 }
 function action(name: string, label: string) {
   return within(card(name)).getByRole("button", { name: label });
+}
+// A click sends to Discord; a middle click plays here.
+function playHere(name: string) {
+  const body = play(name);
+  fireEvent.mouseDown(body, { button: 1 });
+  fireEvent(body, new MouseEvent("auxclick", { bubbles: true, cancelable: true, button: 1 }));
 }
 
 function storedInstants() {
@@ -304,7 +310,6 @@ describe("MyInstantsPanel", () => {
   });
 
   it("plays a clip locally with the content the backend hands back", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockResolvedValue({
       exists: true,
       content: "data:audio/mp3;base64,AAAA"
@@ -313,19 +318,18 @@ describe("MyInstantsPanel", () => {
     renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() => expect(FakeAudio.played).toEqual(["data:audio/mp3;base64,AAAA"]));
   });
 
   it("warns when the instant no longer exists, with no remove action", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockResolvedValue({ exists: false });
 
     const { snackbar } = renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() => {
       // Unlike Favoritos there is nothing to remove here.
@@ -492,13 +496,12 @@ describe("MyInstantsPanel when a clip cannot be fetched", () => {
   useFakes();
 
   it("shows the backend message instead of failing silently", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockRejectedValue(new Error("Nenhuma URL enviada"));
 
     const { snackbar } = renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
 
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() =>
       expect(snackbar.openSnackbar).toHaveBeenCalledWith({ message: "Nenhuma URL enviada" })
@@ -507,18 +510,17 @@ describe("MyInstantsPanel when a clip cannot be fetched", () => {
   });
 
   it("plays nothing and stays usable after the failure", async () => {
-    const user = userEvent.setup();
     vi.mocked(getContent).mockRejectedValueOnce(new Error("Nenhuma URL enviada"));
 
     renderPanel();
     await screen.findByRole("article", { name: "Primeiro" });
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     vi.mocked(getContent).mockResolvedValue({
       exists: true,
       content: "data:audio/mp3;base64,BBBB"
     });
-    await user.click(play("Primeiro"));
+    playHere("Primeiro");
 
     await waitFor(() => expect(FakeAudio.played).toEqual(["data:audio/mp3;base64,BBBB"]));
   });

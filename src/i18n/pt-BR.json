@@ -1,8 +1,5 @@
 {
   "card": {
-    "play": "Reproduzir",
-    "playOnDiscord": "Reproduzir no Discord",
-    "discordUnavailable": "O bot não está em nenhum canal de voz",
     "stop": "Parar",
     "playingLocal": "Reproduzindo",
     "playingDiscord": "No Discord",
@@ -10,7 +7,9 @@
     "moveHandle": "Mover {{name}}, posição {{pos}} de {{total}}",
     "position": "{{pos}} de {{total}}",
     "dragFailed": "Não foi possível preparar o arquivo. Tente arrastar de novo.",
-    "preparing": "Preparando o arquivo…"
+    "preparing": "Preparando o arquivo…",
+    "tooltipDiscord": "Reproduzir no Discord · clique do meio: reproduzir aqui",
+    "tooltipLocal": "Reproduzir aqui · clique do meio: reproduzir no Discord"
   },
   "common": {
     "switch": "Trocar",
@@ -239,7 +238,6 @@
   },
   "shortcuts": {
     "title": "Atalho para “{{name}}”",
-    "prompt": "Pressione a tecla que vai reproduzir este som no Discord. Com Shift, ele é reproduzido só aqui.",
     "captureLabel": "Pressione uma letra ou um número",
     "waiting": "Pressione uma letra ou um número",
     "plays": "{{key}} reproduz “{{name}}”",
@@ -283,7 +281,8 @@
       "menuApp": "Peace Breaker Bot",
       "legend": "Legenda",
       "settings": "Abrir Configurações",
-      "globalSettings": "Atalhos globais em Configurações…"
+      "globalSettings": "Atalhos globais em Configurações…",
+      "yourSoundsLocal": "Seus sons · aqui"
     },
     "global": {
       "lede": "Com o app em foco, a tecla sozinha reproduz o som. Fora dele, use a tecla com o modificador.",
@@ -295,7 +294,9 @@
       "failedToast_one": "{{count}} atalho não funciona fora do app",
       "failedToast_other": "{{count}} atalhos não funcionam fora do app",
       "see": "Ver"
-    }
+    },
+    "promptDiscord": "Pressione a tecla que vai reproduzir este som no Discord. Com Shift, ele é reproduzido só aqui.",
+    "promptLocal": "Pressione a tecla que vai reproduzir este som aqui. Com Shift, ele é reproduzido no Discord."
   },
   "menu": {
     "app": {
@@ -437,7 +438,10 @@
     "searching": "Procurando…",
     "inUse": "em uso",
     "noneBody": "Confira se o bot está rodando e se este computador está na mesma rede que ele.",
-    "connectionNote": "A troca vale na hora. Os servidores são encontrados na rede local."
+    "connectionNote": "A troca vale na hora. Os servidores são encontrados na rede local.",
+    "clickHint": "Clique: {{main}} · clique do meio ou Shift: {{other}}",
+    "discord": "Discord",
+    "here": "aqui"
   },
   "settings": {
     "title": "Configurações",
@@ -466,7 +470,7 @@
       "data": "Dados e backup"
     },
     "general": {
-      "lede": "Idioma e atualizações do aplicativo.",
+      "lede": "Idioma, reprodução e atualizações do aplicativo.",
       "language": "Idioma",
       "languageTitle": "Idioma da interface",
       "languageHint": "“Automático” usa o idioma do sistema.",
@@ -481,7 +485,13 @@
       "available": "A versão {{version}} está disponível.",
       "failed": "Não foi possível verificar atualizações.",
       "checkNow": "Verificar agora",
-      "checking": "Verificando…"
+      "checking": "Verificando…",
+      "playback": "Reprodução",
+      "clickTitle": "O clique reproduz",
+      "clickDiscord": "No Discord",
+      "clickLocal": "Aqui",
+      "clickHintDiscord": "O clique do meio, ou Shift + clique, reproduz aqui. As teclas, a paleta e o acesso rápido seguem a mesma regra.",
+      "clickHintLocal": "O clique do meio, ou Shift + clique, reproduz no Discord. As teclas, a paleta e o acesso rápido seguem a mesma regra."
     },
     "server": {
       "lede": "O bot que recebe os sons. O app encontra o bot sozinho na rede; você pode escolher outro ou informar um endereço.",
@@ -564,11 +574,8 @@
       "style": "Estilo",
       "styleLabel": "Estilo do acesso rápido",
       "styleHint": "Favoritos mostra os sons. Conexão mostra só o servidor, para conectar e procurar.",
-      "click": "Ao clicar em um som",
-      "clickHint": "Só no estilo Favoritos. Padrão: ouvir aqui.",
-      "clickLocal": "Ouvir aqui",
-      "clickDiscord": "Reproduzir no Discord",
-      "shortcutElsewhere": "O atalho global que abre o acesso rápido fica em"
+      "shortcutElsewhere": "O atalho global que abre o acesso rápido fica em",
+      "clickElsewhere": "O que o clique faz fica em"
     },
     "data": {
       "lede": "Seus favoritos sincronizam com o bot selecionado e valem em todos os bots do mesmo dono. Exportar salva um arquivo de backup.",
@@ -608,6 +615,10 @@
       "updates": {
         "title": "Atualizações",
         "hint": "Verificar se há uma versão nova"
+      },
+      "click": {
+        "title": "O clique reproduz",
+        "hint": "No Discord ou aqui, clique do meio"
       },
       "palette": {
         "title": "Paleta",
@@ -663,7 +674,7 @@
       },
       "quickAccess": {
         "title": "Acesso rápido",
-        "hint": "Estilo e o que acontece ao clicar em um som"
+        "hint": "Estilo favoritos ou conexão"
       },
       "nameBeside": {
         "title": "Nome do som ao lado do ícone",
@@ -786,5 +797,13 @@
     "globalOffToast": "Teclas globais desligadas",
     "appliedServer": "Conectado a {{address}}",
     "voiceSub": "Canal de voz"
+  },
+  "clickHint": {
+    "titleDiscord": "O clique reproduz no Discord",
+    "bodyDiscord": "Para ouvir aqui, use o clique do meio ou Shift + clique.",
+    "titleLocal": "O clique reproduz aqui",
+    "bodyLocal": "Para reproduzir no Discord, use o clique do meio ou Shift + clique.",
+    "change": "Mudar",
+    "dismiss": "Entendi"
   }
 }

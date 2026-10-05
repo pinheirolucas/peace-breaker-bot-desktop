@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { settingsKeys } from "./storage";
 
-const notSettings = ["instants", "favoritesSync", "recentClips", "lastVoiceChannel"];
+const notSettings = ["instants", "favoritesSync", "recentClips", "lastVoiceChannel", "clickHintSeen"];
 
 const sources = import.meta.glob(["./**/*.{ts,tsx}", "!./**/*.test.*", "!./**/*.stories.*"], {
   query: "?raw",

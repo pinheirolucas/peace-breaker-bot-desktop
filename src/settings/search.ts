@@ -26,6 +26,7 @@ export function searchEntries(t: Translate, os: PlatformId): SearchEntry[] {
 
   return [
     entry("language", "general"),
+    entry("click", "general"),
     entry("updates", "general"),
     entry("palette", "appearance"),
     entry("mode", "appearance"),

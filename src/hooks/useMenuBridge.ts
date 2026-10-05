@@ -59,10 +59,14 @@ export function useFocusedCard(): boolean {
   return focused;
 }
 
-/** Clicks a control of the card that has focus, so the menu runs exactly what the button runs (and a disabled button does nothing). */
-export function clickFocusedCard(action: "play" | "discord"): void {
+/** Presses the body of the card that has focus, with Shift when `mode` is not its main way to play, so the menu runs exactly what a click runs (and a disabled body does nothing). */
+export function clickFocusedCard(mode: "local" | "discord"): void {
   const card = document.activeElement?.closest("article.pad");
-  card?.querySelector<HTMLButtonElement>(`[data-act="${action}"]`)?.click();
+  const body = card?.querySelector<HTMLButtonElement>('[data-act="play"]');
+  if (!body || body.disabled) return;
+
+  const shiftKey = body.dataset.main !== mode;
+  body.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, shiftKey }));
 }
 
 /**

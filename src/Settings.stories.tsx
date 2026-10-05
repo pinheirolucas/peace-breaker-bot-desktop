@@ -17,7 +17,7 @@ import { KeysPane } from "./settings/KeysSection";
 import { PresencePane } from "./settings/PresenceSection";
 import { ServerPane } from "./settings/ServerSection";
 import type { UpdateStatus } from "./settings/useUpdateCheck";
-import type { LanguageChoice } from "./storage";
+import type { LanguageChoice, MainPlayback } from "./storage";
 import type { PlatformId } from "./themes";
 import type { DesktopId } from "./hooks/usePlatform";
 import type { Region } from "./regions";
@@ -88,6 +88,7 @@ function Window({ os, desktop, section: initial, query: initialQuery = "", compa
   const [query, setQuery] = useState(initialQuery);
 
   const [language, setLanguage] = useState<LanguageChoice>("auto");
+  const [mainPlayback, setMainPlayback] = useState<MainPlayback>("discord");
 
   const kind = scenario.server ?? "connected";
   const [manual, setManual] = useState<Server[]>(kind === "manual" ? [remote] : []);
@@ -116,6 +117,8 @@ function Window({ os, desktop, section: initial, query: initialQuery = "", compa
   const panes: Record<SettingsPane, ReactNode> = {
     general: (
       <GeneralPane
+        mainPlayback={mainPlayback}
+        onMainPlayback={setMainPlayback}
         language={language}
         onLanguage={setLanguage}
         version="0.1.15"
@@ -187,6 +190,7 @@ function Window({ os, desktop, section: initial, query: initialQuery = "", compa
         glyph={scenario.glyph}
         onChange={setPresence}
         onOpenKeys={() => setSection("keys")}
+        onOpenGeneral={() => setSection("general")}
       />
     ),
     data: (

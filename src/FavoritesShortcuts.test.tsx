@@ -177,7 +177,7 @@ describe("clip keys in Favoritos", () => {
     const article = screen.getByRole("article", { name: "Vish" });
     expect(within(article).getByRole("button", { name: "Vish" })).toHaveAttribute(
       "aria-keyshortcuts",
-      "V Shift+V"
+      "Enter Shift+Enter V Shift+V"
     );
     expect(article.querySelector(".k--card")).toHaveTextContent("V");
     expect(screen.getByRole("article", { name: "Sem tecla" }).querySelector(".k--card")).toBeNull();
