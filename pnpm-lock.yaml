@@ -80,7 +80,7 @@ importers:
         version: 10.4.1
       '@testing-library/jest-dom':
         specifier: ^7.0.1
-        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)))
+        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)))
       '@testing-library/react':
         specifier: ^16.3.3
         version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -110,7 +110,7 @@ importers:
         version: 26.16.1(electron-builder-squirrel-windows@26.16.1)(supports-color@10.2.2)
       jsdom:
         specifier: ^30.0.1
-        version: 30.0.1(@noble/hashes@2.4.0)
+        version: 30.0.1(@noble/hashes@1.8.0)
       msw:
         specifier: 2.15.0
         version: 2.15.0(@types/node@24.13.3)(typescript@5.9.3)
@@ -131,7 +131,7 @@ importers:
         version: 8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)
       vitest:
         specifier: ^5.0.0
-        version: 5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0))
+        version: 5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0))
       wait-on:
         specifier: ^9.1.0
         version: 9.1.0(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)
@@ -818,10 +818,6 @@ packages:
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
-
-  '@noble/hashes@2.4.0':
-    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
-    engines: {node: '>= 20.19.0'}
 
   '@open-draft/deferred-promise@2.2.0':
     resolution: {integrity: sha512-CecwLWx3rhxVQF6V4bAgPS5t+So2sTbPgAzafKkVizyi7tlwpcFpdFqq+wqF2OwNBmqFuu6tOyouTuxgpMfzmA==}
@@ -1933,10 +1929,6 @@ packages:
     resolution: {integrity: sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA==}
     engines: {node: '>=10.0.0'}
 
-  '@xmldom/xmldom@0.9.12':
-    resolution: {integrity: sha512-5AXjrcMClTryPe9LgZrygpB1lj7s0S9E0+W+AHaVKAVyHanafK86iPSvG5xHVSp/jC+VH1UXu0TAEmY279xH7A==}
-    engines: {node: '>=14.6'}
-
   abbrev@4.0.0:
     resolution: {integrity: sha512-a1wflyaL0tHtJSmLSOVybYhy22vRih4eduhhrkcjgrWGnRfrZtovJ2FRjxuTtkkj47O/baf0R86QU5OuYpz8fA==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -2502,8 +2494,8 @@ packages:
   fix-dts-default-cjs-exports@1.0.1:
     resolution: {integrity: sha512-pVIECanWFC61Hzl2+oOCtoJ3F17kglZC/6N94eRWycFgBH35hHx0Li604ZIzhseh97mf2p0cv7vVrOZGoqhlEg==}
 
-  follow-redirects@1.16.0:
-    resolution: {integrity: sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==}
+  follow-redirects@1.16.1:
+    resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -3135,10 +3127,6 @@ packages:
 
   plist@3.1.0:
     resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
-    engines: {node: '>=10.4.0'}
-
-  plist@3.1.1:
-    resolution: {integrity: sha512-ZIfcLJC+7E7FBFnDxm9MPmt7D+DidyQ26lewieO75AdhA2ayMtsJSES0iWzqJQbcVRSrTufQoy0DR94xHue0oA==}
     engines: {node: '>=10.4.0'}
 
   postcss-load-config@6.0.1:
@@ -4195,7 +4183,7 @@ snapshots:
       fs-extra: 10.1.0
       isbinaryfile: 4.0.10
       minimist: 1.2.8
-      plist: 3.1.1
+      plist: 3.1.0
     transitivePeerDependencies:
       - supports-color
 
@@ -4218,7 +4206,7 @@ snapshots:
       dir-compare: 4.2.0
       fs-extra: 11.4.0
       minimatch: 9.0.9
-      plist: 3.1.1
+      plist: 3.1.0
     transitivePeerDependencies:
       - supports-color
 
@@ -4348,9 +4336,9 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@exodus/bytes@1.15.1(@noble/hashes@2.4.0)':
+  '@exodus/bytes@1.15.1(@noble/hashes@1.8.0)':
     optionalDependencies:
-      '@noble/hashes': 2.4.0
+      '@noble/hashes': 1.8.0
 
   '@floating-ui/core@1.8.0':
     dependencies:
@@ -4601,9 +4589,6 @@ snapshots:
   '@noble/hashes@1.4.0': {}
 
   '@noble/hashes@1.8.0': {}
-
-  '@noble/hashes@2.4.0':
-    optional: true
 
   '@open-draft/deferred-promise@2.2.0': {}
 
@@ -5367,7 +5352,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/jest-dom@7.0.1(@testing-library/dom@10.4.1)(vitest@5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)))':
+  '@testing-library/jest-dom@7.0.1(@testing-library/dom@10.4.1)(vitest@5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)))':
     dependencies:
       '@adobe/css-tools': 4.5.0
       '@testing-library/dom': 10.4.1
@@ -5377,7 +5362,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
     optionalDependencies:
-      vitest: 5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0))
+      vitest: 5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0))
 
   '@testing-library/react@16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
@@ -5524,8 +5509,6 @@ snapshots:
 
   '@xmldom/xmldom@0.8.15': {}
 
-  '@xmldom/xmldom@0.9.12': {}
-
   abbrev@4.0.0: {}
 
   acorn@8.18.0: {}
@@ -5647,7 +5630,7 @@ snapshots:
 
   axios@1.20.0(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2):
     dependencies:
-      follow-redirects: 1.16.0(debug@4.4.3(supports-color@10.2.2))
+      follow-redirects: 1.16.1(debug@4.4.3(supports-color@10.2.2))
       form-data: 4.0.6
       https-proxy-agent: 5.0.1(supports-color@10.2.2)
       proxy-from-env: 2.1.0
@@ -5865,10 +5848,10 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  data-urls@7.0.0(@noble/hashes@2.4.0):
+  data-urls@7.0.0(@noble/hashes@1.8.0):
     dependencies:
       whatwg-mimetype: 5.0.0
-      whatwg-url: 16.0.1(@noble/hashes@2.4.0)
+      whatwg-url: 16.0.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -6159,7 +6142,7 @@ snapshots:
       mlly: 1.8.2
       rollup: 4.63.1
 
-  follow-redirects@1.16.0(debug@4.4.3(supports-color@10.2.2)):
+  follow-redirects@1.16.1(debug@4.4.3(supports-color@10.2.2)):
     optionalDependencies:
       debug: 4.4.3(supports-color@10.2.2)
 
@@ -6266,7 +6249,7 @@ snapshots:
       es6-error: 4.1.1
       matcher: 3.0.0
       roarr: 2.15.4
-      semver: 7.8.5
+      semver: 7.7.4
       serialize-error: 7.0.1
     optional: true
 
@@ -6322,9 +6305,9 @@ snapshots:
     dependencies:
       lru-cache: 6.0.0
 
-  html-encoding-sniffer@6.0.0(@noble/hashes@2.4.0):
+  html-encoding-sniffer@6.0.0(@noble/hashes@1.8.0):
     dependencies:
-      '@exodus/bytes': 1.15.1(@noble/hashes@2.4.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -6429,17 +6412,17 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@30.0.1(@noble/hashes@2.4.0):
+  jsdom@30.0.1(@noble/hashes@1.8.0):
     dependencies:
       '@asamuzakjp/css-color': 6.0.7
       '@asamuzakjp/dom-selector': 8.3.2
       '@bramus/specificity': 2.4.2
       '@csstools/css-syntax-patches-for-csstree': 1.1.12(css-tree@3.2.1)
-      '@exodus/bytes': 1.15.1(@noble/hashes@2.4.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
       css-tree: 3.2.1
-      data-urls: 7.0.0(@noble/hashes@2.4.0)
+      data-urls: 7.0.0(@noble/hashes@1.8.0)
       decimal.js: 10.6.0
-      html-encoding-sniffer: 6.0.0(@noble/hashes@2.4.0)
+      html-encoding-sniffer: 6.0.0(@noble/hashes@1.8.0)
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.2
       parse5: 8.0.1
@@ -6450,7 +6433,7 @@ snapshots:
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
-      whatwg-url: 17.1.0(@noble/hashes@2.4.0)
+      whatwg-url: 17.1.0(@noble/hashes@1.8.0)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
@@ -6671,11 +6654,11 @@ snapshots:
 
   node-abi@4.35.0:
     dependencies:
-      semver: 7.8.5
+      semver: 7.7.4
 
   node-api-version@0.2.1:
     dependencies:
-      semver: 7.8.5
+      semver: 7.7.4
 
   node-gyp@12.4.0:
     dependencies:
@@ -6684,7 +6667,7 @@ snapshots:
       graceful-fs: 4.2.11
       nopt: 9.0.0
       proc-log: 6.1.0
-      semver: 7.8.5
+      semver: 7.7.4
       tar: 7.5.22
       tinyglobby: 0.2.17
       undici: 6.28.1
@@ -6820,12 +6803,6 @@ snapshots:
   plist@3.1.0:
     dependencies:
       '@xmldom/xmldom': 0.8.15
-      base64-js: 1.5.1
-      xmlbuilder: 15.1.1
-
-  plist@3.1.1:
-    dependencies:
-      '@xmldom/xmldom': 0.9.12
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
@@ -7485,7 +7462,7 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
 
-  vitest@5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)):
+  vitest@5.0.0(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/mocker': 5.0.0(msw@2.15.0(@types/node@24.13.3)(typescript@5.9.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0))
@@ -7503,7 +7480,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.13.3
-      jsdom: 30.0.1(@noble/hashes@2.4.0)
+      jsdom: 30.0.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - msw
 
@@ -7536,17 +7513,17 @@ snapshots:
 
   whatwg-mimetype@5.0.0: {}
 
-  whatwg-url@16.0.1(@noble/hashes@2.4.0):
+  whatwg-url@16.0.1(@noble/hashes@1.8.0):
     dependencies:
-      '@exodus/bytes': 1.15.1(@noble/hashes@2.4.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
 
-  whatwg-url@17.1.0(@noble/hashes@2.4.0):
+  whatwg-url@17.1.0(@noble/hashes@1.8.0):
     dependencies:
-      '@exodus/bytes': 1.15.1(@noble/hashes@2.4.0)
+      '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
