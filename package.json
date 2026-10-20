@@ -131,7 +131,7 @@
     "electron-builder": "^26.16.1",
     "jsdom": "^30.0.1",
     "msw": "2.15.0",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "storybook": "^10.6.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
