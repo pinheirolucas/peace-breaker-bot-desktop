@@ -127,7 +127,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.1.1",
     "concurrently": "^10.0.5",
-    "electron": "^44.2.0",
+    "electron": "^44.9.1",
     "electron-builder": "^26.16.1",
     "jsdom": "^30.0.1",
     "msw": "2.15.0",
