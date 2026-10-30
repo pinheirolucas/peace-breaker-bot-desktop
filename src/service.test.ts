@@ -55,7 +55,7 @@ function errorAtStatus(status: number, body: JsonBodyType) {
   return HttpResponse.json(body, { status });
 }
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => {
   server.resetHandlers();
   resetApiUrl();

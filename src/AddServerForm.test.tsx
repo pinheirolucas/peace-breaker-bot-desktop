@@ -10,7 +10,7 @@ const typed = "10.0.0.20:9001";
 const resolved = "http://10.0.0.20:9001/api/v1";
 const server = setupServer();
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
