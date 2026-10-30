@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Desktop UI (Vite + React 19 + Electron 44) for Peace Breaker Bot: browse and favourite "instants" (short mp3 clips from several sites), play them locally, or tell the Discord bot to play them. The backend is the sibling repo `../peace-breaker-bot`; this app has no server of its own and does nothing without it.
+Desktop UI (Vite + React 19 + Electron 45) for Peace Breaker Bot: browse and favourite "instants" (short mp3 clips from several sites), play them locally, or tell the Discord bot to play them. The backend is the sibling repo `../peace-breaker-bot`; this app has no server of its own and does nothing without it.
 
 ## Commands
 
