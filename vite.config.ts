@@ -31,10 +31,10 @@ export default defineConfig({
     outDir: "build",
 
     // Pinned to the Chromium that the Electron version in devDependencies
-    // ships (44.2.0 -> Chromium 152). Getting this wrong is production-only and
+    // ships (45.1.0 -> Chromium 156). Getting this wrong is production-only and
     // silent: the dev server works, the build succeeds, and the packaged app
     // shows a blank window with a SyntaxError. Raise it in step with Electron.
-    target: "chrome152"
+    target: "chrome156"
   },
 
   server: {
