@@ -82,11 +82,11 @@
     "@radix-ui/react-tooltip": "^1.4.1",
     "bonjour-service": "1.4.4",
     "electron-updater": "^6.8.11",
-    "i18next": "^26.5.11",
+    "i18next": "^27.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-dropzone": "^20.2.0",
-    "react-i18next": "^17.1.9"
+    "react-i18next": "^18.0.1"
   },
   "scripts": {
     "react-start": "vite",
